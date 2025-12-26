@@ -135,11 +135,12 @@ export interface FormActionSchema {
   submitApiUrl?: string;
 }
 
-export interface FormStepSchema {
+export interface FormStepConfig {
   id: string;
   label: string;
   order: number;
   fieldIds: string[];
+  icon?: string;
 }
 
 export interface FormSectionSchema {
@@ -161,6 +162,6 @@ export interface FormSchema {
 
   fields: FormFieldSchema[];
 
-  steps?: FormStepSchema[];
+  steps?: FormStepConfig[];
   sections?: FormSectionSchema[];
 }

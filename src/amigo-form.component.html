@@ -26,31 +26,64 @@
 
         <!-- MULTI STEP PROGRESS -->
         <div *ngIf="isMultiStep" class="w-full mb-6 flex flex-col items-center my-3">
+        
+            <!-- progress bar -->
             <div class="w-full h-1 bg-gray-200 rounded-full relative mb-6">
-                <div class="h-1 bg-black rounded-full transition-all duration-300"
-                    [ngStyle]="{ width: ((activeStepIndex + 1) / totalSteps) * 100 + '%' }"></div>
+                <div class="h-1 rounded-full transition-all duration-300" [ngStyle]="{
+                width: ((activeStepIndex + 1) / totalSteps) * 100 + '%',
+                backgroundColor: submitButtonStyle['backgroundColor']
+              }">
+                </div>
             </div>
-
+        
+            <!-- step circles -->
             <div class="flex items-center justify-center gap-10">
                 <div *ngFor="let step of orderedSteps; let i = index" class="flex flex-col items-center cursor-pointer"
                     (click)="setActiveStep(i)">
+        
                     <div class="w-10 h-10 flex items-center justify-center rounded-full border-2 transition-all duration-300"
-                        [ngClass]="
-              i === activeStepIndex
-                ? 'bg-black border-black text-white'
-                : 'bg-white border-gray-400 text-gray-700'
-            ">
-                        {{ i + 1 }}
+                        [ngStyle]="
+                  i === activeStepIndex
+                    ? {
+                        backgroundColor: submitButtonStyle['backgroundColor'],
+                        borderColor: submitButtonStyle['backgroundColor'],
+                        color: submitButtonStyle['color']
+                      }
+                    : {
+                        backgroundColor: '#FFFFFF',
+                        borderColor: '#9CA3AF',
+                        color: '#374151'
+                      }
+                ">
+        
+                        <!-- if no icon -->
+                        <ng-container *ngIf="!step.icon">
+                            {{ i + 1 }}
+                        </ng-container>
+        
+                        <!-- if icon -->
+                        <ng-container *ngIf="step.icon">
+                            <i [class]="step.icon" class="text-lg" [ngStyle]="
+                      i === activeStepIndex
+                        ? { color: submitButtonStyle['color'] }
+                        : { color: '#6B7280' }
+                    ">
+                            </i>
+                        </ng-container>
+        
                     </div>
-
-                    <div class="mt-2 text-xs text-gray-600 font-medium">{{ step.label }}</div>
+        
+                    <div class="mt-2 text-xs text-gray-600 font-medium">
+                        {{ step.label }}
+                    </div>
                 </div>
             </div>
-
+        
             <div *ngIf="visibleFields.length === 0" class="text-xs text-gray-500 my-5">
                 No fields assigned to this step yet.
             </div>
         </div>
+
 
         <!-- SINGLE-SECTIONAL MODE -->
         <div *ngIf="isSectional; else normalOrMulti">

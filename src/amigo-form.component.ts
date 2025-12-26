@@ -1,17 +1,6 @@
-import {
-  Component,
-  EventEmitter,
-  Input,
-  OnChanges,
-  Output,
-  SimpleChanges,
-} from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {
-  ReactiveFormsModule,
-  FormGroup,
-  AbstractControl,
-} from '@angular/forms';
+import { ReactiveFormsModule, FormGroup, AbstractControl } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
 
 import { FormSchema, FormFieldSchema, FormType } from './models';
@@ -75,8 +64,7 @@ export class AmigoFormComponent implements OnChanges {
         next: (res: any) => {
           this.applySchema(res?.form_data ?? res);
         },
-        error: (e) =>
-          (this.loadError = e?.message ?? 'Failed to load form schema'),
+        error: (e) => (this.loadError = e?.message ?? 'Failed to load form schema'),
       });
   }
 
@@ -87,8 +75,7 @@ export class AmigoFormComponent implements OnChanges {
 
     // normalize file accept tokens in schema
     const fields = (s?.fields ?? []).map((f: any) => {
-      if (f?.type === 'file')
-        return { ...f, accept: normalizeAccept(f.accept) };
+      if (f?.type === 'file') return { ...f, accept: normalizeAccept(f.accept) };
       return f;
     });
 
@@ -117,7 +104,7 @@ export class AmigoFormComponent implements OnChanges {
   }
 
   cardIcon(field: any): string {
-    return field?.card?.icon || '✅';
+    return field?.card?.icon || '';
   }
 
   cardTitle(field: any): string {
@@ -229,9 +216,7 @@ export class AmigoFormComponent implements OnChanges {
 
   get orderedSteps() {
     const s = this.resolvedSchema;
-    return [...(s?.steps ?? [])].sort(
-      (a, b) => (a?.order ?? 0) - (b?.order ?? 0)
-    );
+    return [...(s?.steps ?? [])].sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
   }
 
   get totalSteps(): number {
@@ -263,16 +248,11 @@ export class AmigoFormComponent implements OnChanges {
   get orderedSections() {
     const s = this.resolvedSchema;
     if (!s || s.formType !== 'single-sectional') return [];
-    return [...(s.sections ?? [])].sort(
-      (a, b) => (a?.order ?? 0) - (b?.order ?? 0)
-    );
+    return [...(s.sections ?? [])].sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
   }
 
   get isSectional(): boolean {
-    return (
-      this.resolvedSchema?.formType === 'single-sectional' &&
-      this.orderedSections.length > 0
-    );
+    return this.resolvedSchema?.formType === 'single-sectional' && this.orderedSections.length > 0;
   }
 
   fieldsForSection(sectionId: string): FormFieldSchema[] {
@@ -305,10 +285,7 @@ export class AmigoFormComponent implements OnChanges {
     this.touchFields(current);
     if (this.hasErrors(current)) return;
 
-    this.activeStepIndex = Math.min(
-      this.totalSteps - 1,
-      this.activeStepIndex + 1
-    );
+    this.activeStepIndex = Math.min(this.totalSteps - 1, this.activeStepIndex + 1);
   }
 
   submit(): void {
