@@ -9,11 +9,11 @@
     "prepare": "npm run build"
   },
   "peerDependencies": {
-    "@angular/common": "^17.0.0",
-    "@angular/core": "^17.0.0",
-    "@angular/forms": "^17.0.0",
-    "rxjs": "^7.0.0"
-  },
+  "@angular/common": ">=17 <21",
+  "@angular/core": ">=17 <21",
+  "@angular/forms": ">=17 <21",
+  "rxjs": "^7.0.0"
+},
   "devDependencies": {
     "@angular/compiler-cli": "^17.0.0",
     "ng-packagr": "^17.0.0",
