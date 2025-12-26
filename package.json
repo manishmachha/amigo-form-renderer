@@ -1,0 +1,31 @@
+{
+  "name": "@your-scope/amigo-form-renderer",
+  "version": "1.0.0",
+  "description": "Amigo Form Renderer Angular library",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "build": "ng-packagr -p ng-package.json",
+    "prepare": "npm run build"
+  },
+  "peerDependencies": {
+    "@angular/common": "^17.0.0",
+    "@angular/core": "^17.0.0",
+    "@angular/forms": "^17.0.0",
+    "rxjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "@angular/compiler-cli": "^17.0.0",
+    "ng-packagr": "^17.0.0",
+    "typescript": "~5.2.0"
+  },
+  "main": "dist/bundles/amigo-form-renderer.umd.js",
+  "module": "dist/fesm2022/amigo-form-renderer.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/fesm2022/amigo-form-renderer.mjs"
+    }
+  }
+}

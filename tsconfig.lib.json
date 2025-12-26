@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "declaration": true,
+    "declarationMap": false,
+    "inlineSources": false,
+    "outDir": "./dist-ts",
+    "types": [],
+    "lib": ["ES2022", "DOM"]
+  },
+  "angularCompilerOptions": {
+    "compilationMode": "partial"
+  },
+  "exclude": ["node_modules", "dist", "**/*.spec.ts"]
+}

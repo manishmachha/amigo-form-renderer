@@ -1,0 +1,340 @@
+<div class="w-full h-full flex flex-col mb-6 overflow-auto bg-gray-50">
+
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="flex items-center justify-center p-6 text-sm text-gray-600">
+        Loading form…
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="loadError" class="p-3 rounded border border-red-200 bg-red-50 text-red-700 text-sm">
+        {{ loadError }}
+    </div>
+
+    <!-- Empty -->
+    <div *ngIf="!isLoading && !loadError && (!resolvedSchema?.fields || resolvedSchema.fields.length === 0)"
+        class="flex justify-center items-center h-100 border border-dotted border-gray-300 rounded-xl bg-white">
+        <h2 class="text-sm text-gray-600">No fields found for this form schema.</h2>
+    </div>
+
+    <form *ngIf="!isLoading && !loadError && resolvedSchema?.fields?.length && form" [formGroup]="form" class="text-sm"
+        [ngStyle]="getFormStyle()" [ngClass]="resolvedSchema?.style?.formClass || ''" (ngSubmit)="submit()">
+        <h2 class="text-2xl my-2">{{ resolvedSchema.name }}</h2>
+
+        <p *ngIf="resolvedSchema.description" class="text-[13px] text-gray-500 mb-4">
+            {{ resolvedSchema.description }}
+        </p>
+
+        <!-- MULTI STEP PROGRESS -->
+        <div *ngIf="isMultiStep" class="w-full mb-6 flex flex-col items-center my-3">
+            <div class="w-full h-1 bg-gray-200 rounded-full relative mb-6">
+                <div class="h-1 bg-black rounded-full transition-all duration-300"
+                    [ngStyle]="{ width: ((activeStepIndex + 1) / totalSteps) * 100 + '%' }"></div>
+            </div>
+
+            <div class="flex items-center justify-center gap-10">
+                <div *ngFor="let step of orderedSteps; let i = index" class="flex flex-col items-center cursor-pointer"
+                    (click)="setActiveStep(i)">
+                    <div class="w-10 h-10 flex items-center justify-center rounded-full border-2 transition-all duration-300"
+                        [ngClass]="
+              i === activeStepIndex
+                ? 'bg-black border-black text-white'
+                : 'bg-white border-gray-400 text-gray-700'
+            ">
+                        {{ i + 1 }}
+                    </div>
+
+                    <div class="mt-2 text-xs text-gray-600 font-medium">{{ step.label }}</div>
+                </div>
+            </div>
+
+            <div *ngIf="visibleFields.length === 0" class="text-xs text-gray-500 my-5">
+                No fields assigned to this step yet.
+            </div>
+        </div>
+
+        <!-- SINGLE-SECTIONAL MODE -->
+        <div *ngIf="isSectional; else normalOrMulti">
+            <div *ngFor="let sec of orderedSections" class="mb-6">
+                <div class="flex items-center justify-between mb-2 border-b border-gray-200 pb-2">
+                    <h3 class="text-[11px] font-semibold uppercase text-blue-700">{{ sec.label }}</h3>
+                    <span class="text-[11px] text-gray-500">{{ fieldsForSection(sec.id).length }} fields</span>
+                </div>
+
+                <div class="grid" [ngStyle]="{
+            'grid-template-columns': 'repeat(' + (resolvedSchema.layout?.columns || 1) + ', minmax(0, 1fr))',
+            'column-gap': (resolvedSchema.spacing?.gapX ?? 12) + 'px',
+            'row-gap': (resolvedSchema.spacing?.gapY ?? 12) + 'px'
+          }">
+                    <div *ngFor="let field of fieldsForSection(sec.id); trackBy: trackByFieldId"
+                        [ngStyle]="{ 'grid-column': 'span ' + (field.colSpan || 1) }"
+                        [ngClass]="resolvedSchema.style?.fieldWrapperClass || 'mb-3'">
+                        <ng-container *ngTemplateOutlet="fieldRenderer; context: { $implicit: field }"></ng-container>
+                    </div>
+                </div>
+
+                <div *ngIf="fieldsForSection(sec.id).length === 0" class="text-xs text-gray-500 mt-2">
+                    No fields in this section yet.
+                </div>
+            </div>
+        </div>
+
+        <!-- NORMAL (single) + MULTI -->
+        <ng-template #normalOrMulti>
+            <div class="grid" [ngStyle]="{
+          'grid-template-columns': 'repeat(' + (resolvedSchema.layout?.columns || 1) + ', minmax(0, 1fr))',
+          'column-gap': (resolvedSchema.spacing?.gapX ?? 12) + 'px',
+          'row-gap': (resolvedSchema.spacing?.gapY ?? 12) + 'px'
+        }">
+                <div *ngFor="let field of visibleFields; trackBy: trackByFieldId"
+                    [ngStyle]="{ 'grid-column': 'span ' + (field.colSpan || 1) }"
+                    [ngClass]="resolvedSchema.style?.fieldWrapperClass || 'mb-3'">
+                    <ng-container *ngTemplateOutlet="fieldRenderer; context: { $implicit: field }"></ng-container>
+                </div>
+            </div>
+        </ng-template>
+
+        <!-- Multi-step nav -->
+        <div *ngIf="isMultiStep" class="mt-4 flex items-center justify-between text-xs">
+            <button type="button" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
+                (click)="prevStep()" [disabled]="activeStepIndex === 0">
+                ← Previous step
+            </button>
+
+            <button type="button" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
+                (click)="nextStep()" [disabled]="activeStepIndex === totalSteps - 1">
+                Next step →
+            </button>
+        </div>
+
+        <!-- Actions -->
+        <div class="mt-4 flex items-center gap-2">
+            <button type="submit" (mouseenter)="isSubmitHovered = true" (mouseleave)="isSubmitHovered = false"
+                [ngStyle]="submitButtonStyle"
+                [ngClass]="resolvedSchema.style?.buttonClass || 'px-4 py-2 rounded text-sm font-medium'">
+                {{ resolvedSchema.actions?.submitLabel || 'Submit' }}
+            </button>
+
+            <button type="button" (click)="onCancel()" (mouseenter)="isCancelHovered = true"
+                (mouseleave)="isCancelHovered = false" [ngStyle]="cancelButtonStyle"
+                [ngClass]="resolvedSchema.style?.buttonClass || 'px-4 py-2 rounded text-sm font-medium'">
+                {{ resolvedSchema.actions?.cancelLabel || 'Cancel' }}
+            </button>
+        </div>
+
+        <!-- Field renderer template -->
+        <ng-template #fieldRenderer let-field>
+            <!-- INFO CARD (non-input block) -->
+            <ng-container *ngIf="isCard(field); else inputField">
+                <div [ngStyle]="cardStyle(field)" class="w-full flex items-start gap-3">
+                    <!-- Icon -->
+                    <div class="shrink-0 mt-0.5 text-lg leading-none" [ngStyle]="cardIconStyle(field)">
+                        <!-- If it's a bootstrap-icons class like "bi bi-shield-check" -->
+                        <i *ngIf="isBootstrapIcon(cardIcon(field))" [class]="cardIcon(field)"></i>
+            
+                        <!-- Else treat it like a normal emoji/text icon -->
+                        <span *ngIf="!isBootstrapIcon(cardIcon(field))">{{ cardIcon(field) }}</span>
+                    </div>
+            
+                    <!-- Content -->
+                    <div class="min-w-0">
+                        <div class="text-sm font-semibold leading-tight">
+                            {{ cardTitle(field) }}
+                        </div>
+            
+                        <div *ngIf="cardBody(field)" class="mt-1 text-xs opacity-90">
+                            {{ cardBody(field) }}
+                        </div>
+                    </div>
+                </div>
+            </ng-container>
+
+
+            <!-- INPUT FIELD -->
+            <ng-template #inputField>
+                <label [ngClass]="resolvedSchema?.style?.labelClass || 'block text-sm font-medium mb-1'">
+                    {{ field.label }}
+                    <span *ngIf="field.required === true || field.required === 'true' || field.validations?.required"
+                        class="text-red-500">*</span>
+                </label>
+
+                <ng-container [ngSwitch]="field.type">
+
+                <!-- TEXT -->
+                <ng-container *ngSwitchCase="'text'">
+                    <input type="text" [placeholder]="field.placeholder" [formControlName]="controlKey(field)"
+                        [ngClass]="resolvedSchema?.style?.inputClass || 'w-full border border-gray-300 rounded px-2 py-1 text-sm'" />
+
+                    <div *ngIf="showError(field)" class="mt-1 text-[11px] text-red-600 space-y-0.5">
+                        <div *ngIf="ctrl(field)?.errors?.['required']">This field is required.</div>
+                        <div *ngIf="ctrl(field)?.errors?.['minlength']">
+                            Minimum {{ field.validations?.minLength }} characters required.
+                        </div>
+                        <div *ngIf="ctrl(field)?.errors?.['maxlength']">
+                            Maximum {{ field.validations?.maxLength }} characters allowed.
+                        </div>
+                        <div *ngIf="ctrl(field)?.errors?.['pattern']">Value does not match the required pattern.</div>
+                    </div>
+                </ng-container>
+
+                <!-- NUMBER -->
+                <ng-container *ngSwitchCase="'number'">
+                    <input type="number" [placeholder]="field.placeholder" [formControlName]="controlKey(field)"
+                        [ngClass]="resolvedSchema?.style?.inputClass || 'w-full border border-gray-300 rounded px-2 py-1 text-sm'" />
+
+                    <div *ngIf="showError(field)" class="mt-1 text-[11px] text-red-600 space-y-0.5">
+                        <div *ngIf="ctrl(field)?.errors?.['required']">This field is required.</div>
+                        <div *ngIf="ctrl(field)?.errors?.['min']">Value should be ≥ {{ field.validations?.min }}.</div>
+                        <div *ngIf="ctrl(field)?.errors?.['max']">Value should be ≤ {{ field.validations?.max }}.</div>
+                    </div>
+                </ng-container>
+
+                <!-- EMAIL -->
+                <ng-container *ngSwitchCase="'email'">
+                    <input type="email" [placeholder]="field.placeholder" [formControlName]="controlKey(field)"
+                        [ngClass]="resolvedSchema?.style?.inputClass || 'w-full border border-gray-300 rounded px-2 py-1 text-sm'" />
+
+                    <div *ngIf="showError(field)" class="mt-1 text-[11px] text-red-600 space-y-0.5">
+                        <div *ngIf="ctrl(field)?.errors?.['required']">This field is required.</div>
+                        <div *ngIf="ctrl(field)?.errors?.['email']">Please enter a valid email address.</div>
+                        <div *ngIf="ctrl(field)?.errors?.['minlength']">
+                            Minimum {{ field.validations?.minLength }} characters required.
+                        </div>
+                        <div *ngIf="ctrl(field)?.errors?.['maxlength']">
+                            Maximum {{ field.validations?.maxLength }} characters allowed.
+                        </div>
+                        <div *ngIf="ctrl(field)?.errors?.['pattern']">Value does not match the required pattern.</div>
+                    </div>
+                </ng-container>
+
+                <!-- TEXTAREA -->
+                <ng-container *ngSwitchCase="'textarea'">
+                    <textarea [placeholder]="field.placeholder" [formControlName]="controlKey(field)" rows="4"
+                        [ngClass]="resolvedSchema?.style?.inputClass || 'w-full border border-gray-300 rounded px-2 py-1 text-sm'"></textarea>
+
+                    <div *ngIf="showError(field)" class="mt-1 text-[11px] text-red-600 space-y-0.5">
+                        <div *ngIf="ctrl(field)?.errors?.['required']">This field is required.</div>
+                        <div *ngIf="ctrl(field)?.errors?.['minlength']">
+                            Minimum {{ field.validations?.minLength }} characters required.
+                        </div>
+                        <div *ngIf="ctrl(field)?.errors?.['maxlength']">
+                            Maximum {{ field.validations?.maxLength }} characters allowed.
+                        </div>
+                        <div *ngIf="ctrl(field)?.errors?.['pattern']">Value does not match the required pattern.</div>
+                    </div>
+                </ng-container>
+
+                <!-- SELECT -->
+                <ng-container *ngSwitchCase="'select'">
+                    <select [formControlName]="controlKey(field)"
+                        [ngClass]="resolvedSchema?.style?.inputClass || 'w-full border border-gray-300 rounded px-2 py-1 text-sm'">
+                        <option [ngValue]="null" disabled>
+                            {{ field.placeholder || 'Select an option' }}
+                        </option>
+                        <option *ngFor="let opt of field.options || []" [ngValue]="opt.value">
+                            {{ opt.label }}
+                        </option>
+                    </select>
+
+                    <div *ngIf="showError(field)" class="mt-1 text-[11px] text-red-600">
+                        <div *ngIf="ctrl(field)?.errors?.['required']">Please select an option.</div>
+                    </div>
+                </ng-container>
+
+                <!-- CHECKBOX -->
+                <ng-container *ngSwitchCase="'checkbox'">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" [formControlName]="controlKey(field)" />
+                        <span class="text-xs text-gray-700">Check</span>
+                    </div>
+
+                    <div *ngIf="showError(field)" class="mt-1 text-[11px] text-red-600">
+                        <div *ngIf="ctrl(field)?.errors?.['requiredTrue']">Please check this box.</div>
+                    </div>
+                </ng-container>
+
+                <!-- RADIO -->
+                <ng-container *ngSwitchCase="'radio'">
+                    <div
+                        [ngClass]="field.optionDirection === 'horizontal' ? 'flex flex-row gap-4 items-center' : 'flex flex-col gap-1'">
+                        <label *ngFor="let opt of field.options || []"
+                            class="inline-flex items-center gap-2 text-xs text-gray-700">
+                            <input type="radio" [value]="opt.value" [formControlName]="controlKey(field)" />
+                            <span>{{ opt.label }}</span>
+                        </label>
+                    </div>
+
+                    <div *ngIf="showError(field)" class="mt-1 text-[11px] text-red-600">
+                        <div *ngIf="ctrl(field)?.errors?.['required']">Please choose an option.</div>
+                    </div>
+                </ng-container>
+
+                <!-- DATE -->
+                <ng-container *ngSwitchCase="'date'">
+                    <input type="date" [formControlName]="controlKey(field)"
+                        [ngClass]="resolvedSchema?.style?.inputClass || 'w-full border border-gray-300 rounded px-2 py-1 text-sm'" />
+
+                    <div *ngIf="showError(field)" class="mt-1 text-[11px] text-red-600 space-y-0.5">
+                        <div *ngIf="ctrl(field)?.errors?.['required']">This field is required.</div>
+                        <div *ngIf="ctrl(field)?.errors?.['min']">Date should be on or after {{ field.validations?.min
+                            }}.</div>
+                        <div *ngIf="ctrl(field)?.errors?.['max']">Date should be on or before {{ field.validations?.max
+                            }}.</div>
+                    </div>
+                </ng-container>
+
+                <!-- FILE -->
+                <ng-container *ngSwitchCase="'file'">
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center gap-2">
+                            <input #fileInput type="file" [attr.accept]="field.accept || null"
+                                [attr.multiple]="field.multiple ? '' : null" (change)="onFileChange($event, field)"
+                                (blur)="ctrl(field)?.markAsTouched()"
+                                [ngClass]="resolvedSchema?.style?.inputClass || 'w-full border border-gray-300 rounded px-2 py-1 text-sm'" />
+
+                            <button *ngIf="fileNames(field).length" type="button"
+                                class="px-2 py-1 text-[11px] border border-gray-300 rounded hover:bg-gray-100"
+                                (click)="clearFiles(field, fileInput)">
+                                Clear
+                            </button>
+                        </div>
+
+                        <div class="text-[11px] text-gray-500">
+                            <span *ngIf="field.accept">Allowed: {{ field.accept }}</span>
+                            <span *ngIf="field.maxSizeMB"> • Max {{ field.maxSizeMB }}MB per file</span>
+                            <span *ngIf="field.maxFiles"> • Max {{ field.maxFiles }} file(s)</span>
+                        </div>
+
+                        <div *ngIf="fileNames(field).length" class="text-[11px] text-gray-600">
+                            Selected: {{ fileNames(field).join(', ') }}
+                        </div>
+                    </div>
+
+                    <div *ngIf="showError(field)" class="mt-1 text-[11px] text-red-600 space-y-0.5">
+                        <div *ngIf="ctrl(field)?.errors?.['required']">This field is required.</div>
+
+                        <div *ngIf="ctrl(field)?.errors?.['maxFiles']">
+                            You can upload up to {{ ctrl(field)?.errors?.['maxFiles']?.max }} file(s).
+                        </div>
+
+                        <div *ngIf="ctrl(field)?.errors?.['maxSizeMB']">
+                            {{ ctrl(field)?.errors?.['maxSizeMB']?.file }} is too large. Max
+                            {{ ctrl(field)?.errors?.['maxSizeMB']?.max }}MB.
+                        </div>
+
+                        <div *ngIf="ctrl(field)?.errors?.['accept']">
+                            {{ ctrl(field)?.errors?.['accept']?.file }} is not an allowed file type.
+                        </div>
+                    </div>
+                </ng-container>
+
+                <!-- DEFAULT -->
+                <ng-container *ngSwitchDefault>
+                    <input type="text" [placeholder]="field.placeholder" [formControlName]="controlKey(field)"
+                        [ngClass]="resolvedSchema?.style?.inputClass || 'w-full border border-gray-300 rounded px-2 py-1 text-sm'" />
+                </ng-container>
+
+                </ng-container>
+            </ng-template>
+        </ng-template>
+    </form>
+</div>
