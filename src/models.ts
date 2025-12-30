@@ -133,6 +133,20 @@ export interface FormActionSchema {
   // Optional fields used by your composer
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   submitApiUrl?: string;
+
+  /**
+   * Optional:
+   * - auto: JSON unless files exist (recommended)
+   * - json: always JSON (will fail for File objects)
+   * - multipart: always FormData
+   */
+  contentType?: 'auto' | 'json' | 'multipart';
+
+  /**
+   * Optional: if you want to wrap payload inside a key
+   * Example: payloadKey="data" => { data: <formValue> }
+   */
+  payloadKey?: string;
 }
 
 export interface FormStepConfig {

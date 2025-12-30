@@ -139,20 +139,26 @@
             </button>
         </div>
 
+        <!-- Submit error (API) -->
+        <div *ngIf="submitError" class="mt-3 p-3 rounded border border-red-200 bg-red-50 text-red-700 text-sm">
+            {{ submitError }}
+        </div>
+        
         <!-- Actions -->
         <div class="mt-4 flex items-center gap-2">
             <button type="submit" (mouseenter)="isSubmitHovered = true" (mouseleave)="isSubmitHovered = false"
-                [ngStyle]="submitButtonStyle"
-                [ngClass]="resolvedSchema.style?.buttonClass || 'px-4 py-2 rounded text-sm font-medium'">
-                {{ resolvedSchema.actions?.submitLabel || 'Submit' }}
+                [ngStyle]="submitButtonStyle" [disabled]="isSubmitting"
+                [ngClass]="resolvedSchema.style?.buttonClass || 'px-4 py-2 rounded text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed'">
+                {{ isSubmitting ? 'Submitting...' : (resolvedSchema.actions?.submitLabel || 'Submit') }}
             </button>
-
-            <button type="button" (click)="onCancel()" (mouseenter)="isCancelHovered = true"
-                (mouseleave)="isCancelHovered = false" [ngStyle]="cancelButtonStyle"
-                [ngClass]="resolvedSchema.style?.buttonClass || 'px-4 py-2 rounded text-sm font-medium'">
+        
+            <button *ngIf="showCancelButton" type="button" (click)="onCancel()" (mouseenter)="isCancelHovered = true"
+                (mouseleave)="isCancelHovered = false" [disabled]="isSubmitting" [ngStyle]="cancelButtonStyle"
+                [ngClass]="resolvedSchema.style?.buttonClass || 'px-4 py-2 rounded text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed'">
                 {{ resolvedSchema.actions?.cancelLabel || 'Cancel' }}
             </button>
         </div>
+
 
         <!-- Field renderer template -->
         <ng-template #fieldRenderer let-field>
