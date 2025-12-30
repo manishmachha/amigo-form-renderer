@@ -1,0 +1,254 @@
+import * as i0 from '@angular/core';
+import { InjectionToken, Provider, OnChanges, EventEmitter, ChangeDetectorRef, NgZone, SimpleChanges } from '@angular/core';
+import { FormGroup, AbstractControl } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+type FormType = 'single' | 'multi' | 'single-sectional';
+type FieldType = 'text' | 'number' | 'email' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'date' | 'file' | 'card' | 'info-card';
+/**
+ * Informational card (non-input) that can be placed inside the form layout.
+ * Used to show messages like “Secure Verification”.
+ */
+interface InfoCardStyle {
+    borderColor?: string;
+    backgroundColor?: string;
+    textColor?: string;
+    iconColor?: string;
+    borderWidth?: number;
+    borderRadius?: number;
+}
+interface InfoCardSchema {
+    /** Optional icon (emoji/text). Keep it simple to avoid needing icon libraries. */
+    icon?: string;
+    title?: string;
+    body?: string;
+    style?: InfoCardStyle;
+}
+interface FormFieldOption {
+    value: any;
+    label: string;
+}
+interface FieldValidationRules {
+    required?: boolean;
+    minLength?: number;
+    maxLength?: number;
+    min?: number;
+    max?: number;
+    pattern?: string;
+}
+interface FormFieldSchema {
+    id: string;
+    label: string;
+    type: FieldType;
+    name: string;
+    placeholder?: string;
+    /**
+     * For input fields this can be boolean or 'true'/'false'.
+     * For non-input blocks like cards, it may be omitted.
+     */
+    required?: string | boolean;
+    /** Informational card configuration (used when type is 'card' or 'info-card'). */
+    card?: InfoCardSchema;
+    /**
+     * FILE upload configuration (emitted by form-composer-canvas)
+     * Example accept: "image/*,.pdf"
+     */
+    accept?: string;
+    multiple?: boolean;
+    /** Maximum number of files allowed (default 1) */
+    maxFiles?: number;
+    /** Maximum allowed size per file in MB (composer uses maxSizeMB) */
+    maxSizeMB?: number;
+    options?: FormFieldOption[];
+    optionDirection?: 'horizontal' | 'vertical';
+    row?: number;
+    col?: number;
+    colSpan?: number;
+    validations?: FieldValidationRules;
+    step?: number;
+    section?: number;
+}
+interface FormLayoutSchema {
+    rows: number;
+    columns: number;
+}
+interface FormSpacingSchema {
+    marginTop?: number;
+    marginRight?: number;
+    marginBottom?: number;
+    marginLeft?: number;
+    paddingTop?: number;
+    paddingRight?: number;
+    paddingBottom?: number;
+    paddingLeft?: number;
+    gapX?: number;
+    gapY?: number;
+}
+interface FormStyleSchema {
+    formClass?: string;
+    fieldWrapperClass?: string;
+    labelClass?: string;
+    inputClass?: string;
+    buttonClass?: string;
+    hintClass?: string;
+    errorClass?: string;
+    borderWidth?: number;
+    borderRadius?: number;
+    borderColor?: string;
+    backgroundColor?: string;
+    textColor?: string;
+    buttonBackgroundColor?: string;
+    buttonTextColor?: string;
+    buttonHoverBackgroundColor?: string;
+    buttonHoverTextColor?: string;
+}
+interface FormActionSchema {
+    submitLabel?: string;
+    cancelLabel?: string;
+    showCancel?: boolean;
+    method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+    submitApiUrl?: string;
+    /**
+     * Optional:
+     * - auto: JSON unless files exist (recommended)
+     * - json: always JSON (will fail for File objects)
+     * - multipart: always FormData
+     */
+    contentType?: 'auto' | 'json' | 'multipart';
+    /**
+     * Optional: if you want to wrap payload inside a key
+     * Example: payloadKey="data" => { data: <formValue> }
+     */
+    payloadKey?: string;
+}
+interface FormStepConfig {
+    id: string;
+    label: string;
+    order: number;
+    fieldIds: string[];
+    icon?: string;
+}
+interface FormSectionSchema {
+    id: string;
+    label: string;
+    order: number;
+    fieldIds: string[];
+}
+interface FormSchema {
+    name: string;
+    description?: string;
+    formType?: FormType;
+    layout: FormLayoutSchema;
+    spacing?: FormSpacingSchema;
+    style?: FormStyleSchema;
+    actions?: FormActionSchema;
+    fields: FormFieldSchema[];
+    steps?: FormStepConfig[];
+    sections?: FormSectionSchema[];
+}
+
+type AmigoAuthTokenProvider = () => string | null;
+
+interface AmigoFormConfig {
+    apiBaseUrl: string;
+    endpoints?: {
+        getFormById?: (id: string) => string;
+    };
+}
+declare const AMIGO_FORM_CONFIG: InjectionToken<AmigoFormConfig>;
+declare function provideAmigoForm(config: AmigoFormConfig, tokenProvider?: AmigoAuthTokenProvider): Provider[];
+
+declare class AmigoFormService {
+    private http;
+    private cfg;
+    constructor(http: HttpClient, cfg: AmigoFormConfig);
+    getFormSchemaById(id: string): Observable<FormSchema>;
+    /**
+     * Calls submit API based on FormActionSchema.
+     * - Auto uses FormData if any file exists in payload (or contentType='multipart')
+     * - GET uses query params
+     */
+    submitByAction(action: FormActionSchema, payload: Record<string, any>, schema?: FormSchema): Observable<any>;
+    private resolveUrl;
+    private payloadHasFiles;
+    private toFormData;
+    private toHttpParams;
+    static ɵfac: i0.ɵɵFactoryDeclaration<AmigoFormService, never>;
+    static ɵprov: i0.ɵɵInjectableDeclaration<AmigoFormService>;
+}
+
+declare class AmigoFormComponent implements OnChanges {
+    private formService;
+    private cdr;
+    private zone;
+    formId?: string;
+    schema?: FormSchema;
+    initialValue?: Record<string, any>;
+    /**
+     * Emits:
+     * - if NO submitApiUrl => raw form value (backward compatible)
+     * - if submitApiUrl exists => { payload, response, action }
+     */
+    submitted: EventEmitter<any>;
+    /** Emits error object when API submit fails */
+    submitFailed: EventEmitter<any>;
+    cancelled: EventEmitter<void>;
+    isLoading: boolean;
+    loadError: string | null;
+    isSubmitting: boolean;
+    submitError: string | null;
+    resolvedSchema: any | null;
+    form: FormGroup | null;
+    activeStepIndex: number;
+    isSubmitHovered: boolean;
+    isCancelHovered: boolean;
+    constructor(formService: AmigoFormService, cdr: ChangeDetectorRef, zone: NgZone);
+    ngOnChanges(changes: SimpleChanges): void;
+    private init;
+    private applySchema;
+    isCard(field: FormFieldSchema | any): boolean;
+    cardIcon(field: any): string;
+    cardTitle(field: any): string;
+    cardBody(field: any): string;
+    cardStyle(field: any): Record<string, any>;
+    cardIconStyle(field: any): Record<string, any>;
+    controlKey(field: any): string;
+    ctrl(field: any): AbstractControl | null;
+    showError(field: any): boolean;
+    onFileChange(evt: Event, field: FormFieldSchema): void;
+    fileNames(field: FormFieldSchema): string[];
+    clearFiles(field: FormFieldSchema, inputEl: HTMLInputElement): void;
+    trackByFieldId: (_: number, field: any) => any;
+    get orderedSteps(): any[];
+    get totalSteps(): number;
+    get isMultiStep(): boolean;
+    get visibleFields(): FormFieldSchema[];
+    get orderedSections(): any[];
+    get isSectional(): boolean;
+    fieldsForSection(sectionId: string): FormFieldSchema[];
+    setActiveStep(i: number): void;
+    onCancel(): void;
+    prevStep(): void;
+    nextStep(): void;
+    submit(): void;
+    private touchFields;
+    private hasErrors;
+    getFormStyle(): Record<string, any>;
+    get submitButtonStyle(): {
+        [key: string]: string;
+    };
+    get cancelButtonStyle(): {
+        [key: string]: string;
+    };
+    isBootstrapIcon(icon: string | null | undefined): boolean;
+    get showCancelButton(): boolean;
+    static ɵfac: i0.ɵɵFactoryDeclaration<AmigoFormComponent, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<AmigoFormComponent, "amigo-form", never, { "formId": { "alias": "formId"; "required": false; }; "schema": { "alias": "schema"; "required": false; }; "initialValue": { "alias": "initialValue"; "required": false; }; }, { "submitted": "submitted"; "submitFailed": "submitFailed"; "cancelled": "cancelled"; }, never, never, true, never>;
+}
+
+declare function buildFormGroup(fields: FormFieldSchema[], initialValue?: Record<string, any>): FormGroup;
+declare function normalizeAccept(a?: string): string | undefined;
+
+export { AMIGO_FORM_CONFIG, AmigoFormComponent, AmigoFormService, buildFormGroup, normalizeAccept, provideAmigoForm };
+export type { AmigoFormConfig, FieldType, FieldValidationRules, FormActionSchema, FormFieldOption, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionSchema, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, InfoCardSchema, InfoCardStyle };
