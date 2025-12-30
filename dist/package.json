@@ -1,5 +1,5 @@
 {
-  "name": "@your-scope/amigo-form-renderer",
+  "name": "@amigo/amigo-form-renderer",
   "version": "1.0.1",
   "description": "Amigo Form Renderer Angular library",
   "license": "MIT",
@@ -16,15 +16,18 @@
       "optional": true
     }
   },
-  "module": "fesm2022/your-scope-amigo-form-renderer.mjs",
-  "typings": "types/your-scope-amigo-form-renderer.d.ts",
+  "files": [
+    "dist"
+  ],
+  "module": "fesm2022/amigo-amigo-form-renderer.mjs",
+  "typings": "types/amigo-amigo-form-renderer.d.ts",
   "exports": {
+    ".": {
+      "types": "./types/amigo-amigo-form-renderer.d.ts",
+      "default": "./fesm2022/amigo-amigo-form-renderer.mjs"
+    },
     "./package.json": {
       "default": "./package.json"
-    },
-    ".": {
-      "types": "./types/your-scope-amigo-form-renderer.d.ts",
-      "default": "./fesm2022/your-scope-amigo-form-renderer.mjs"
     }
   },
   "sideEffects": false,

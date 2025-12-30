@@ -777,4 +777,4 @@ function px(v) {
  */
 
 export { AMIGO_FORM_CONFIG, AmigoFormComponent, AmigoFormService, buildFormGroup, normalizeAccept, provideAmigoForm };
-//# sourceMappingURL=your-scope-amigo-form-renderer.mjs.map
+//# sourceMappingURL=amigo-amigo-form-renderer.mjs.map
