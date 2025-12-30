@@ -29,12 +29,12 @@
   "files": [
     "dist"
   ],
-  "module": "dist/fesm2022/your-scope-amigo-form-renderer.mjs",
-  "typings": "dist/types/your-scope-amigo-form-renderer.d.ts",
+  "module": "dist/fesm2022/amigo-amigo-form-renderer.mjs",
+  "typings": "dist/types/amigo-amigo-form-renderer.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/types/your-scope-amigo-form-renderer.d.ts",
-      "default": "./dist/fesm2022/your-scope-amigo-form-renderer.mjs"
+      "types": "./dist/types/amigo-amigo-form-renderer.d.ts",
+      "default": "./dist/fesm2022/amigo-amigo-form-renderer.mjs"
     }
   },
   "sideEffects": false
