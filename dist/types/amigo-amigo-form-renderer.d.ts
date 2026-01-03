@@ -249,6 +249,7 @@ declare class AmigoFormComponent implements OnChanges {
     isBootstrapIcon(icon: string | null | undefined): boolean;
     get showCancelButton(): boolean;
     private normalizePayload;
+    private patchInitialValue;
     static ɵfac: i0.ɵɵFactoryDeclaration<AmigoFormComponent, never>;
     static ɵcmp: i0.ɵɵComponentDeclaration<AmigoFormComponent, "amigo-form", never, { "formId": { "alias": "formId"; "required": false; }; "schema": { "alias": "schema"; "required": false; }; "initialValue": { "alias": "initialValue"; "required": false; }; }, { "submitted": "submitted"; "submitFailed": "submitFailed"; "cancelled": "cancelled"; }, never, never, true, never>;
 }
