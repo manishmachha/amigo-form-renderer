@@ -5,7 +5,7 @@ import { HttpClient, HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from
 import { Observable } from 'rxjs';
 
 type FormType = 'single' | 'multi' | 'single-sectional';
-type FieldType = 'text' | 'number' | 'email' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'date' | 'file' | 'card' | 'info-card';
+type FieldType = 'text' | 'number' | 'email' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'date' | 'file' | 'card' | 'password' | 'info-card';
 /**
  * Informational card (non-input) that can be placed inside the form layout.
  * Used to show messages like “Secure Verification”.

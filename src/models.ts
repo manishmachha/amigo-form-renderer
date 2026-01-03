@@ -11,6 +11,7 @@ export type FieldType =
   | 'date'
   | 'file'
   | 'card'
+  | 'password'
   | 'info-card';
 
 /**

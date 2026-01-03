@@ -215,6 +215,23 @@
                     </div>
                 </ng-container>
 
+                <!-- PASSWORD -->
+                <ng-container *ngSwitchCase="'password'">
+                    <input type="password" [placeholder]="field.placeholder" [formControlName]="controlKey(field)"
+                        [ngClass]="resolvedSchema?.style?.inputClass || 'w-full border border-gray-300 rounded px-2 py-1 text-sm'" />
+
+                    <div *ngIf="showError(field)" class="mt-1 text-[11px] text-red-600 space-y-0.5">
+                        <div *ngIf="ctrl(field)?.errors?.['required']">This field is required.</div>
+                        <div *ngIf="ctrl(field)?.errors?.['minlength']">
+                            Minimum {{ field.validations?.minLength }} characters required.
+                        </div>
+                        <div *ngIf="ctrl(field)?.errors?.['maxlength']">
+                            Maximum {{ field.validations?.maxLength }} characters allowed.
+                        </div>
+                        <div *ngIf="ctrl(field)?.errors?.['pattern']">Value does not match the required pattern.</div>
+                    </div>
+                </ng-container>
+
                 <!-- NUMBER -->
                 <ng-container *ngSwitchCase="'number'">
                     <input type="number" [placeholder]="field.placeholder" [formControlName]="controlKey(field)"
