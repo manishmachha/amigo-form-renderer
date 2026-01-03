@@ -1,7 +1,7 @@
 import * as i0 from '@angular/core';
 import { InjectionToken, Provider, OnChanges, EventEmitter, ChangeDetectorRef, NgZone, SimpleChanges } from '@angular/core';
 import { FormGroup, AbstractControl } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 type FormType = 'single' | 'multi' | 'single-sectional';
@@ -149,6 +149,11 @@ interface FormSchema {
 }
 
 type AmigoAuthTokenProvider = () => string | null;
+/**
+ * Host app will provide this.
+ * Example: () => authService.getAuthToken()
+ */
+declare const AMIGO_AUTH_TOKEN_PROVIDER: InjectionToken<AmigoAuthTokenProvider>;
 
 interface AmigoFormConfig {
     apiBaseUrl: string;
@@ -243,6 +248,7 @@ declare class AmigoFormComponent implements OnChanges {
     };
     isBootstrapIcon(icon: string | null | undefined): boolean;
     get showCancelButton(): boolean;
+    private normalizePayload;
     static ɵfac: i0.ɵɵFactoryDeclaration<AmigoFormComponent, never>;
     static ɵcmp: i0.ɵɵComponentDeclaration<AmigoFormComponent, "amigo-form", never, { "formId": { "alias": "formId"; "required": false; }; "schema": { "alias": "schema"; "required": false; }; "initialValue": { "alias": "initialValue"; "required": false; }; }, { "submitted": "submitted"; "submitFailed": "submitFailed"; "cancelled": "cancelled"; }, never, never, true, never>;
 }
@@ -250,5 +256,14 @@ declare class AmigoFormComponent implements OnChanges {
 declare function buildFormGroup(fields: FormFieldSchema[], initialValue?: Record<string, any>): FormGroup;
 declare function normalizeAccept(a?: string): string | undefined;
 
-export { AMIGO_FORM_CONFIG, AmigoFormComponent, AmigoFormService, buildFormGroup, normalizeAccept, provideAmigoForm };
-export type { AmigoFormConfig, FieldType, FieldValidationRules, FormActionSchema, FormFieldOption, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionSchema, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, InfoCardSchema, InfoCardStyle };
+declare class AmigoTokenInterceptor implements HttpInterceptor {
+    private tokenProvider;
+    private cfg;
+    constructor(tokenProvider: AmigoAuthTokenProvider | null, cfg: AmigoFormConfig | null);
+    intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>>;
+    static ɵfac: i0.ɵɵFactoryDeclaration<AmigoTokenInterceptor, [{ optional: true; }, { optional: true; }]>;
+    static ɵprov: i0.ɵɵInjectableDeclaration<AmigoTokenInterceptor>;
+}
+
+export { AMIGO_AUTH_TOKEN_PROVIDER, AMIGO_FORM_CONFIG, AmigoFormComponent, AmigoFormService, AmigoTokenInterceptor, buildFormGroup, normalizeAccept, provideAmigoForm };
+export type { AmigoAuthTokenProvider, AmigoFormConfig, FieldType, FieldValidationRules, FormActionSchema, FormFieldOption, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionSchema, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, InfoCardSchema, InfoCardStyle };
