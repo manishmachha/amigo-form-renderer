@@ -187,6 +187,29 @@
                 </div>
             </ng-container>
 
+            <ng-template #notCard>
+            
+                <!-- BUTTON (non-input block) -->
+                <ng-container *ngIf="isButton(field); else inputField">
+                    <div class="w-full">
+                        <button type="button" (click)="onSchemaButtonClick(field)" [disabled]="buttonLoading[field.id]"
+                            class="px-4 py-2 rounded-lg text-sm font-semibold border transition" [ngClass]="[
+                        (field.button?.styleVariant || 'primary') === 'primary' ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' :
+                        (field.button?.styleVariant || 'primary') === 'danger' ? 'bg-red-600 text-white border-red-600 hover:bg-red-700' :
+                        'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                      ]">
+                            {{ field.button?.label || field.label }}
+                            <span *ngIf="buttonLoading[field.id]" class="ml-2 text-xs opacity-80">…</span>
+                        </button>
+            
+                        <div *ngIf="buttonFeedback[field.id]" class="mt-2 text-xs rounded-lg px-3 py-2 border" [ngClass]="buttonFeedback[field.id].type === 'success'
+                           ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                           : 'bg-rose-50 border-rose-200 text-rose-800'">
+                            {{ buttonFeedback[field.id].message }}
+                        </div>
+                    </div>
+                </ng-container>
+
 
             <!-- INPUT FIELD -->
             <ng-template #inputField>

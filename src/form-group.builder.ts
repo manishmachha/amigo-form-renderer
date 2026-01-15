@@ -13,16 +13,19 @@ export function buildFormGroup(
   initialValue?: Record<string, any>
 ): FormGroup {
   const group: Record<string, FormControl> = {};
+const isNonInput = (t: string) => t === 'card' || t === 'info-card' || t === 'button';
+  for (const f of fields as any[]) {
 
-  for (const f of fields) {
+     const t = (f?.type ?? '').toString();
+     if (isNonInput(t)) continue;
+     
     // Info cards are purely visual blocks and must NOT create form controls.
     if (f.type === 'card' || f.type === 'info-card') continue;
 
     const v = f.validations ?? {};
 
     // robust required parsing (boolean OR "true"/"false" strings)
-    const required =
-      f.required === true || f.required === 'true' || v.required === true;
+    const required = f.required === true || f.required === 'true' || v.required === true;
 
     const validators: ValidatorFn[] = [];
 
@@ -34,10 +37,8 @@ export function buildFormGroup(
     }
 
     // string length rules
-    if (typeof v.minLength === 'number')
-      validators.push(Validators.minLength(v.minLength));
-    if (typeof v.maxLength === 'number')
-      validators.push(Validators.maxLength(v.maxLength));
+    if (typeof v.minLength === 'number') validators.push(Validators.minLength(v.minLength));
+    if (typeof v.maxLength === 'number') validators.push(Validators.maxLength(v.maxLength));
 
     // numeric/date min/max (note: Angular Validators.min/max are numeric; if you want date min/max, handle separately)
     if (typeof v.min === 'number') validators.push(Validators.min(v.min));
@@ -51,22 +52,14 @@ export function buildFormGroup(
 
     //  file-specific validators
     if (f.type === 'file') {
-      const maxFiles =
-        typeof f.maxFiles === 'number'
-          ? f.maxFiles
-          : f.multiple
-          ? undefined
-          : 1;
+      const maxFiles = typeof f.maxFiles === 'number' ? f.maxFiles : f.multiple ? undefined : 1;
 
-      const maxSizeMB =
-        typeof f.maxSizeMB === 'number' ? f.maxSizeMB : undefined;
+      const maxSizeMB = typeof f.maxSizeMB === 'number' ? f.maxSizeMB : undefined;
 
       const accept = normalizeAccept(f.accept);
 
-      if (maxFiles !== undefined)
-        validators.push(fileMaxFilesValidator(maxFiles));
-      if (maxSizeMB !== undefined)
-        validators.push(fileMaxSizeValidator(maxSizeMB));
+      if (maxFiles !== undefined) validators.push(fileMaxFilesValidator(maxFiles));
+      if (maxSizeMB !== undefined) validators.push(fileMaxSizeValidator(maxSizeMB));
       if (accept) validators.push(fileAcceptValidator(accept));
     }
 

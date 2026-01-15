@@ -12,7 +12,38 @@ export type FieldType =
   | 'file'
   | 'card'
   | 'password'
-  | 'info-card';
+  | 'info-card'
+  | 'button';
+
+  export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  export type ButtonStyleVariant = 'primary' | 'secondary' | 'danger';
+
+  export interface KeyValuePair {
+    key: string;
+    value: string;
+  }
+
+  export interface ApiEndpointConfig {
+    method: HttpMethod;
+    url: string;
+    headers?: KeyValuePair[];
+    queryParams?: KeyValuePair[];
+    /** map request body keys to form values: { "employeeId": "employee.id", "amount": "{{salary}}" } */
+    bodyMapping?: Record<string, string>;
+  }
+
+  export interface ButtonElementSchema {
+    label?: string; // optional override; fallback to field.label
+    styleVariant?: ButtonStyleVariant; // default 'primary'
+    actionType?: 'API_CALL'; // default 'API_CALL'
+    api?: ApiEndpointConfig;
+
+    successMessage?: string;
+    errorMessage?: string;
+
+    /** default true */
+    triggerValidation?: boolean;
+  }
 
 /**
  * Informational card (non-input) that can be placed inside the form layout.
