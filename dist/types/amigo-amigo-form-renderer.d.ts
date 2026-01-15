@@ -1,11 +1,35 @@
 import * as i0 from '@angular/core';
 import { InjectionToken, Provider, OnChanges, EventEmitter, ChangeDetectorRef, NgZone, SimpleChanges } from '@angular/core';
 import { FormGroup, AbstractControl } from '@angular/forms';
-import { HttpClient, HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
+import { HttpClient, HttpContextToken, HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 type FormType = 'single' | 'multi' | 'single-sectional';
-type FieldType = 'text' | 'number' | 'email' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'date' | 'file' | 'card' | 'password' | 'info-card';
+type FieldType = 'text' | 'number' | 'email' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'date' | 'file' | 'card' | 'password' | 'info-card' | 'button';
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+type ButtonStyleVariant = 'primary' | 'secondary' | 'danger';
+interface KeyValuePair {
+    key: string;
+    value: string;
+}
+interface ApiEndpointConfig {
+    method: HttpMethod;
+    url: string;
+    headers?: KeyValuePair[];
+    queryParams?: KeyValuePair[];
+    /** map request body keys to form values: { "employeeId": "employee.id", "amount": "{{salary}}" } */
+    bodyMapping?: Record<string, string>;
+}
+interface ButtonElementSchema {
+    label?: string;
+    styleVariant?: ButtonStyleVariant;
+    actionType?: 'API_CALL';
+    api?: ApiEndpointConfig;
+    successMessage?: string;
+    errorMessage?: string;
+    /** default true */
+    triggerValidation?: boolean;
+}
 /**
  * Informational card (non-input) that can be placed inside the form layout.
  * Used to show messages like “Secure Verification”.
@@ -183,10 +207,47 @@ declare class AmigoFormService {
     static ɵprov: i0.ɵɵInjectableDeclaration<AmigoFormService>;
 }
 
+type TokenFrom = 'LOCAL_STORAGE' | 'SESSION_STORAGE' | 'CUSTOM_CALLBACK';
+type AuthType = 'NONE' | 'BEARER';
+interface BearerAuthConfig {
+    secured?: boolean;
+    authType?: AuthType;
+    tokenFrom?: TokenFrom;
+    tokenKey?: string;
+}
+interface ExecuteOptions {
+    /** values from the reactive form (normalized) */
+    formValue?: Record<string, any>;
+    /** true => do NOT let interceptor attach global token */
+    skipGlobalAuth?: boolean;
+    /** optional per-request bearer auth (mainly for select API) */
+    bearerAuth?: BearerAuthConfig;
+}
+declare class AmigoApiExecutionService {
+    private http;
+    private cfg;
+    private tokenProvider;
+    constructor(http: HttpClient, cfg: AmigoFormConfig | null, tokenProvider: AmigoAuthTokenProvider | null);
+    execute(endpoint: ApiEndpointConfig, opts?: ExecuteOptions): Observable<any>;
+    private resolveUrl;
+    private buildBearerHeader;
+    private toHeaderRecord;
+    private toHttpParams;
+    private buildBody;
+    private resolveExpr;
+    private interpolate;
+    private getByPath;
+    private payloadHasFiles;
+    private toFormData;
+    static ɵfac: i0.ɵɵFactoryDeclaration<AmigoApiExecutionService, [null, { optional: true; }, { optional: true; }]>;
+    static ɵprov: i0.ɵɵInjectableDeclaration<AmigoApiExecutionService>;
+}
+
 declare class AmigoFormComponent implements OnChanges {
     private formService;
     private cdr;
     private zone;
+    private apiExec;
     formId?: string;
     schema?: FormSchema;
     initialValue?: Record<string, any>;
@@ -208,7 +269,12 @@ declare class AmigoFormComponent implements OnChanges {
     activeStepIndex: number;
     isSubmitHovered: boolean;
     isCancelHovered: boolean;
-    constructor(formService: AmigoFormService, cdr: ChangeDetectorRef, zone: NgZone);
+    buttonLoading: Record<string, boolean>;
+    buttonFeedback: Record<string, {
+        type: 'success' | 'error';
+        message: string;
+    }>;
+    constructor(formService: AmigoFormService, cdr: ChangeDetectorRef, zone: NgZone, apiExec: AmigoApiExecutionService);
     ngOnChanges(changes: SimpleChanges): void;
     private init;
     private applySchema;
@@ -250,6 +316,10 @@ declare class AmigoFormComponent implements OnChanges {
     get showCancelButton(): boolean;
     private normalizePayload;
     private patchInitialValue;
+    isButton(field: any): boolean;
+    private isNonInput;
+    private normalizeFormValue;
+    onSchemaButtonClick(field: any): void;
     static ɵfac: i0.ɵɵFactoryDeclaration<AmigoFormComponent, never>;
     static ɵcmp: i0.ɵɵComponentDeclaration<AmigoFormComponent, "amigo-form", never, { "formId": { "alias": "formId"; "required": false; }; "schema": { "alias": "schema"; "required": false; }; "initialValue": { "alias": "initialValue"; "required": false; }; }, { "submitted": "submitted"; "submitFailed": "submitFailed"; "cancelled": "cancelled"; }, never, never, true, never>;
 }
@@ -257,6 +327,7 @@ declare class AmigoFormComponent implements OnChanges {
 declare function buildFormGroup(fields: FormFieldSchema[], initialValue?: Record<string, any>): FormGroup;
 declare function normalizeAccept(a?: string): string | undefined;
 
+declare const AMIGO_SKIP_AUTH: HttpContextToken<boolean>;
 declare class AmigoTokenInterceptor implements HttpInterceptor {
     private tokenProvider;
     private cfg;
@@ -266,5 +337,5 @@ declare class AmigoTokenInterceptor implements HttpInterceptor {
     static ɵprov: i0.ɵɵInjectableDeclaration<AmigoTokenInterceptor>;
 }
 
-export { AMIGO_AUTH_TOKEN_PROVIDER, AMIGO_FORM_CONFIG, AmigoFormComponent, AmigoFormService, AmigoTokenInterceptor, buildFormGroup, normalizeAccept, provideAmigoForm };
-export type { AmigoAuthTokenProvider, AmigoFormConfig, FieldType, FieldValidationRules, FormActionSchema, FormFieldOption, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionSchema, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, InfoCardSchema, InfoCardStyle };
+export { AMIGO_AUTH_TOKEN_PROVIDER, AMIGO_FORM_CONFIG, AMIGO_SKIP_AUTH, AmigoFormComponent, AmigoFormService, AmigoTokenInterceptor, buildFormGroup, normalizeAccept, provideAmigoForm };
+export type { AmigoAuthTokenProvider, AmigoFormConfig, ApiEndpointConfig, ButtonElementSchema, ButtonStyleVariant, FieldType, FieldValidationRules, FormActionSchema, FormFieldOption, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionSchema, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, HttpMethod, InfoCardSchema, InfoCardStyle, KeyValuePair };
