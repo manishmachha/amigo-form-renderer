@@ -6,6 +6,27 @@ import { Observable } from 'rxjs';
 
 type FormType = 'single' | 'multi' | 'single-sectional';
 type FieldType = 'text' | 'number' | 'email' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'date' | 'file' | 'card' | 'password' | 'info-card' | 'button';
+type OptionsSourceMode = "STATIC" | "API";
+type SelectAuthType = "NONE" | "BEARER";
+type SelectTokenFrom = "LOCAL_STORAGE" | "SESSION_STORAGE" | "CUSTOM_CALLBACK";
+interface SelectOptionsResponseMapping {
+    labelKey: string;
+    valueKey: string;
+    dataPath?: string;
+}
+interface SelectOptionsApiConfig {
+    url: string;
+    method: HttpMethod;
+    secured?: boolean;
+    authType?: SelectAuthType;
+    tokenFrom?: SelectTokenFrom;
+    tokenKey?: string;
+    responseMapping: SelectOptionsResponseMapping;
+}
+interface SelectOptionsSourceSchema {
+    mode: OptionsSourceMode;
+    api?: SelectOptionsApiConfig;
+}
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 type ButtonStyleVariant = 'primary' | 'secondary' | 'danger';
 interface KeyValuePair {
@@ -85,13 +106,14 @@ interface FormFieldSchema {
     /** Maximum allowed size per file in MB (composer uses maxSizeMB) */
     maxSizeMB?: number;
     options?: FormFieldOption[];
-    optionDirection?: 'horizontal' | 'vertical';
+    optionDirection?: "horizontal" | "vertical";
     row?: number;
     col?: number;
     colSpan?: number;
     validations?: FieldValidationRules;
     step?: number;
     section?: number;
+    optionsSource?: SelectOptionsSourceSchema;
 }
 interface FormLayoutSchema {
     rows: number;
@@ -243,11 +265,23 @@ declare class AmigoApiExecutionService {
     static ɵprov: i0.ɵɵInjectableDeclaration<AmigoApiExecutionService>;
 }
 
+declare class AmigoSelectOptionsService {
+    private api;
+    private cache;
+    constructor(api: AmigoApiExecutionService);
+    load(field: FormFieldSchema, formValue: Record<string, any>): Observable<FormFieldOption[]>;
+    private mapResponseToOptions;
+    private getByPath;
+    static ɵfac: i0.ɵɵFactoryDeclaration<AmigoSelectOptionsService, never>;
+    static ɵprov: i0.ɵɵInjectableDeclaration<AmigoSelectOptionsService>;
+}
+
 declare class AmigoFormComponent implements OnChanges {
     private formService;
     private cdr;
     private zone;
     private apiExec;
+    private selectOptions;
     formId?: string;
     schema?: FormSchema;
     initialValue?: Record<string, any>;
@@ -269,14 +303,20 @@ declare class AmigoFormComponent implements OnChanges {
     activeStepIndex: number;
     isSubmitHovered: boolean;
     isCancelHovered: boolean;
+    selectState: Record<string, {
+        loading: boolean;
+        error?: string;
+        options: any[];
+    }>;
     buttonLoading: Record<string, boolean>;
     buttonFeedback: Record<string, {
-        type: 'success' | 'error';
+        type: "success" | "error";
         message: string;
     }>;
-    constructor(formService: AmigoFormService, cdr: ChangeDetectorRef, zone: NgZone, apiExec: AmigoApiExecutionService);
+    constructor(formService: AmigoFormService, cdr: ChangeDetectorRef, zone: NgZone, apiExec: AmigoApiExecutionService, selectOptions: AmigoSelectOptionsService);
     ngOnChanges(changes: SimpleChanges): void;
     private init;
+    private preloadApiSelectOptions;
     private applySchema;
     isCard(field: FormFieldSchema | any): boolean;
     cardIcon(field: any): string;
@@ -338,4 +378,4 @@ declare class AmigoTokenInterceptor implements HttpInterceptor {
 }
 
 export { AMIGO_AUTH_TOKEN_PROVIDER, AMIGO_FORM_CONFIG, AMIGO_SKIP_AUTH, AmigoFormComponent, AmigoFormService, AmigoTokenInterceptor, buildFormGroup, normalizeAccept, provideAmigoForm };
-export type { AmigoAuthTokenProvider, AmigoFormConfig, ApiEndpointConfig, ButtonElementSchema, ButtonStyleVariant, FieldType, FieldValidationRules, FormActionSchema, FormFieldOption, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionSchema, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, HttpMethod, InfoCardSchema, InfoCardStyle, KeyValuePair };
+export type { AmigoAuthTokenProvider, AmigoFormConfig, ApiEndpointConfig, ButtonElementSchema, ButtonStyleVariant, FieldType, FieldValidationRules, FormActionSchema, FormFieldOption, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionSchema, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, HttpMethod, InfoCardSchema, InfoCardStyle, KeyValuePair, OptionsSourceMode, SelectAuthType, SelectOptionsApiConfig, SelectOptionsResponseMapping, SelectOptionsSourceSchema, SelectTokenFrom };

@@ -15,6 +15,35 @@ export type FieldType =
   | 'info-card'
   | 'button';
 
+  export type OptionsSourceMode = "STATIC" | "API";
+  export type SelectAuthType = "NONE" | "BEARER";
+  export type SelectTokenFrom =
+    | "LOCAL_STORAGE"
+    | "SESSION_STORAGE"
+    | "CUSTOM_CALLBACK";
+
+  export interface SelectOptionsResponseMapping {
+    labelKey: string; // e.g. "name" or "meta.name"
+    valueKey: string; // e.g. "id"
+    dataPath?: string; // e.g. "data.items"
+  }
+
+  export interface SelectOptionsApiConfig {
+    url: string;
+    method: HttpMethod;
+    secured?: boolean;
+    authType?: SelectAuthType;
+    tokenFrom?: SelectTokenFrom;
+    tokenKey?: string;
+
+    responseMapping: SelectOptionsResponseMapping;
+  }
+
+  export interface SelectOptionsSourceSchema {
+    mode: OptionsSourceMode;
+    api?: SelectOptionsApiConfig;
+  }
+
   export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   export type ButtonStyleVariant = 'primary' | 'secondary' | 'danger';
 
@@ -107,13 +136,14 @@ export interface FormFieldSchema {
   maxSizeMB?: number;
 
   options?: FormFieldOption[];
-  optionDirection?: 'horizontal' | 'vertical';
+  optionDirection?: "horizontal" | "vertical";
   row?: number;
   col?: number;
   colSpan?: number;
   validations?: FieldValidationRules;
   step?: number;
   section?: number;
+  optionsSource?: SelectOptionsSourceSchema;
 }
 
 export interface FormLayoutSchema {

@@ -310,20 +310,39 @@
 
                         <!-- SELECT -->
                         <ng-container *ngSwitchCase="'select'">
-                            <select [formControlName]="controlKey(field)"
+                            <select [formControlName]="controlKey(field)" [disabled]="selectState[field.id]?.loading"
                                 [ngClass]="resolvedSchema?.style?.inputClass || 'w-full border border-gray-300 rounded px-2 py-1 text-sm'">
-                                <option [ngValue]="null" disabled>
-                                    {{ field.placeholder || 'Select an option' }}
-                                </option>
-                                <option *ngFor="let opt of field.options || []" [ngValue]="opt.value">
-                                    {{ opt.label }}
-                                </option>
+                                <option value="">Select an option</option>
+                        
+                                <ng-container *ngFor="let opt of (field.optionsSource?.mode === 'API'
+                              ? (selectState[field.id]?.options || [])
+                              : (field.options || []))">
+                                    <option [value]="opt.value">{{ opt.label }}</option>
+                                </ng-container>
                             </select>
-
+                        
+                            <div *ngIf="field.optionsSource?.mode === 'API' && selectState[field.id]?.loading"
+                                class="mt-1 text-[11px] text-slate-500">
+                                Loading options…
+                            </div>
+                        
+                            <div *ngIf="field.optionsSource?.mode === 'API' && selectState[field.id]?.error"
+                                class="mt-1 text-[11px] text-rose-600">
+                                {{ selectState[field.id]?.error }}
+                            </div>
+                        
+                            <div *ngIf="field.optionsSource?.mode === 'API'
+                                      && !selectState[field.id]?.loading
+                                      && !selectState[field.id]?.error
+                                      && (selectState[field.id]?.options?.length || 0) === 0" class="mt-1 text-[11px] text-slate-500">
+                                No options available.
+                            </div>
+                        
                             <div *ngIf="showError(field)" class="mt-1 text-[11px] text-red-600">
                                 <div *ngIf="ctrl(field)?.errors?.['required']">Please select an option.</div>
                             </div>
                         </ng-container>
+
 
                         <!-- CHECKBOX -->
                         <ng-container *ngSwitchCase="'checkbox'">
