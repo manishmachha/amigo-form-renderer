@@ -1,15 +1,30 @@
 import * as i0 from '@angular/core';
 import { InjectionToken, Provider, OnChanges, EventEmitter, ChangeDetectorRef, NgZone, SimpleChanges } from '@angular/core';
 import { FormGroup, AbstractControl } from '@angular/forms';
-import { HttpClient, HttpContextToken, HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
+import { HttpClient, HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-type FormType = 'single' | 'multi' | 'single-sectional';
-type FieldType = 'text' | 'number' | 'email' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'date' | 'file' | 'card' | 'password' | 'info-card' | 'button';
+type FieldType = 'text' | 'password' | 'number' | 'email' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'date' | 'file' | 'card' | 'button';
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+interface KeyValuePair {
+    key: string;
+    value: string;
+}
+interface FieldValidationRules {
+    minLength?: number;
+    maxLength?: number;
+    pattern?: string;
+    min?: number;
+    max?: number;
+}
+interface FormFieldOption {
+    label: string;
+    value: any;
+}
 type OptionsSourceMode = 'STATIC' | 'API';
 type SelectAuthType = 'NONE' | 'BEARER';
-type SelectTokenFrom = 'LOCAL_STORAGE' | 'SESSION_STORAGE' | 'CUSTOM_CALLBACK';
-interface SelectOptionsResponseMapping {
+type TokenFrom = 'LOCAL_STORAGE' | 'SESSION_STORAGE' | 'CUSTOM_CALLBACK';
+interface SelectOptionsApiResponseMapping {
     labelKey: string;
     valueKey: string;
     dataPath?: string;
@@ -19,149 +34,123 @@ interface SelectOptionsApiConfig {
     method: HttpMethod;
     secured?: boolean;
     authType?: SelectAuthType;
-    tokenFrom?: SelectTokenFrom;
+    tokenFrom?: TokenFrom;
     tokenKey?: string;
-    responseMapping: SelectOptionsResponseMapping;
+    responseMapping: SelectOptionsApiResponseMapping;
 }
 interface SelectOptionsSourceSchema {
     mode: OptionsSourceMode;
     api?: SelectOptionsApiConfig;
 }
-type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-type ButtonStyleVariant = 'primary' | 'secondary' | 'danger';
-interface KeyValuePair {
-    key: string;
-    value: string;
+type VisibilityOperator = 'CHECKED' | 'UNCHECKED' | 'EQUALS' | 'NOT_EQUALS' | 'HAS_VALUE' | 'NOT_HAS_VALUE' | 'IN' | 'NOT_IN';
+interface VisibilityRule {
+    dependsOn: string;
+    operator: VisibilityOperator;
+    value?: any;
+}
+interface FieldVisibilitySchema {
+    mode?: 'ALL' | 'ANY';
+    rules: VisibilityRule[];
 }
 interface ApiEndpointConfig {
     method: HttpMethod;
     url: string;
     headers?: KeyValuePair[];
     queryParams?: KeyValuePair[];
-    /** map request body keys to form values: { "employeeId": "employee.id", "amount": "{{salary}}" } */
     bodyMapping?: Record<string, string>;
 }
+interface ActionApiConfig {
+    triggerValidation?: boolean;
+    successMessage?: string;
+    errorMessage?: string;
+    api: ApiEndpointConfig;
+}
+type ButtonStyleVariant = 'primary' | 'secondary' | 'danger';
+type ButtonActionType = 'API_CALL';
 interface ButtonElementSchema {
-    label?: string;
+    label: string;
     styleVariant?: ButtonStyleVariant;
-    actionType?: 'API_CALL';
+    actionType?: ButtonActionType;
     api?: ApiEndpointConfig;
     successMessage?: string;
     errorMessage?: string;
-    /** default true */
     triggerValidation?: boolean;
 }
-/**
- * Informational card (non-input) that can be placed inside the form layout.
- * Used to show messages like “Secure Verification”.
- */
-interface InfoCardStyle {
+interface InfoCardStyleSchema {
+    borderWidth?: number;
+    borderRadius?: number;
     borderColor?: string;
     backgroundColor?: string;
     textColor?: string;
     iconColor?: string;
-    borderWidth?: number;
-    borderRadius?: number;
 }
 interface InfoCardSchema {
-    /** Optional icon (emoji/text). Keep it simple to avoid needing icon libraries. */
-    icon?: string;
-    title?: string;
+    title: string;
     body?: string;
-    style?: InfoCardStyle;
-}
-interface FormFieldOption {
-    value: any;
-    label: string;
-}
-interface FieldValidationRules {
-    required?: boolean;
-    minLength?: number;
-    maxLength?: number;
-    min?: number;
-    max?: number;
-    pattern?: string;
+    icon?: string;
+    style?: InfoCardStyleSchema;
 }
 interface FormFieldSchema {
     id: string;
     label: string;
-    type: FieldType;
     name: string;
+    type: FieldType;
     placeholder?: string;
-    /**
-     * For input fields this can be boolean or 'true'/'false'.
-     * For non-input blocks like cards, it may be omitted.
-     */
-    required?: string | boolean;
-    /** Informational card configuration (used when type is 'card' or 'info-card'). */
-    card?: InfoCardSchema;
-    /**
-     * FILE upload configuration (emitted by form-composer-canvas)
-     * Example accept: "image/*,.pdf"
-     */
-    accept?: string;
-    multiple?: boolean;
-    /** Maximum number of files allowed (default 1) */
-    maxFiles?: number;
-    /** Maximum allowed size per file in MB (composer uses maxSizeMB) */
-    maxSizeMB?: number;
+    required?: boolean | string;
+    colSpan?: number;
     options?: FormFieldOption[];
     optionDirection?: 'horizontal' | 'vertical';
-    row?: number;
-    col?: number;
-    colSpan?: number;
-    validations?: FieldValidationRules;
-    step?: number;
-    section?: number;
     optionsSource?: SelectOptionsSourceSchema;
+    validations?: FieldValidationRules;
+    multiple?: boolean;
+    accept?: string;
+    maxSizeMB?: number;
+    maxFiles?: number;
+    card?: InfoCardSchema;
+    button?: ButtonElementSchema;
+    visibility?: FieldVisibilitySchema;
 }
 interface FormLayoutSchema {
-    rows: number;
     columns: number;
 }
 interface FormSpacingSchema {
-    marginTop?: number;
-    marginRight?: number;
-    marginBottom?: number;
-    marginLeft?: number;
-    paddingTop?: number;
-    paddingRight?: number;
-    paddingBottom?: number;
-    paddingLeft?: number;
-    gapX?: number;
-    gapY?: number;
+    gapX: number;
+    gapY: number;
+    paddingTop: number;
+    paddingRight: number;
+    paddingBottom: number;
+    paddingLeft: number;
+    marginTop: number;
+    marginRight: number;
+    marginBottom: number;
+    marginLeft: number;
 }
 interface FormStyleSchema {
+    borderWidth: number;
+    borderRadius: number;
+    borderColor: string;
+    backgroundColor: string;
+    textColor: string;
+    buttonBackgroundColor: string;
+    buttonTextColor: string;
+    buttonHoverBackgroundColor?: string;
+    buttonHoverTextColor?: string;
     formClass?: string;
     fieldWrapperClass?: string;
     labelClass?: string;
     inputClass?: string;
     buttonClass?: string;
-    hintClass?: string;
-    errorClass?: string;
-    borderWidth?: number;
-    borderRadius?: number;
-    borderColor?: string;
-    backgroundColor?: string;
-    textColor?: string;
-    buttonBackgroundColor?: string;
-    buttonTextColor?: string;
-    buttonHoverBackgroundColor?: string;
-    buttonHoverTextColor?: string;
 }
 interface FormActionSchema {
-    submitLabel?: string;
-    cancelLabel?: string;
-    showCancel?: boolean;
-    method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+    submitLabel: string;
+    cancelLabel: string;
     submitApiUrl?: string;
-    api?: ApiEndpointConfig;
-    successMessage?: string;
-    errorMessage?: string;
-    triggerValidation?: boolean;
-    contentType?: 'auto' | 'json' | 'multipart';
+    method?: HttpMethod;
     payloadKey?: string;
+    contentType?: 'auto' | 'json' | 'multipart';
+    submitApi?: ActionApiConfig;
 }
+type FormType = 'single' | 'multi' | 'single-sectional';
 interface FormStepConfig {
     id: string;
     label: string;
@@ -169,23 +158,24 @@ interface FormStepConfig {
     fieldIds: string[];
     icon?: string;
 }
-interface FormSectionSchema {
+interface FormSectionConfig {
     id: string;
     label: string;
     order: number;
     fieldIds: string[];
 }
 interface FormSchema {
+    id: string;
     name: string;
     description?: string;
-    formType?: FormType;
-    layout: FormLayoutSchema;
-    spacing?: FormSpacingSchema;
-    style?: FormStyleSchema;
-    actions?: FormActionSchema;
     fields: FormFieldSchema[];
+    layout: FormLayoutSchema;
+    spacing: FormSpacingSchema;
+    style: FormStyleSchema;
+    actions: FormActionSchema;
+    formType?: FormType;
     steps?: FormStepConfig[];
-    sections?: FormSectionSchema[];
+    sections?: FormSectionConfig[];
 }
 
 type AmigoAuthTokenProvider = () => string | null;
@@ -204,69 +194,55 @@ interface AmigoFormConfig {
 declare const AMIGO_FORM_CONFIG: InjectionToken<AmigoFormConfig>;
 declare function provideAmigoForm(config: AmigoFormConfig, tokenProvider?: AmigoAuthTokenProvider): Provider[];
 
-declare class AmigoFormService {
-    private http;
-    private cfg;
-    constructor(http: HttpClient, cfg: AmigoFormConfig);
-    getFormSchemaById(id: string): Observable<FormSchema>;
-    /**
-     * Calls submit API based on FormActionSchema.
-     * - Auto uses FormData if any file exists in payload (or contentType='multipart')
-     * - GET uses query params
-     */
-    submitByAction(action: FormActionSchema, payload: Record<string, any>, schema?: FormSchema): Observable<any>;
-    private resolveUrl;
-    private payloadHasFiles;
-    private toFormData;
-    private toHttpParams;
-    static ɵfac: i0.ɵɵFactoryDeclaration<AmigoFormService, never>;
-    static ɵprov: i0.ɵɵInjectableDeclaration<AmigoFormService>;
-}
-
-type TokenFrom = 'LOCAL_STORAGE' | 'SESSION_STORAGE' | 'CUSTOM_CALLBACK';
-type AuthType = 'NONE' | 'BEARER';
-interface BearerAuthConfig {
-    secured?: boolean;
-    authType?: AuthType;
-    tokenFrom?: TokenFrom;
-    tokenKey?: string;
-}
-interface ExecuteOptions {
-    /** values from the reactive form (normalized) */
-    formValue?: Record<string, any>;
-    /** true => do NOT let interceptor attach global token */
-    skipGlobalAuth?: boolean;
-    /** optional per-request bearer auth (mainly for select API) */
-    bearerAuth?: BearerAuthConfig;
+interface AmigoApiExecutionContext {
+    formValue: Record<string, any>;
+    payloadKey?: string;
+    contentType?: 'auto' | 'json' | 'multipart';
+    skipAuth?: boolean;
 }
 declare class AmigoApiExecutionService {
     private http;
     private cfg;
-    private tokenProvider;
-    constructor(http: HttpClient, cfg: AmigoFormConfig | null, tokenProvider: AmigoAuthTokenProvider | null);
-    execute(endpoint: ApiEndpointConfig, opts?: ExecuteOptions): Observable<any>;
+    constructor(http: HttpClient, cfg: AmigoFormConfig | null);
+    execute(endpoint: ApiEndpointConfig, ctx: AmigoApiExecutionContext): Observable<any>;
     private resolveUrl;
-    private buildBearerHeader;
-    private toHeaderRecord;
-    private toHttpParams;
-    private buildBody;
-    private resolveExpr;
-    private interpolate;
+    private buildMappedBody;
+    private resolveMappingExpr;
+    private resolveString;
     private getByPath;
-    private payloadHasFiles;
+    private mergeParamsFromObject;
+    private scalarToString;
+    private hasFile;
     private toFormData;
-    static ɵfac: i0.ɵɵFactoryDeclaration<AmigoApiExecutionService, [null, { optional: true; }, { optional: true; }]>;
+    private appendFormData;
+    static ɵfac: i0.ɵɵFactoryDeclaration<AmigoApiExecutionService, [null, { optional: true; }]>;
     static ɵprov: i0.ɵɵInjectableDeclaration<AmigoApiExecutionService>;
 }
 
+declare class AmigoFormService {
+    private http;
+    private apiExec;
+    private cfg;
+    constructor(http: HttpClient, apiExec: AmigoApiExecutionService, cfg: AmigoFormConfig);
+    getFormSchemaById(id: string): Observable<FormSchema>;
+    submitByAction(action: FormActionSchema, payload: Record<string, any>): Observable<any>;
+    static ɵfac: i0.ɵɵFactoryDeclaration<AmigoFormService, never>;
+    static ɵprov: i0.ɵɵInjectableDeclaration<AmigoFormService>;
+}
+
 declare class AmigoSelectOptionsService {
-    private api;
+    private http;
+    private cfg;
+    private tokenProvider;
     private cache;
-    constructor(api: AmigoApiExecutionService);
-    load(field: FormFieldSchema, formValue: Record<string, any>): Observable<FormFieldOption[]>;
-    private mapResponseToOptions;
+    constructor(http: HttpClient, cfg: AmigoFormConfig | null, tokenProvider: AmigoAuthTokenProvider | null);
+    load(field: FormFieldSchema, _formValue?: Record<string, any>): Observable<FormFieldOption[]>;
+    clear(fieldId?: string): void;
+    private resolveUrl;
+    private resolveToken;
+    private mapOptions;
     private getByPath;
-    static ɵfac: i0.ɵɵFactoryDeclaration<AmigoSelectOptionsService, never>;
+    static ɵfac: i0.ɵɵFactoryDeclaration<AmigoSelectOptionsService, [null, { optional: true; }, { optional: true; }]>;
     static ɵprov: i0.ɵɵInjectableDeclaration<AmigoSelectOptionsService>;
 }
 
@@ -279,15 +255,7 @@ declare class AmigoFormComponent implements OnChanges {
     formId?: string;
     schema?: FormSchema;
     initialValue?: Record<string, any>;
-    pathVariables: Record<string, any>;
-    queryParams: Record<string, any>;
-    /**
-     * Emits:
-     * - if NO submitApiUrl => raw form value (backward compatible)
-     * - if submitApiUrl exists => { payload, response, action }
-     */
     submitted: EventEmitter<any>;
-    /** Emits error object when API submit fails */
     submitFailed: EventEmitter<any>;
     cancelled: EventEmitter<void>;
     isLoading: boolean;
@@ -297,6 +265,11 @@ declare class AmigoFormComponent implements OnChanges {
     resolvedSchema: any | null;
     form: FormGroup | null;
     activeStepIndex: number;
+    submitLoading: boolean;
+    submitFeedback?: {
+        type: 'success' | 'error';
+        message: string;
+    };
     isSubmitHovered: boolean;
     isCancelHovered: boolean;
     selectState: Record<string, {
@@ -309,6 +282,9 @@ declare class AmigoFormComponent implements OnChanges {
         type: 'success' | 'error';
         message: string;
     }>;
+    private visibilitySub?;
+    private visibilityState;
+    private visibilityUpdating;
     constructor(formService: AmigoFormService, cdr: ChangeDetectorRef, zone: NgZone, apiExec: AmigoApiExecutionService, selectOptions: AmigoSelectOptionsService);
     ngOnChanges(changes: SimpleChanges): void;
     private init;
@@ -355,15 +331,22 @@ declare class AmigoFormComponent implements OnChanges {
     isButton(field: any): boolean;
     private isNonInput;
     private normalizeFormValue;
+    private setupVisibility;
+    isFieldVisible(field: any): boolean;
+    private recomputeVisibility;
+    private evaluateVisibility;
+    private evaluateVisibilityRule;
+    private resolveDependsOnKey;
+    private isEmptyValue;
     onSchemaButtonClick(field: any): void;
+    private resolveSubmitApi;
     static ɵfac: i0.ɵɵFactoryDeclaration<AmigoFormComponent, never>;
-    static ɵcmp: i0.ɵɵComponentDeclaration<AmigoFormComponent, "amigo-form", never, { "formId": { "alias": "formId"; "required": false; }; "schema": { "alias": "schema"; "required": false; }; "initialValue": { "alias": "initialValue"; "required": false; }; "pathVariables": { "alias": "pathVariables"; "required": false; }; "queryParams": { "alias": "queryParams"; "required": false; }; }, { "submitted": "submitted"; "submitFailed": "submitFailed"; "cancelled": "cancelled"; }, never, never, true, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<AmigoFormComponent, "amigo-form", never, { "formId": { "alias": "formId"; "required": false; }; "schema": { "alias": "schema"; "required": false; }; "initialValue": { "alias": "initialValue"; "required": false; }; }, { "submitted": "submitted"; "submitFailed": "submitFailed"; "cancelled": "cancelled"; }, never, never, true, never>;
 }
 
 declare function buildFormGroup(fields: FormFieldSchema[], initialValue?: Record<string, any>): FormGroup;
 declare function normalizeAccept(a?: string): string | undefined;
 
-declare const AMIGO_SKIP_AUTH: HttpContextToken<boolean>;
 declare class AmigoTokenInterceptor implements HttpInterceptor {
     private tokenProvider;
     private cfg;
@@ -373,5 +356,5 @@ declare class AmigoTokenInterceptor implements HttpInterceptor {
     static ɵprov: i0.ɵɵInjectableDeclaration<AmigoTokenInterceptor>;
 }
 
-export { AMIGO_AUTH_TOKEN_PROVIDER, AMIGO_FORM_CONFIG, AMIGO_SKIP_AUTH, AmigoFormComponent, AmigoFormService, AmigoTokenInterceptor, buildFormGroup, normalizeAccept, provideAmigoForm };
-export type { AmigoAuthTokenProvider, AmigoFormConfig, ApiEndpointConfig, ButtonElementSchema, ButtonStyleVariant, FieldType, FieldValidationRules, FormActionSchema, FormFieldOption, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionSchema, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, HttpMethod, InfoCardSchema, InfoCardStyle, KeyValuePair, OptionsSourceMode, SelectAuthType, SelectOptionsApiConfig, SelectOptionsResponseMapping, SelectOptionsSourceSchema, SelectTokenFrom };
+export { AMIGO_AUTH_TOKEN_PROVIDER, AMIGO_FORM_CONFIG, AmigoFormComponent, AmigoFormService, AmigoTokenInterceptor, buildFormGroup, normalizeAccept, provideAmigoForm };
+export type { ActionApiConfig, AmigoAuthTokenProvider, AmigoFormConfig, ApiEndpointConfig, ButtonActionType, ButtonElementSchema, ButtonStyleVariant, FieldType, FieldValidationRules, FieldVisibilitySchema, FormActionSchema, FormFieldOption, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionConfig, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, HttpMethod, InfoCardSchema, InfoCardStyleSchema, KeyValuePair, OptionsSourceMode, SelectAuthType, SelectOptionsApiConfig, SelectOptionsApiResponseMapping, SelectOptionsSourceSchema, TokenFrom, VisibilityOperator, VisibilityRule };

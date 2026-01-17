@@ -1,7 +1,6 @@
-export type FormType = 'single' | 'multi' | 'single-sectional';
-
 export type FieldType =
   | 'text'
+  | 'password'
   | 'number'
   | 'email'
   | 'textarea'
@@ -11,18 +10,36 @@ export type FieldType =
   | 'date'
   | 'file'
   | 'card'
-  | 'password'
-  | 'info-card'
   | 'button';
+
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+export interface KeyValuePair {
+  key: string;
+  value: string;
+}
+
+export interface FieldValidationRules {
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  min?: number;
+  max?: number;
+}
+
+export interface FormFieldOption {
+  label: string;
+  value: any;
+}
 
 export type OptionsSourceMode = 'STATIC' | 'API';
 export type SelectAuthType = 'NONE' | 'BEARER';
-export type SelectTokenFrom = 'LOCAL_STORAGE' | 'SESSION_STORAGE' | 'CUSTOM_CALLBACK';
+export type TokenFrom = 'LOCAL_STORAGE' | 'SESSION_STORAGE' | 'CUSTOM_CALLBACK';
 
-export interface SelectOptionsResponseMapping {
-  labelKey: string; // e.g. "name" or "meta.name"
-  valueKey: string; // e.g. "id"
-  dataPath?: string; // e.g. "data.items"
+export interface SelectOptionsApiResponseMapping {
+  labelKey: string;
+  valueKey: string;
+  dataPath?: string;
 }
 
 export interface SelectOptionsApiConfig {
@@ -30,10 +47,9 @@ export interface SelectOptionsApiConfig {
   method: HttpMethod;
   secured?: boolean;
   authType?: SelectAuthType;
-  tokenFrom?: SelectTokenFrom;
+  tokenFrom?: TokenFrom;
   tokenKey?: string;
-
-  responseMapping: SelectOptionsResponseMapping;
+  responseMapping: SelectOptionsApiResponseMapping;
 }
 
 export interface SelectOptionsSourceSchema {
@@ -41,12 +57,25 @@ export interface SelectOptionsSourceSchema {
   api?: SelectOptionsApiConfig;
 }
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-export type ButtonStyleVariant = 'primary' | 'secondary' | 'danger';
+export type VisibilityOperator =
+  | 'CHECKED'
+  | 'UNCHECKED'
+  | 'EQUALS'
+  | 'NOT_EQUALS'
+  | 'HAS_VALUE'
+  | 'NOT_HAS_VALUE'
+  | 'IN'
+  | 'NOT_IN';
 
-export interface KeyValuePair {
-  key: string;
-  value: string;
+export interface VisibilityRule {
+  dependsOn: string;
+  operator: VisibilityOperator;
+  value?: any;
+}
+
+export interface FieldVisibilitySchema {
+  mode?: 'ALL' | 'ANY';
+  rules: VisibilityRule[];
 }
 
 export interface ApiEndpointConfig {
@@ -54,154 +83,122 @@ export interface ApiEndpointConfig {
   url: string;
   headers?: KeyValuePair[];
   queryParams?: KeyValuePair[];
-  /** map request body keys to form values: { "employeeId": "employee.id", "amount": "{{salary}}" } */
   bodyMapping?: Record<string, string>;
 }
 
-export interface ButtonElementSchema {
-  label?: string; // optional override; fallback to field.label
-  styleVariant?: ButtonStyleVariant; // default 'primary'
-  actionType?: 'API_CALL'; // default 'API_CALL'
-  api?: ApiEndpointConfig;
-
+export interface ActionApiConfig {
+  triggerValidation?: boolean;
   successMessage?: string;
   errorMessage?: string;
+  api: ApiEndpointConfig;
+}
 
-  /** default true */
+export type ButtonStyleVariant = 'primary' | 'secondary' | 'danger';
+export type ButtonActionType = 'API_CALL';
+
+export interface ButtonElementSchema {
+  label: string;
+  styleVariant?: ButtonStyleVariant;
+  actionType?: ButtonActionType;
+  api?: ApiEndpointConfig;
+  successMessage?: string;
+  errorMessage?: string;
   triggerValidation?: boolean;
 }
 
-/**
- * Informational card (non-input) that can be placed inside the form layout.
- * Used to show messages like “Secure Verification”.
- */
-export interface InfoCardStyle {
+export interface InfoCardStyleSchema {
+  borderWidth?: number;
+  borderRadius?: number;
   borderColor?: string;
   backgroundColor?: string;
   textColor?: string;
   iconColor?: string;
-  borderWidth?: number;
-  borderRadius?: number;
 }
 
 export interface InfoCardSchema {
-  /** Optional icon (emoji/text). Keep it simple to avoid needing icon libraries. */
-  icon?: string;
-  title?: string;
+  title: string;
   body?: string;
-  style?: InfoCardStyle;
-}
-
-export interface FormFieldOption {
-  value: any;
-  label: string;
-}
-
-export interface FieldValidationRules {
-  required?: boolean;
-  minLength?: number;
-  maxLength?: number;
-  min?: number;
-  max?: number;
-  pattern?: string;
+  icon?: string;
+  style?: InfoCardStyleSchema;
 }
 
 export interface FormFieldSchema {
   id: string;
   label: string;
-  type: FieldType;
   name: string;
+  type: FieldType;
   placeholder?: string;
-  /**
-   * For input fields this can be boolean or 'true'/'false'.
-   * For non-input blocks like cards, it may be omitted.
-   */
-  required?: string | boolean;
-
-  /** Informational card configuration (used when type is 'card' or 'info-card'). */
-  card?: InfoCardSchema;
-
-  /**
-   * FILE upload configuration (emitted by form-composer-canvas)
-   * Example accept: "image/*,.pdf"
-   */
-  accept?: string;
-  multiple?: boolean;
-  /** Maximum number of files allowed (default 1) */
-  maxFiles?: number;
-  /** Maximum allowed size per file in MB (composer uses maxSizeMB) */
-  maxSizeMB?: number;
+  required?: boolean | string;
+  colSpan?: number;
 
   options?: FormFieldOption[];
   optionDirection?: 'horizontal' | 'vertical';
-  row?: number;
-  col?: number;
-  colSpan?: number;
-  validations?: FieldValidationRules;
-  step?: number;
-  section?: number;
+
   optionsSource?: SelectOptionsSourceSchema;
+
+  validations?: FieldValidationRules;
+
+  multiple?: boolean;
+  accept?: string;
+  maxSizeMB?: number;
+  maxFiles?: number;
+
+  card?: InfoCardSchema;
+  button?: ButtonElementSchema;
+
+  visibility?: FieldVisibilitySchema;
 }
 
 export interface FormLayoutSchema {
-  rows: number;
   columns: number;
 }
 
 export interface FormSpacingSchema {
-  marginTop?: number;
-  marginRight?: number;
-  marginBottom?: number;
-  marginLeft?: number;
-  paddingTop?: number;
-  paddingRight?: number;
-  paddingBottom?: number;
-  paddingLeft?: number;
-  gapX?: number;
-  gapY?: number;
+  gapX: number;
+  gapY: number;
+  paddingTop: number;
+  paddingRight: number;
+  paddingBottom: number;
+  paddingLeft: number;
+  marginTop: number;
+  marginRight: number;
+  marginBottom: number;
+  marginLeft: number;
 }
 
 export interface FormStyleSchema {
-  // If you rely on Tailwind classes, keep them here.
+  borderWidth: number;
+  borderRadius: number;
+  borderColor: string;
+  backgroundColor: string;
+  textColor: string;
+
+  buttonBackgroundColor: string;
+  buttonTextColor: string;
+  buttonHoverBackgroundColor?: string;
+  buttonHoverTextColor?: string;
+
   formClass?: string;
   fieldWrapperClass?: string;
   labelClass?: string;
   inputClass?: string;
   buttonClass?: string;
-  hintClass?: string;
-  errorClass?: string;
-
-  // Optional raw values
-  borderWidth?: number;
-  borderRadius?: number;
-  borderColor?: string;
-  backgroundColor?: string;
-  textColor?: string;
-
-  buttonBackgroundColor?: string;
-  buttonTextColor?: string;
-  buttonHoverBackgroundColor?: string;
-  buttonHoverTextColor?: string;
 }
 
 export interface FormActionSchema {
-  submitLabel?: string;
-  cancelLabel?: string;
-  showCancel?: boolean;
+  submitLabel: string;
+  cancelLabel: string;
 
-  // Legacy simpler config (kept for backward compat)
-  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   submitApiUrl?: string;
+  method?: HttpMethod;
 
-  // New advanced config
-  api?: ApiEndpointConfig;
-  successMessage?: string;
-  errorMessage?: string;
-  triggerValidation?: boolean; // default true
-
-  contentType?: 'auto' | 'json' | 'multipart';
   payloadKey?: string;
+  contentType?: 'auto' | 'json' | 'multipart';
+
+  submitApi?: ActionApiConfig;
 }
+
+export type FormType = 'single' | 'multi' | 'single-sectional';
 
 export interface FormStepConfig {
   id: string;
@@ -211,7 +208,7 @@ export interface FormStepConfig {
   icon?: string;
 }
 
-export interface FormSectionSchema {
+export interface FormSectionConfig {
   id: string;
   label: string;
   order: number;
@@ -219,17 +216,15 @@ export interface FormSectionSchema {
 }
 
 export interface FormSchema {
+  id: string;
   name: string;
   description?: string;
-  formType?: FormType;
-
-  layout: FormLayoutSchema;
-  spacing?: FormSpacingSchema;
-  style?: FormStyleSchema;
-  actions?: FormActionSchema;
-
   fields: FormFieldSchema[];
-
+  layout: FormLayoutSchema;
+  spacing: FormSpacingSchema;
+  style: FormStyleSchema;
+  actions: FormActionSchema;
+  formType?: FormType;
   steps?: FormStepConfig[];
-  sections?: FormSectionSchema[];
+  sections?: FormSectionConfig[];
 }

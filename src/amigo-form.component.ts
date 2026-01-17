@@ -1,18 +1,10 @@
-import {
-  ChangeDetectorRef,
-  Component,
-  EventEmitter,
-  Input,
-  NgZone,
-  OnChanges,
-  Output,
-  SimpleChanges,
-} from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, NgZone, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormGroup, AbstractControl } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 
-import { FormSchema, FormFieldSchema, FormType, FormActionSchema } from './models';
+import { FormSchema, FormFieldSchema, FormType, FormActionSchema, ActionApiConfig } from './models';
 import { AmigoFormService } from './amigo-form.service';
 import { buildFormGroup, normalizeAccept } from './form-group.builder';
 import { AmigoApiExecutionService } from './amigo-api-execution.service';
@@ -28,17 +20,11 @@ export class AmigoFormComponent implements OnChanges {
   @Input() formId?: string;
   @Input() schema?: FormSchema;
   @Input() initialValue?: Record<string, any>;
-  @Input() pathVariables: Record<string, any> = {};
-  @Input() queryParams: Record<string, any> = {};
 
-  /**
-   * Emits:
-   * - if NO submitApiUrl => raw form value (backward compatible)
-   * - if submitApiUrl exists => { payload, response, action }
-   */
+  
   @Output() submitted = new EventEmitter<any>();
 
-  /** Emits error object when API submit fails */
+  
   @Output() submitFailed = new EventEmitter<any>();
 
   @Output() cancelled = new EventEmitter<void>();
@@ -53,12 +39,17 @@ export class AmigoFormComponent implements OnChanges {
   form: FormGroup | null = null;
 
   activeStepIndex = 0;
-
+  submitLoading = false;
+  submitFeedback?: { type: 'success' | 'error'; message: string };
   isSubmitHovered = false;
   isCancelHovered = false;
   selectState: Record<string, { loading: boolean; error?: string; options: any[] }> = {};
   buttonLoading: Record<string, boolean> = {};
   buttonFeedback: Record<string, { type: 'success' | 'error'; message: string }> = {};
+
+  private visibilitySub?: Subscription;
+  private visibilityState: Record<string, boolean> = {};
+  private visibilityUpdating = false;
 
   constructor(
     private formService: AmigoFormService,
@@ -73,7 +64,6 @@ export class AmigoFormComponent implements OnChanges {
       this.init();
     }
     if (changes['initialValue'] && this.resolvedSchema) {
-      // If you want to patch when initialValue changes:
       this.form = buildFormGroup(this.resolvedSchema!.fields, this.initialValue);
     }
   }
@@ -81,13 +71,11 @@ export class AmigoFormComponent implements OnChanges {
   private init(): void {
     this.loadError = null;
 
-    // If schema is provided directly
     if (this.schema) {
       this.applySchema(this.schema as any);
       return;
     }
 
-    // If neither schema nor formId
     if (!this.formId) {
       this.resolvedSchema = null;
       this.form = null;
@@ -96,13 +84,11 @@ export class AmigoFormComponent implements OnChanges {
       return;
     }
 
-    // Start loading
     this.isLoading = true;
     this.cdr.detectChanges(); //  ensure UI shows loading immediately
 
     this.formService.getFormSchemaById(this.formId).subscribe({
       next: (res: any) => {
-        //  force inside Angular CD context to update UI
         this.zone.run(() => {
           this.applySchema(res?.form_data ?? res);
           this.isLoading = false;
@@ -169,11 +155,11 @@ export class AmigoFormComponent implements OnChanges {
 
     this.activeStepIndex = 0;
     this.form = buildFormGroup(this.resolvedSchema!.fields, this.initialValue);
-    this.preloadApiSelectOptions();
     this.patchInitialValue();
+    this.setupVisibility();
+    this.preloadApiSelectOptions();
   }
 
-  // ---------- info cards ----------
   isCard(field: FormFieldSchema | any): boolean {
     const t = (field as any)?.type;
     return t === 'card' || t === 'info-card';
@@ -224,7 +210,6 @@ export class AmigoFormComponent implements OnChanges {
     };
   }
 
-  // ---------- keys & controls ----------
   controlKey(field: any): string {
     return field?.name ?? field?.id;
   }
@@ -238,7 +223,6 @@ export class AmigoFormComponent implements OnChanges {
     return !!(c && c.invalid && (c.touched || c.dirty));
   }
 
-  // ---------- file inputs ----------
   onFileChange(evt: Event, field: FormFieldSchema): void {
     const input = evt.target as HTMLInputElement;
     const files = input?.files ? Array.from(input.files) : [];
@@ -280,7 +264,6 @@ export class AmigoFormComponent implements OnChanges {
     if (inputEl) inputEl.value = '';
   }
 
-  // ---------- visibility helpers ----------
   trackByFieldId = (_: number, field: any) => field?.id ?? field?.name ?? _;
 
   get orderedSteps() {
@@ -304,10 +287,10 @@ export class AmigoFormComponent implements OnChanges {
       const step = this.orderedSteps[this.activeStepIndex];
       const ids = new Set(step?.fieldIds ?? []);
       if (!ids.size) return [];
-      return (s.fields ?? []).filter((f: any) => ids.has(f.id));
+      return (s.fields ?? []).filter((f: any) => ids.has(f.id)).filter((f: any) => this.isFieldVisible(f));
     }
 
-    return s.fields ?? [];
+    return (s.fields ?? []).filter((f: any) => this.isFieldVisible(f));
   }
 
   get orderedSections() {
@@ -325,14 +308,13 @@ export class AmigoFormComponent implements OnChanges {
     if (!s) return [];
     const section = (s.sections ?? []).find((x: any) => x.id === sectionId);
     const ids = new Set(section?.fieldIds ?? []);
-    return (s.fields ?? []).filter((f: any) => ids.has(f.id));
+    return (s.fields ?? []).filter((f: any) => ids.has(f.id)).filter((f: any) => this.isFieldVisible(f));
   }
 
   setActiveStep(i: number) {
     this.activeStepIndex = i;
   }
 
-  // ---------- actions ----------
   onCancel(): void {
     this.cancelled.emit();
   }
@@ -356,90 +338,48 @@ export class AmigoFormComponent implements OnChanges {
     if (!this.resolvedSchema || !this.form) return;
 
     this.submitError = null;
-
-    this.form.markAllAsTouched();
-
-    if (this.form.invalid) {
-      const invalid = Object.entries(this.form.controls)
-        .filter(([_, c]) => c.invalid)
-        .map(([k, c]) => ({ key: k, errors: c.errors }));
-      console.table(invalid);
-      return;
-    }
-
-    if (this.form.invalid) return;
-
-    const rawPayload = this.form.value;
-    const payload = this.normalizePayload(rawPayload);
+    this.submitFeedback = undefined;
 
     const action: FormActionSchema | undefined = this.resolvedSchema?.actions;
+    const submitCfg = this.resolveSubmitApi();
 
-    // If no API config, keep old behavior
-    const hasApi = !!(action?.submitApiUrl && (action?.method || 'POST')) || !!action?.api?.url; // new
-    if (!hasApi) {
+    const triggerValidation = submitCfg?.triggerValidation !== false;
+    if (triggerValidation) {
+      this.form.markAllAsTouched();
+      if (this.form.invalid) return;
+    }
+
+    const payload = this.normalizePayload(this.form.value);
+
+    if (!submitCfg) {
       this.submitted.emit(payload);
       return;
     }
 
     this.isSubmitting = true;
-
-    // Use new API config if available, otherwise fallback to legacy
-    const apiConfig = action!.api || {
-      method: (action!.method || 'POST') as any,
-      url: action!.submitApiUrl || '',
-      queryParams: [],
-    };
-
-    // 1. Substitute Path Variables in URL
-    let finalUrl = apiConfig.url;
-    // Replace {{key}} with value from pathVariables input
-    if (this.pathVariables) {
-      finalUrl = finalUrl.replace(/{{\s*([^}]+)\s*}}/g, (_, key) => {
-        const val = this.pathVariables[key.trim()];
-        return val !== undefined && val !== null ? String(val) : '';
-      });
-    }
-
-    // 2. Merge Query Params
-    const mergedParams: any[] = [...(apiConfig.queryParams || [])];
-    if (this.queryParams) {
-      Object.entries(this.queryParams).forEach(([key, value]) => {
-        mergedParams.push({ key, value: String(value) });
-      });
-    }
-
-    const effectiveConfig: any = {
-      ...apiConfig,
-      url: finalUrl,
-      queryParams: mergedParams,
-    };
-
-    // If using bodyMapping in submit action, logic needs to be handled by execution service or here.
-    // The current formService.submitByAction might not support the new flexible structure fully yet
-    // BUT we can use apiExec directly if we want full power, akin to custom buttons.
-    // However, to keep it simple, we will reuse apiExec here directly which supports bodyMapping.
-
     this.apiExec
-      .execute(effectiveConfig, { formValue: payload })
+      .execute(submitCfg.api, {
+        formValue: payload,
+        payloadKey: action?.payloadKey || undefined,
+        contentType: (action?.contentType as any) || 'auto',
+      })
       .pipe(finalize(() => (this.isSubmitting = false)))
       .subscribe({
         next: (res) => {
-          this.submitted.emit({
-            payload,
-            response: res,
-            action,
-          });
-          // Show success message if configured
-          if (action?.successMessage) {
-            console.log('Submit Success:', action.successMessage);
-          }
+          this.submitFeedback = {
+            type: 'success',
+            message: submitCfg.successMessage || 'Submitted successfully.',
+          };
+          this.submitted.emit({ payload, response: res, action });
         },
         error: (err) => {
-          this.submitError =
-            action?.errorMessage ??
-            err?.error?.message ??
-            err?.message ??
+          const msg =
+            submitCfg.errorMessage ||
+            err?.error?.message ||
+            err?.message ||
             'Failed to submit. Please try again.';
+          this.submitError = msg;
+          this.submitFeedback = { type: 'error', message: msg };
           this.submitFailed.emit(err);
         },
       });
@@ -448,21 +388,26 @@ export class AmigoFormComponent implements OnChanges {
   private touchFields(fields: FormFieldSchema[]): void {
     if (!this.form) return;
     for (const f of fields as any[]) {
-      if (this.isCard(f)) continue;
+      if (this.isNonInput(f)) continue;
+      if (!this.isFieldVisible(f)) continue;
       const c = this.form.get(this.controlKey(f));
-      c?.markAsTouched();
-      c?.updateValueAndValidity();
+      if (!c || c.disabled) continue;
+      c.markAsTouched();
+      c.updateValueAndValidity({ emitEvent: false });
     }
   }
 
   private hasErrors(fields: FormFieldSchema[]): boolean {
     if (!this.form) return true;
     return (fields as any[])
-      .filter((f) => !this.isCard(f))
-      .some((f) => this.form!.get(this.controlKey(f))?.invalid);
+      .filter((f) => !this.isNonInput(f))
+      .filter((f) => this.isFieldVisible(f))
+      .some((f) => {
+        const c = this.form!.get(this.controlKey(f));
+        return !!(c && c.enabled && c.invalid);
+      });
   }
 
-  // ---------- styling helpers ----------
   getFormStyle(): Record<string, any> {
     const sp: any = this.resolvedSchema?.spacing ?? {};
     const st: any = this.resolvedSchema?.style ?? {};
@@ -536,11 +481,9 @@ export class AmigoFormComponent implements OnChanges {
       const key = this.controlKey(field);
       const value = payload[key];
 
-      //  ONLY for number fields
       if (field.type === 'number') {
         normalized[key] = value === '' || value === undefined ? null : Number(value);
       } else {
-        //  Do NOT touch text / other fields
         normalized[key] = value;
       }
     }
@@ -557,7 +500,6 @@ export class AmigoFormComponent implements OnChanges {
     for (const field of inputFields) {
       const key = this.controlKey(field);
 
-      // allow matching by name or id (in case parent sends either)
       const incoming =
         this.initialValue[key] ??
         (field?.name ? this.initialValue[field.name] : undefined) ??
@@ -565,15 +507,10 @@ export class AmigoFormComponent implements OnChanges {
 
       if (incoming === undefined) continue;
 
-      // File inputs: cannot set the actual <input type=file> UI value.
-      // Best practice: ignore or store separately to display "existing files".
       if (field.type === 'file') {
-        // If you still want the FormControl to hold metadata, you can:
-        // patch[key] = incoming; // e.g., [{name,url}]
         continue;
       }
 
-      // Normalize common types
       if (field.type === 'number') {
         patch[key] = incoming === '' || incoming === null ? null : Number(incoming);
         continue;
@@ -584,7 +521,6 @@ export class AmigoFormComponent implements OnChanges {
         continue;
       }
 
-      // date expects yyyy-mm-dd for <input type="date">
       if (field.type === 'date' && incoming) {
         patch[key] = String(incoming).slice(0, 10);
         continue;
@@ -593,10 +529,8 @@ export class AmigoFormComponent implements OnChanges {
       patch[key] = incoming;
     }
 
-    // only patch existing controls
     this.form.patchValue(patch, { emitEvent: false });
 
-    // optional: keep form “clean” after prefill
     this.form.markAsPristine();
     this.form.markAsUntouched();
   }
@@ -629,12 +563,106 @@ export class AmigoFormComponent implements OnChanges {
     return normalized;
   }
 
+
+  private setupVisibility(): void {
+    this.visibilitySub?.unsubscribe();
+    if (!this.form || !this.resolvedSchema) return;
+    this.recomputeVisibility();
+    this.visibilitySub = this.form.valueChanges.subscribe(() => {
+      if (this.visibilityUpdating) return;
+      this.recomputeVisibility();
+    });
+  }
+
+  isFieldVisible(field: any): boolean {
+    const rules = field?.visibility?.rules;
+    if (!rules || !rules.length) return true;
+    const key = field?.id || field?.name;
+    return this.visibilityState[key] !== false;
+  }
+
+  private recomputeVisibility(): void {
+    if (!this.form || !this.resolvedSchema) return;
+    const raw = (this.form as any).getRawValue ? (this.form as any).getRawValue() : this.form.value;
+
+    this.visibilityUpdating = true;
+    try {
+      for (const f of this.resolvedSchema.fields as any[]) {
+        const visible = this.evaluateVisibility(f, raw);
+        const stateKey = f.id || f.name;
+        this.visibilityState[stateKey] = visible;
+
+        if (this.isNonInput(f)) continue;
+        const c = this.form.get(this.controlKey(f));
+        if (!c) continue;
+        if (!visible && c.enabled) c.disable({ emitEvent: false });
+        if (visible && c.disabled) c.enable({ emitEvent: false });
+      }
+    } finally {
+      this.visibilityUpdating = false;
+    }
+  }
+
+  private evaluateVisibility(field: any, raw: Record<string, any>): boolean {
+    const vis = field?.visibility;
+    const rules = vis?.rules ?? [];
+    if (!rules.length) return true;
+    const mode = String(vis?.mode || 'ALL').toUpperCase();
+    const results = rules.map((r: any) => this.evaluateVisibilityRule(r, raw));
+    return mode === 'ANY' ? results.some(Boolean) : results.every(Boolean);
+  }
+
+  private evaluateVisibilityRule(rule: any, raw: Record<string, any>): boolean {
+    const depKey = this.resolveDependsOnKey(rule?.dependsOn);
+    const v = raw?.[depKey];
+    const op = String(rule?.operator || 'EQUALS').toUpperCase();
+    const cmp = rule?.value;
+
+    switch (op) {
+      case 'CHECKED':
+        return v === true;
+      case 'UNCHECKED':
+        return v !== true;
+      case 'HAS_VALUE':
+        return !this.isEmptyValue(v);
+      case 'NOT_HAS_VALUE':
+        return this.isEmptyValue(v);
+      case 'IN':
+        return Array.isArray(cmp) ? cmp.includes(v) : false;
+      case 'NOT_IN':
+        return Array.isArray(cmp) ? !cmp.includes(v) : true;
+      case 'NOT_EQUALS':
+        return Array.isArray(v) ? !v.includes(cmp) : v !== cmp;
+      case 'EQUALS':
+      default:
+        return Array.isArray(v) ? v.includes(cmp) : v === cmp;
+    }
+  }
+
+  private resolveDependsOnKey(dep: any): string {
+    const d = String(dep || '');
+    if (!d) return d;
+    if (this.form?.get(d)) return d;
+    const fields = (this.resolvedSchema?.fields ?? []) as any[];
+    const byId = fields.find((f) => f.id === d);
+    if (byId) return this.controlKey(byId);
+    const byName = fields.find((f) => f.name === d);
+    if (byName) return this.controlKey(byName);
+    return d;
+  }
+
+  private isEmptyValue(v: any): boolean {
+    if (v === null || v === undefined) return true;
+    if (typeof v === 'string' && v.trim() === '') return true;
+    if (Array.isArray(v) && v.length === 0) return true;
+    return false;
+  }
+
   onSchemaButtonClick(field: any): void {
     const btn = field?.button;
     const endpoint = btn?.api;
     if (!btn || (btn.actionType === 'API_CALL' && !endpoint)) return;
 
-    // default true
     const triggerValidation = btn.triggerValidation !== false;
 
     if (triggerValidation) {
@@ -664,6 +692,32 @@ export class AmigoFormComponent implements OnChanges {
           };
         },
       });
+  }
+
+  private resolveSubmitApi(): ActionApiConfig | null {
+    const a: any = this.resolvedSchema?.actions;
+    if (a?.submitApi?.api?.url) {
+      return {
+        triggerValidation: a.submitApi.triggerValidation !== false,
+        successMessage: a.submitApi.successMessage,
+        errorMessage: a.submitApi.errorMessage,
+        api: a.submitApi.api,
+      };
+    }
+
+    if (a?.submitApiUrl) {
+      return {
+        triggerValidation: true,
+        api: {
+          method: (a.method || 'POST') as any,
+          url: a.submitApiUrl,
+          headers: [],
+          queryParams: [],
+        },
+      };
+    }
+
+    return null;
   }
 }
 

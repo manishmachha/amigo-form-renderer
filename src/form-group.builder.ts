@@ -8,54 +8,32 @@ import {
 } from '@angular/forms';
 import { FormFieldSchema } from './models';
 
-export function buildFormGroup(
-  fields: FormFieldSchema[],
-  initialValue?: Record<string, any>
-): FormGroup {
+export function buildFormGroup(fields: FormFieldSchema[], initialValue?: Record<string, any>): FormGroup {
   const group: Record<string, FormControl> = {};
-const isNonInput = (t: string) => t === 'card' || t === 'info-card' || t === 'button';
   for (const f of fields as any[]) {
-
-     const t = (f?.type ?? '').toString();
-     if (isNonInput(t)) continue;
-     
-    // Info cards are purely visual blocks and must NOT create form controls.
-    if (f.type === 'card' || f.type === 'info-card') continue;
+    const t = String(f?.type ?? '');
+    if (t === 'card' || t === 'info-card' || t === 'button') continue;
 
     const v = f.validations ?? {};
-
-    // robust required parsing (boolean OR "true"/"false" strings)
     const required = f.required === true || f.required === 'true' || v.required === true;
 
     const validators: ValidatorFn[] = [];
-
-    // required mapping
     if (required) {
-      if (f.type === 'checkbox') validators.push(Validators.requiredTrue);
-      else if (f.type === 'file') validators.push(fileRequiredValidator());
+      if (t === 'checkbox') validators.push(Validators.requiredTrue);
+      else if (t === 'file') validators.push(fileRequiredValidator());
       else validators.push(Validators.required);
     }
 
-    // string length rules
     if (typeof v.minLength === 'number') validators.push(Validators.minLength(v.minLength));
     if (typeof v.maxLength === 'number') validators.push(Validators.maxLength(v.maxLength));
-
-    // numeric/date min/max (note: Angular Validators.min/max are numeric; if you want date min/max, handle separately)
     if (typeof v.min === 'number') validators.push(Validators.min(v.min));
     if (typeof v.max === 'number') validators.push(Validators.max(v.max));
-
-    // pattern
     if (v.pattern) validators.push(Validators.pattern(v.pattern));
+    if (t === 'email') validators.push(Validators.email);
 
-    //  email validator like template-driven
-    if (f.type === 'email') validators.push(Validators.email);
-
-    //  file-specific validators
-    if (f.type === 'file') {
+    if (t === 'file') {
       const maxFiles = typeof f.maxFiles === 'number' ? f.maxFiles : f.multiple ? undefined : 1;
-
       const maxSizeMB = typeof f.maxSizeMB === 'number' ? f.maxSizeMB : undefined;
-
       const accept = normalizeAccept(f.accept);
 
       if (maxFiles !== undefined) validators.push(fileMaxFilesValidator(maxFiles));
@@ -64,14 +42,13 @@ const isNonInput = (t: string) => t === 'card' || t === 'info-card' || t === 'bu
     }
 
     const key = f.name ?? f.id;
-
     const init =
       initialValue?.[key] ??
-      (f.type === 'checkbox'
+      (t === 'checkbox'
         ? false
-        : f.type === 'select' || f.type === 'radio'
+        : t === 'select' || t === 'radio'
         ? null
-        : f.type === 'file'
+        : t === 'file'
         ? null
         : '');
 
@@ -81,118 +58,70 @@ const isNonInput = (t: string) => t === 'card' || t === 'info-card' || t === 'bu
   return new FormGroup(group);
 }
 
-// -----------------------
-// File helpers + validators
-// -----------------------
-
 export function normalizeAccept(a?: string): string | undefined {
   if (!a) return undefined;
   const s = String(a).trim().toLowerCase();
-  if (!s) return undefined;
-
-  // handle common composer shorthand like "pdf"
-  if (s === 'pdf') return '.pdf,application/pdf';
-
-  // if already looks valid
-  if (s.startsWith('.') || s.includes('/') || s.includes(',')) return a;
-
-  // fallback: treat as extension
-  return `.${s}`;
-}
-
-function normalizeFiles(value: any): File[] {
-  if (!value) return [];
-  if (Array.isArray(value)) return value.filter(Boolean);
-  if (typeof FileList !== 'undefined' && value instanceof FileList) {
-    return Array.from(value);
-  }
-  if (typeof File !== 'undefined' && value instanceof File) {
-    return [value];
-  }
-  return [];
+  return s || undefined;
 }
 
 function fileRequiredValidator(): ValidatorFn {
-  return (control: AbstractControl): ValidationErrors | null => {
-    const files = normalizeFiles(control.value);
-    return files.length ? null : { required: true };
+  return (c: AbstractControl): ValidationErrors | null => {
+    const v = c.value;
+    if (!v) return { required: true };
+    if (Array.isArray(v)) return v.length ? null : { required: true };
+    return null;
   };
 }
 
 function fileMaxFilesValidator(maxFiles: number): ValidatorFn {
-  return (control: AbstractControl): ValidationErrors | null => {
-    const files = normalizeFiles(control.value);
-    return files.length > maxFiles
-      ? { maxFiles: { max: maxFiles, actual: files.length } }
-      : null;
+  return (c: AbstractControl): ValidationErrors | null => {
+    const v = c.value;
+    if (!v) return null;
+    const count = Array.isArray(v) ? v.length : 1;
+    return count > maxFiles ? { maxFiles: { maxFiles, actual: count } } : null;
   };
 }
 
 function fileMaxSizeValidator(maxSizeMB: number): ValidatorFn {
   const maxBytes = maxSizeMB * 1024 * 1024;
-  return (control: AbstractControl): ValidationErrors | null => {
-    const files = normalizeFiles(control.value);
-    const tooBig = files.find((f) => (f?.size ?? 0) > maxBytes);
-    return tooBig
-      ? {
-          maxSizeMB: {
-            max: maxSizeMB,
-            file: tooBig?.name,
-            actualBytes: tooBig?.size,
-          },
-        }
-      : null;
+  return (c: AbstractControl): ValidationErrors | null => {
+    const v = c.value;
+    if (!v) return null;
+    const files: File[] = Array.isArray(v) ? v : [v];
+    const tooLarge = files.find((f) => f?.size > maxBytes);
+    return tooLarge ? { maxSizeMB: { maxSizeMB, actualBytes: tooLarge.size } } : null;
   };
 }
 
-/**
- * Accept parser supports:
- * - extensions: .pdf
- * - exact mime: application/pdf
- * - wildcards: image/*
- */
 function fileAcceptValidator(accept: string): ValidatorFn {
-  const tokens = (accept || '')
+  const parts = accept
     .split(',')
-    .map((t) => t.trim())
+    .map((x) => x.trim())
     .filter(Boolean);
 
-  return (control: AbstractControl): ValidationErrors | null => {
-    const files = normalizeFiles(control.value);
-    if (!files.length || !tokens.length) return null;
+  const isOk = (file: File): boolean => {
+    const mime = (file.type || '').toLowerCase();
+    const name = (file.name || '').toLowerCase();
 
-    const bad = files.find((f) => !isAcceptedFile(f, tokens));
-    return bad ? { accept: { accept, file: bad.name, type: bad.type } } : null;
-  };
-}
-
-function isAcceptedFile(file: File, tokens: string[]): boolean {
-  const name = (file?.name || '').toLowerCase();
-  const type = (file?.type || '').toLowerCase();
-
-  return tokens.some((t) => {
-    const tok = t.toLowerCase();
-    if (!tok) return true;
-
-    // extension
-    if (tok.startsWith('.')) return name.endsWith(tok);
-
-    // wildcard mime, e.g. image/*
-    if (tok.endsWith('/*')) {
-      const prefix = tok.slice(0, tok.length - 1); // keep trailing '/'
-      return type.startsWith(prefix);
-    }
-
-    // exact mime
-    if (tok.includes('/')) {
-      if (type) return type === tok;
-
-      // fallback when browser doesn't provide MIME type
-      if (tok === 'application/pdf') return name.endsWith('.pdf');
-
-      return false;
+    for (const p of parts) {
+      if (p.startsWith('.')) {
+        if (name.endsWith(p)) return true;
+      } else if (p.endsWith('/*')) {
+        const prefix = p.slice(0, -1);
+        if (mime.startsWith(prefix)) return true;
+      } else {
+        if (mime === p) return true;
+      }
     }
 
     return false;
-  });
+  };
+
+  return (c: AbstractControl): ValidationErrors | null => {
+    const v = c.value;
+    if (!v) return null;
+    const files: File[] = Array.isArray(v) ? v : [v];
+    const bad = files.find((f) => f && !isOk(f));
+    return bad ? { accept: { accept, bad: bad.name } } : null;
+  };
 }
