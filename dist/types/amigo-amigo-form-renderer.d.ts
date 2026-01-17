@@ -6,9 +6,9 @@ import { Observable } from 'rxjs';
 
 type FormType = 'single' | 'multi' | 'single-sectional';
 type FieldType = 'text' | 'number' | 'email' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'date' | 'file' | 'card' | 'password' | 'info-card' | 'button';
-type OptionsSourceMode = "STATIC" | "API";
-type SelectAuthType = "NONE" | "BEARER";
-type SelectTokenFrom = "LOCAL_STORAGE" | "SESSION_STORAGE" | "CUSTOM_CALLBACK";
+type OptionsSourceMode = 'STATIC' | 'API';
+type SelectAuthType = 'NONE' | 'BEARER';
+type SelectTokenFrom = 'LOCAL_STORAGE' | 'SESSION_STORAGE' | 'CUSTOM_CALLBACK';
 interface SelectOptionsResponseMapping {
     labelKey: string;
     valueKey: string;
@@ -106,7 +106,7 @@ interface FormFieldSchema {
     /** Maximum allowed size per file in MB (composer uses maxSizeMB) */
     maxSizeMB?: number;
     options?: FormFieldOption[];
-    optionDirection?: "horizontal" | "vertical";
+    optionDirection?: 'horizontal' | 'vertical';
     row?: number;
     col?: number;
     colSpan?: number;
@@ -155,17 +155,11 @@ interface FormActionSchema {
     showCancel?: boolean;
     method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     submitApiUrl?: string;
-    /**
-     * Optional:
-     * - auto: JSON unless files exist (recommended)
-     * - json: always JSON (will fail for File objects)
-     * - multipart: always FormData
-     */
+    api?: ApiEndpointConfig;
+    successMessage?: string;
+    errorMessage?: string;
+    triggerValidation?: boolean;
     contentType?: 'auto' | 'json' | 'multipart';
-    /**
-     * Optional: if you want to wrap payload inside a key
-     * Example: payloadKey="data" => { data: <formValue> }
-     */
     payloadKey?: string;
 }
 interface FormStepConfig {
@@ -285,6 +279,8 @@ declare class AmigoFormComponent implements OnChanges {
     formId?: string;
     schema?: FormSchema;
     initialValue?: Record<string, any>;
+    pathVariables: Record<string, any>;
+    queryParams: Record<string, any>;
     /**
      * Emits:
      * - if NO submitApiUrl => raw form value (backward compatible)
@@ -310,7 +306,7 @@ declare class AmigoFormComponent implements OnChanges {
     }>;
     buttonLoading: Record<string, boolean>;
     buttonFeedback: Record<string, {
-        type: "success" | "error";
+        type: 'success' | 'error';
         message: string;
     }>;
     constructor(formService: AmigoFormService, cdr: ChangeDetectorRef, zone: NgZone, apiExec: AmigoApiExecutionService, selectOptions: AmigoSelectOptionsService);
@@ -361,7 +357,7 @@ declare class AmigoFormComponent implements OnChanges {
     private normalizeFormValue;
     onSchemaButtonClick(field: any): void;
     static ɵfac: i0.ɵɵFactoryDeclaration<AmigoFormComponent, never>;
-    static ɵcmp: i0.ɵɵComponentDeclaration<AmigoFormComponent, "amigo-form", never, { "formId": { "alias": "formId"; "required": false; }; "schema": { "alias": "schema"; "required": false; }; "initialValue": { "alias": "initialValue"; "required": false; }; }, { "submitted": "submitted"; "submitFailed": "submitFailed"; "cancelled": "cancelled"; }, never, never, true, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<AmigoFormComponent, "amigo-form", never, { "formId": { "alias": "formId"; "required": false; }; "schema": { "alias": "schema"; "required": false; }; "initialValue": { "alias": "initialValue"; "required": false; }; "pathVariables": { "alias": "pathVariables"; "required": false; }; "queryParams": { "alias": "queryParams"; "required": false; }; }, { "submitted": "submitted"; "submitFailed": "submitFailed"; "cancelled": "cancelled"; }, never, never, true, never>;
 }
 
 declare function buildFormGroup(fields: FormFieldSchema[], initialValue?: Record<string, any>): FormGroup;

@@ -15,64 +15,61 @@ export type FieldType =
   | 'info-card'
   | 'button';
 
-  export type OptionsSourceMode = "STATIC" | "API";
-  export type SelectAuthType = "NONE" | "BEARER";
-  export type SelectTokenFrom =
-    | "LOCAL_STORAGE"
-    | "SESSION_STORAGE"
-    | "CUSTOM_CALLBACK";
+export type OptionsSourceMode = 'STATIC' | 'API';
+export type SelectAuthType = 'NONE' | 'BEARER';
+export type SelectTokenFrom = 'LOCAL_STORAGE' | 'SESSION_STORAGE' | 'CUSTOM_CALLBACK';
 
-  export interface SelectOptionsResponseMapping {
-    labelKey: string; // e.g. "name" or "meta.name"
-    valueKey: string; // e.g. "id"
-    dataPath?: string; // e.g. "data.items"
-  }
+export interface SelectOptionsResponseMapping {
+  labelKey: string; // e.g. "name" or "meta.name"
+  valueKey: string; // e.g. "id"
+  dataPath?: string; // e.g. "data.items"
+}
 
-  export interface SelectOptionsApiConfig {
-    url: string;
-    method: HttpMethod;
-    secured?: boolean;
-    authType?: SelectAuthType;
-    tokenFrom?: SelectTokenFrom;
-    tokenKey?: string;
+export interface SelectOptionsApiConfig {
+  url: string;
+  method: HttpMethod;
+  secured?: boolean;
+  authType?: SelectAuthType;
+  tokenFrom?: SelectTokenFrom;
+  tokenKey?: string;
 
-    responseMapping: SelectOptionsResponseMapping;
-  }
+  responseMapping: SelectOptionsResponseMapping;
+}
 
-  export interface SelectOptionsSourceSchema {
-    mode: OptionsSourceMode;
-    api?: SelectOptionsApiConfig;
-  }
+export interface SelectOptionsSourceSchema {
+  mode: OptionsSourceMode;
+  api?: SelectOptionsApiConfig;
+}
 
-  export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-  export type ButtonStyleVariant = 'primary' | 'secondary' | 'danger';
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+export type ButtonStyleVariant = 'primary' | 'secondary' | 'danger';
 
-  export interface KeyValuePair {
-    key: string;
-    value: string;
-  }
+export interface KeyValuePair {
+  key: string;
+  value: string;
+}
 
-  export interface ApiEndpointConfig {
-    method: HttpMethod;
-    url: string;
-    headers?: KeyValuePair[];
-    queryParams?: KeyValuePair[];
-    /** map request body keys to form values: { "employeeId": "employee.id", "amount": "{{salary}}" } */
-    bodyMapping?: Record<string, string>;
-  }
+export interface ApiEndpointConfig {
+  method: HttpMethod;
+  url: string;
+  headers?: KeyValuePair[];
+  queryParams?: KeyValuePair[];
+  /** map request body keys to form values: { "employeeId": "employee.id", "amount": "{{salary}}" } */
+  bodyMapping?: Record<string, string>;
+}
 
-  export interface ButtonElementSchema {
-    label?: string; // optional override; fallback to field.label
-    styleVariant?: ButtonStyleVariant; // default 'primary'
-    actionType?: 'API_CALL'; // default 'API_CALL'
-    api?: ApiEndpointConfig;
+export interface ButtonElementSchema {
+  label?: string; // optional override; fallback to field.label
+  styleVariant?: ButtonStyleVariant; // default 'primary'
+  actionType?: 'API_CALL'; // default 'API_CALL'
+  api?: ApiEndpointConfig;
 
-    successMessage?: string;
-    errorMessage?: string;
+  successMessage?: string;
+  errorMessage?: string;
 
-    /** default true */
-    triggerValidation?: boolean;
-  }
+  /** default true */
+  triggerValidation?: boolean;
+}
 
 /**
  * Informational card (non-input) that can be placed inside the form layout.
@@ -136,7 +133,7 @@ export interface FormFieldSchema {
   maxSizeMB?: number;
 
   options?: FormFieldOption[];
-  optionDirection?: "horizontal" | "vertical";
+  optionDirection?: 'horizontal' | 'vertical';
   row?: number;
   col?: number;
   colSpan?: number;
@@ -192,22 +189,17 @@ export interface FormActionSchema {
   cancelLabel?: string;
   showCancel?: boolean;
 
-  // Optional fields used by your composer
+  // Legacy simpler config (kept for backward compat)
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   submitApiUrl?: string;
 
-  /**
-   * Optional:
-   * - auto: JSON unless files exist (recommended)
-   * - json: always JSON (will fail for File objects)
-   * - multipart: always FormData
-   */
-  contentType?: 'auto' | 'json' | 'multipart';
+  // New advanced config
+  api?: ApiEndpointConfig;
+  successMessage?: string;
+  errorMessage?: string;
+  triggerValidation?: boolean; // default true
 
-  /**
-   * Optional: if you want to wrap payload inside a key
-   * Example: payloadKey="data" => { data: <formValue> }
-   */
+  contentType?: 'auto' | 'json' | 'multipart';
   payloadKey?: string;
 }
 
