@@ -6,6 +6,8 @@ import { ApiEndpointConfig, HttpMethod, KeyValuePair } from './models';
 
 export interface AmigoApiExecutionContext {
   formValue: Record<string, any>;
+  pathParams?: Record<string, any>;
+  queryParams?: Record<string, any>;
   payloadKey?: string;
   contentType?: 'auto' | 'json' | 'multipart';
   skipAuth?: boolean;
@@ -13,11 +15,15 @@ export interface AmigoApiExecutionContext {
 
 @Injectable({ providedIn: 'root' })
 export class AmigoApiExecutionService {
-  constructor(private http: HttpClient, @Optional() @Inject(AMIGO_FORM_CONFIG) private cfg: AmigoFormConfig | null) {}
+  constructor(
+    private http: HttpClient,
+    @Optional() @Inject(AMIGO_FORM_CONFIG) private cfg: AmigoFormConfig | null,
+  ) {}
 
   execute(endpoint: ApiEndpointConfig, ctx: AmigoApiExecutionContext): Observable<any> {
     const method = ((endpoint?.method || 'POST') as string).toUpperCase() as HttpMethod;
-    const url = this.resolveUrl(endpoint?.url || '');
+    const baseUrl = this.resolveUrl(endpoint?.url || '');
+    const url = this.applyPathParams(baseUrl, ctx.pathParams);
 
     let headers = new HttpHeaders();
     if (ctx.skipAuth) headers = headers.set('X-Amigo-Skip-Auth', '1');
@@ -25,7 +31,8 @@ export class AmigoApiExecutionService {
     for (const h of endpoint?.headers || []) {
       if (!h?.key) continue;
       const v = this.resolveString(h.value, ctx.formValue);
-      if (v !== undefined && v !== null && String(v).length) headers = headers.set(h.key, String(v));
+      if (v !== undefined && v !== null && String(v).length)
+        headers = headers.set(h.key, String(v));
     }
 
     let params = new HttpParams();
@@ -36,6 +43,8 @@ export class AmigoApiExecutionService {
       params = params.set(q.key, String(v));
     }
 
+    params = this.mergeParamsOverride(params, ctx.queryParams);
+
     const mapped = this.buildMappedBody(endpoint?.bodyMapping, ctx.formValue);
     const payload = ctx.payloadKey ? { [ctx.payloadKey]: mapped } : mapped;
 
@@ -45,7 +54,8 @@ export class AmigoApiExecutionService {
     }
 
     const contentType = ctx.contentType || 'auto';
-    const useMultipart = contentType === 'multipart' || (contentType === 'auto' && this.hasFile(payload));
+    const useMultipart =
+      contentType === 'multipart' || (contentType === 'auto' && this.hasFile(payload));
 
     if (useMultipart) {
       const fd = this.toFormData(payload);
@@ -111,7 +121,10 @@ export class AmigoApiExecutionService {
   }
 
   private getByPath(obj: any, path: string): any {
-    const parts = (path || '').split('.').map((p) => p.trim()).filter(Boolean);
+    const parts = (path || '')
+      .split('.')
+      .map((p) => p.trim())
+      .filter(Boolean);
     let cur = obj;
     for (const p of parts) {
       if (cur == null) return undefined;
@@ -183,5 +196,45 @@ export class AmigoApiExecutionService {
     }
 
     fd.append(keyPrefix, String(value));
+  }
+
+  private applyPathParams(url: string, params?: Record<string, any>): string {
+    if (!params || !url) return url;
+
+    const has = (k: string) => Object.prototype.hasOwnProperty.call(params, k);
+    const enc = (v: any) => encodeURIComponent(v === undefined || v === null ? '' : String(v));
+
+    let out = url;
+
+    // {id} style
+    out = out.replace(/\{([^}]+)\}/g, (m, k) => (has(k) ? enc(params[k]) : m));
+
+    // :id style
+    out = out.replace(/:([A-Za-z0-9_]+)/g, (m, k) => (has(k) ? enc(params[k]) : m));
+
+    return out;
+  }
+
+  private mergeParamsOverride(params: HttpParams, obj?: Record<string, any>): HttpParams {
+    if (!obj || typeof obj !== 'object') return params;
+
+    let p = params;
+    for (const [k, v] of Object.entries(obj)) {
+      if (v === undefined || v === null) continue;
+
+      p = p.delete(k);
+
+      if (Array.isArray(v)) {
+        for (const item of v) {
+          if (item === undefined || item === null) continue;
+          p = p.append(k, this.scalarToString(item));
+        }
+        continue;
+      }
+
+      p = p.set(k, this.scalarToString(v));
+    }
+
+    return p;
   }
 }

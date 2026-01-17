@@ -20,11 +20,11 @@ export class AmigoFormComponent implements OnChanges {
   @Input() formId?: string;
   @Input() schema?: FormSchema;
   @Input() initialValue?: Record<string, any>;
+  @Input() submitPathParams?: Record<string, any>;
+  @Input() submitQueryParams?: Record<string, any>;
 
-  
   @Output() submitted = new EventEmitter<any>();
 
-  
   @Output() submitFailed = new EventEmitter<any>();
 
   @Output() cancelled = new EventEmitter<void>();
@@ -287,7 +287,9 @@ export class AmigoFormComponent implements OnChanges {
       const step = this.orderedSteps[this.activeStepIndex];
       const ids = new Set(step?.fieldIds ?? []);
       if (!ids.size) return [];
-      return (s.fields ?? []).filter((f: any) => ids.has(f.id)).filter((f: any) => this.isFieldVisible(f));
+      return (s.fields ?? [])
+        .filter((f: any) => ids.has(f.id))
+        .filter((f: any) => this.isFieldVisible(f));
     }
 
     return (s.fields ?? []).filter((f: any) => this.isFieldVisible(f));
@@ -308,7 +310,9 @@ export class AmigoFormComponent implements OnChanges {
     if (!s) return [];
     const section = (s.sections ?? []).find((x: any) => x.id === sectionId);
     const ids = new Set(section?.fieldIds ?? []);
-    return (s.fields ?? []).filter((f: any) => ids.has(f.id)).filter((f: any) => this.isFieldVisible(f));
+    return (s.fields ?? [])
+      .filter((f: any) => ids.has(f.id))
+      .filter((f: any) => this.isFieldVisible(f));
   }
 
   setActiveStep(i: number) {
@@ -340,28 +344,33 @@ export class AmigoFormComponent implements OnChanges {
     this.submitError = null;
     this.submitFeedback = undefined;
 
-    const action: FormActionSchema | undefined = this.resolvedSchema?.actions;
+    const action: any = this.resolvedSchema?.actions ?? {};
     const submitCfg = this.resolveSubmitApi();
 
-    const triggerValidation = submitCfg?.triggerValidation !== false;
+    const triggerValidation = submitCfg ? submitCfg.triggerValidation !== false : true;
+
     if (triggerValidation) {
       this.form.markAllAsTouched();
       if (this.form.invalid) return;
     }
 
-    const payload = this.normalizePayload(this.form.value);
+    const rawPayload = this.form.value;
+    const payload = this.normalizePayload(rawPayload);
 
-    if (!submitCfg) {
+    if (!submitCfg?.api?.url) {
       this.submitted.emit(payload);
       return;
     }
 
     this.isSubmitting = true;
+
     this.apiExec
       .execute(submitCfg.api, {
         formValue: payload,
-        payloadKey: action?.payloadKey || undefined,
-        contentType: (action?.contentType as any) || 'auto',
+        pathParams: this.submitPathParams,
+        queryParams: this.submitQueryParams,
+        payloadKey: action.payloadKey,
+        contentType: action.contentType,
       })
       .pipe(finalize(() => (this.isSubmitting = false)))
       .subscribe({
@@ -370,16 +379,24 @@ export class AmigoFormComponent implements OnChanges {
             type: 'success',
             message: submitCfg.successMessage || 'Submitted successfully.',
           };
-          this.submitted.emit({ payload, response: res, action });
+
+          this.submitted.emit({
+            payload,
+            response: res,
+            action: this.resolvedSchema?.actions,
+          });
         },
         error: (err) => {
-          const msg =
-            submitCfg.errorMessage ||
-            err?.error?.message ||
-            err?.message ||
-            'Failed to submit. Please try again.';
-          this.submitError = msg;
-          this.submitFeedback = { type: 'error', message: msg };
+          this.submitFeedback = {
+            type: 'error',
+            message:
+              submitCfg.errorMessage ||
+              err?.error?.message ||
+              err?.message ||
+              'Failed to submit. Please try again.',
+          };
+
+          this.submitError = this.submitFeedback.message;
           this.submitFailed.emit(err);
         },
       });
@@ -562,7 +579,6 @@ export class AmigoFormComponent implements OnChanges {
     }
     return normalized;
   }
-
 
   private setupVisibility(): void {
     this.visibilitySub?.unsubscribe();

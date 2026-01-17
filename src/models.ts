@@ -84,6 +84,7 @@ export interface ApiEndpointConfig {
   headers?: KeyValuePair[];
   queryParams?: KeyValuePair[];
   bodyMapping?: Record<string, string>;
+  pathParams?: KeyValuePair[];
 }
 
 export interface ActionApiConfig {
