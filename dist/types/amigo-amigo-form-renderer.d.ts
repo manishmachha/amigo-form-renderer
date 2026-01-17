@@ -58,6 +58,7 @@ interface ApiEndpointConfig {
     headers?: KeyValuePair[];
     queryParams?: KeyValuePair[];
     bodyMapping?: Record<string, string>;
+    pathParams?: KeyValuePair[];
 }
 interface ActionApiConfig {
     triggerValidation?: boolean;
@@ -196,6 +197,8 @@ declare function provideAmigoForm(config: AmigoFormConfig, tokenProvider?: Amigo
 
 interface AmigoApiExecutionContext {
     formValue: Record<string, any>;
+    pathParams?: Record<string, any>;
+    queryParams?: Record<string, any>;
     payloadKey?: string;
     contentType?: 'auto' | 'json' | 'multipart';
     skipAuth?: boolean;
@@ -215,6 +218,8 @@ declare class AmigoApiExecutionService {
     private hasFile;
     private toFormData;
     private appendFormData;
+    private applyPathParams;
+    private mergeParamsOverride;
     static ɵfac: i0.ɵɵFactoryDeclaration<AmigoApiExecutionService, [null, { optional: true; }]>;
     static ɵprov: i0.ɵɵInjectableDeclaration<AmigoApiExecutionService>;
 }
@@ -255,6 +260,8 @@ declare class AmigoFormComponent implements OnChanges {
     formId?: string;
     schema?: FormSchema;
     initialValue?: Record<string, any>;
+    submitPathParams?: Record<string, any>;
+    submitQueryParams?: Record<string, any>;
     submitted: EventEmitter<any>;
     submitFailed: EventEmitter<any>;
     cancelled: EventEmitter<void>;
@@ -341,7 +348,7 @@ declare class AmigoFormComponent implements OnChanges {
     onSchemaButtonClick(field: any): void;
     private resolveSubmitApi;
     static ɵfac: i0.ɵɵFactoryDeclaration<AmigoFormComponent, never>;
-    static ɵcmp: i0.ɵɵComponentDeclaration<AmigoFormComponent, "amigo-form", never, { "formId": { "alias": "formId"; "required": false; }; "schema": { "alias": "schema"; "required": false; }; "initialValue": { "alias": "initialValue"; "required": false; }; }, { "submitted": "submitted"; "submitFailed": "submitFailed"; "cancelled": "cancelled"; }, never, never, true, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<AmigoFormComponent, "amigo-form", never, { "formId": { "alias": "formId"; "required": false; }; "schema": { "alias": "schema"; "required": false; }; "initialValue": { "alias": "initialValue"; "required": false; }; "submitPathParams": { "alias": "submitPathParams"; "required": false; }; "submitQueryParams": { "alias": "submitQueryParams"; "required": false; }; }, { "submitted": "submitted"; "submitFailed": "submitFailed"; "cancelled": "cancelled"; }, never, never, true, never>;
 }
 
 declare function buildFormGroup(fields: FormFieldSchema[], initialValue?: Record<string, any>): FormGroup;
