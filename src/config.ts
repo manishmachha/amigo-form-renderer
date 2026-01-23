@@ -5,6 +5,7 @@ import { AMIGO_AUTH_TOKEN_PROVIDER, AmigoAuthTokenProvider } from './auth-token.
 
 export interface AmigoFormConfig {
   apiBaseUrl: string;
+  submitActionBaseUrl: string;
   endpoints?: {
     getFormById?: (id: string) => string;
   };

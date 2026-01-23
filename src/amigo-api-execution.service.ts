@@ -70,7 +70,7 @@ export class AmigoApiExecutionService {
     const u = (url || '').trim();
     if (!u) return u;
     if (/^https?:\/\//i.test(u)) return u;
-    const base = (this.cfg?.apiBaseUrl || '').replace(/\/+$/, '');
+    const base = (this.cfg?.submitActionBaseUrl || '').replace(/\/+$/, '');
     if (!base) return u.startsWith('/') ? u : '/' + u;
     if (u.startsWith('/')) return base + u;
     return base + '/' + u;
