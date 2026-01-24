@@ -188,6 +188,7 @@ declare const AMIGO_AUTH_TOKEN_PROVIDER: InjectionToken<AmigoAuthTokenProvider>;
 
 interface AmigoFormConfig {
     apiBaseUrl: string;
+    submitActionBaseUrl: string;
     endpoints?: {
         getFormById?: (id: string) => string;
     };
