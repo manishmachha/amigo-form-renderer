@@ -5,9 +5,9 @@
   "license": "MIT",
   "private": false,
   "peerDependencies": {
-    "@angular/common": ">=21 <22",
-    "@angular/core": ">=21 <22",
-    "@angular/forms": ">=21 <22",
+    "@angular/common": "^20.0.0",
+    "@angular/core": "^20.0.0",
+    "@angular/forms": "^20.0.0",
     "bootstrap-icons": "^1.13.1",
     "rxjs": "^7.8.0"
   },
@@ -20,10 +20,10 @@
     "dist"
   ],
   "module": "fesm2022/amigo-amigo-form-renderer.mjs",
-  "typings": "types/amigo-amigo-form-renderer.d.ts",
+  "typings": "index.d.ts",
   "exports": {
     ".": {
-      "types": "./types/amigo-amigo-form-renderer.d.ts",
+      "types": "./index.d.ts",
       "default": "./fesm2022/amigo-amigo-form-renderer.mjs"
     },
     "./package.json": {
