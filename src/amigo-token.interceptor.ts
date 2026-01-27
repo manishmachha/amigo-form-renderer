@@ -7,8 +7,10 @@ import { AMIGO_FORM_CONFIG, AmigoFormConfig } from './config';
 @Injectable()
 export class AmigoTokenInterceptor implements HttpInterceptor {
   constructor(
-    @Optional() @Inject(AMIGO_AUTH_TOKEN_PROVIDER) private tokenProvider: AmigoAuthTokenProvider | null,
-    @Optional() @Inject(AMIGO_FORM_CONFIG) private cfg: AmigoFormConfig | null
+    @Optional()
+    @Inject(AMIGO_AUTH_TOKEN_PROVIDER)
+    private tokenProvider: AmigoAuthTokenProvider | null,
+    @Optional() @Inject(AMIGO_FORM_CONFIG) private cfg: AmigoFormConfig | null,
   ) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
@@ -22,9 +24,13 @@ export class AmigoTokenInterceptor implements HttpInterceptor {
     const token = this.tokenProvider?.();
     if (!token) return next.handle(req);
 
-    if (this.cfg?.apiBaseUrl) {
-      const base = this.cfg.apiBaseUrl.replace(/\/+$/, '');
-      const isAmigoCall = req.url.startsWith(base) || req.url.startsWith('/');
+    if (this.cfg?.apiBaseUrl || this.cfg?.selectOptionsBaseUrl) {
+      const bases = [this.cfg.apiBaseUrl, this.cfg.selectOptionsBaseUrl]
+        .filter((b) => !!b)
+        .map((b) => b!.replace(/\/+$/, ''));
+
+      const isAmigoCall = req.url.startsWith('/') || bases.some((b) => req.url.startsWith(b));
+
       if (!isAmigoCall) return next.handle(req);
     }
 

@@ -207,7 +207,10 @@ export class AmigoApiExecutionService {
     let out = url;
 
     // {id} style
-    out = out.replace(/\{([^}]+)\}/g, (m, k) => (has(k) ? enc(params[k]) : m));
+    out = out.replace(/\{([^}]+)\}/g, (m, k) => {
+      const key = k.trim();
+      return has(key) ? enc(params[key]) : m;
+    });
 
     // :id style
     out = out.replace(/:([A-Za-z0-9_]+)/g, (m, k) => (has(k) ? enc(params[k]) : m));

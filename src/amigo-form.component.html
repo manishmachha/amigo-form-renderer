@@ -1,16 +1,16 @@
 <div class="w-full h-full flex flex-col mb-6 overflow-auto">
 
-    
+
     <div *ngIf="isLoading" class="flex items-center justify-center p-6 text-sm text-gray-600">
         Loading form…
     </div>
 
-    
+
     <div *ngIf="loadError" class="p-3 rounded border border-red-200 bg-red-50 text-red-700 text-sm">
         {{ loadError }}
     </div>
 
-    
+
     <div *ngIf="!isLoading && !loadError && (!resolvedSchema?.fields || resolvedSchema.fields.length === 0)"
         class="flex justify-center items-center h-100 border border-dotted border-gray-300 rounded-xl bg-white">
         <h2 class="text-sm text-gray-600">No fields found for this form schema.</h2>
@@ -24,10 +24,10 @@
             {{ resolvedSchema.description }}
         </p>
 
-        
+
         <div *ngIf="isMultiStep" class="w-full mb-6 flex flex-col items-center my-3">
 
-            
+
             <div class="w-full h-1 bg-gray-200 rounded-full relative mb-6">
                 <div class="h-1 rounded-full transition-all duration-300" [ngStyle]="{
                 width: ((activeStepIndex + 1) / totalSteps) * 100 + '%',
@@ -36,7 +36,7 @@
                 </div>
             </div>
 
-            
+
             <div class="flex items-center justify-center gap-10">
                 <div *ngFor="let step of orderedSteps; let i = index" class="flex flex-col items-center cursor-pointer"
                     (click)="setActiveStep(i)">
@@ -56,12 +56,12 @@
                       }
                 ">
 
-                        
+
                         <ng-container *ngIf="!step.icon">
                             {{ i + 1 }}
                         </ng-container>
 
-                        
+
                         <ng-container *ngIf="step.icon">
                             <i [class]="step.icon" class="text-lg" [ngStyle]="
                       i === activeStepIndex
@@ -85,7 +85,7 @@
         </div>
 
 
-        
+
         <div *ngIf="isSectional; else normalOrMulti">
             <div *ngFor="let sec of orderedSections" class="mb-6">
                 <div class="flex items-center justify-between mb-2 border-b border-gray-200 pb-2">
@@ -111,7 +111,7 @@
             </div>
         </div>
 
-        
+
         <ng-template #normalOrMulti>
             <div class="grid" [ngStyle]="{
           'grid-template-columns': 'repeat(' + (resolvedSchema.layout?.columns || 1) + ', minmax(0, 1fr))',
@@ -126,7 +126,7 @@
             </div>
         </ng-template>
 
-        
+
         <div *ngIf="isMultiStep" class="mt-4 flex items-center justify-between text-xs">
             <button type="button" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
                 (click)="prevStep()" [disabled]="activeStepIndex === 0">
@@ -139,19 +139,18 @@
             </button>
         </div>
 
-        <div *ngIf="submitFeedback" class="mt-3 p-3 rounded border text-sm"
-            [ngClass]="submitFeedback.type === 'success'
+        <div *ngIf="submitFeedback" class="mt-3 p-3 rounded border text-sm" [ngClass]="submitFeedback.type === 'success'
               ? 'border-green-200 bg-green-50 text-green-700'
               : 'border-red-200 bg-red-50 text-red-700'">
             {{ submitFeedback.message }}
         </div>
 
-        
+
         <div *ngIf="submitError" class="mt-3 p-3 rounded border border-red-200 bg-red-50 text-red-700 text-sm">
             {{ submitError }}
         </div>
 
-        
+
         <div class="mt-4 flex items-center gap-2">
             <button type="submit" (mouseenter)="isSubmitHovered = true" (mouseleave)="isSubmitHovered = false"
                 [ngStyle]="submitButtonStyle" [disabled]="isSubmitting"
@@ -167,18 +166,18 @@
         </div>
 
 
-        
+
         <ng-template #fieldRenderer let-field>
-            
+
             <ng-container *ngIf="isCard(field); else notCard">
                 <div [ngStyle]="cardStyle(field)" class="w-full flex items-start gap-3">
-                    
+
                     <div class="shrink-0 mt-0.5 text-lg leading-none" [ngStyle]="cardIconStyle(field)">
                         <i *ngIf="isBootstrapIcon(cardIcon(field))" [class]="cardIcon(field)"></i>
                         <span *ngIf="!isBootstrapIcon(cardIcon(field))">{{ cardIcon(field) }}</span>
                     </div>
 
-                    
+
                     <div class="min-w-0">
                         <div class="text-sm font-semibold leading-tight">
                             {{ cardTitle(field) }}
@@ -193,10 +192,11 @@
 
             <ng-template #notCard>
 
-                
+
                 <ng-container *ngIf="isButton(field); else inputField">
                     <div class="w-full">
-                        <button type="button" (click)="onSchemaButtonClick(field)" [disabled]="buttonLoading[field.id]"
+                        <button type="button" (click)="onSchemaButtonClick(field)"
+                            [disabled]="buttonLoading[field.id] ?? false"
                             class="w-full transition disabled:opacity-60 disabled:cursor-not-allowed" [ngClass]="[
                         (resolvedSchema?.style?.inputClass || 'w-full border border-gray-300 rounded px-2 py-1 text-sm'),
                         (field.button?.styleVariant || 'primary') === 'primary'
@@ -210,8 +210,9 @@
                                 <span *ngIf="buttonLoading[field.id]" class="text-xs opacity-80">…</span>
                             </span>
                         </button>
-                
-                        <div *ngIf="buttonFeedback[field.id]" class="mt-2 text-xs rounded-lg px-3 py-2 border" [ngClass]="buttonFeedback[field.id].type === 'success'
+
+                        <div *ngIf="buttonFeedback[field.id]" class="mt-2 text-xs rounded-lg px-3 py-2 border"
+                            [ngClass]="buttonFeedback[field.id].type === 'success'
                         ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                         : 'bg-rose-50 border-rose-200 text-rose-800'">
                             {{ buttonFeedback[field.id].message }}
@@ -220,7 +221,7 @@
                 </ng-container>
 
 
-                
+
                 <ng-template #inputField>
                     <label [ngClass]="resolvedSchema?.style?.labelClass || 'block text-sm font-medium mb-1'">
                         {{ field.label }}
@@ -231,7 +232,7 @@
 
                     <ng-container [ngSwitch]="field.type">
 
-                        
+
                         <ng-container *ngSwitchCase="'text'">
                             <input type="text" [placeholder]="field.placeholder" [formControlName]="controlKey(field)"
                                 [ngClass]="resolvedSchema?.style?.inputClass || 'w-full border border-gray-300 rounded px-2 py-1 text-sm'" />
@@ -249,7 +250,7 @@
                             </div>
                         </ng-container>
 
-                        
+
                         <ng-container *ngSwitchCase="'password'">
                             <input type="password" [placeholder]="field.placeholder"
                                 [formControlName]="controlKey(field)"
@@ -268,7 +269,7 @@
                             </div>
                         </ng-container>
 
-                        
+
                         <ng-container *ngSwitchCase="'number'">
                             <input type="number" [placeholder]="field.placeholder" [formControlName]="controlKey(field)"
                                 [ngClass]="resolvedSchema?.style?.inputClass || 'w-full border border-gray-300 rounded px-2 py-1 text-sm'" />
@@ -282,7 +283,7 @@
                             </div>
                         </ng-container>
 
-                        
+
                         <ng-container *ngSwitchCase="'email'">
                             <input type="email" [placeholder]="field.placeholder" [formControlName]="controlKey(field)"
                                 [ngClass]="resolvedSchema?.style?.inputClass || 'w-full border border-gray-300 rounded px-2 py-1 text-sm'" />
@@ -301,7 +302,7 @@
                             </div>
                         </ng-container>
 
-                        
+
                         <ng-container *ngSwitchCase="'textarea'">
                             <textarea [placeholder]="field.placeholder" [formControlName]="controlKey(field)" rows="4"
                                 [ngClass]="resolvedSchema?.style?.inputClass || 'w-full border border-gray-300 rounded px-2 py-1 text-sm'"></textarea>
@@ -319,43 +320,45 @@
                             </div>
                         </ng-container>
 
-                        
+
                         <ng-container *ngSwitchCase="'select'">
-                            <select [formControlName]="controlKey(field)" [disabled]="selectState[field.id]?.loading"
+                            <select [formControlName]="controlKey(field)"
+                                [disabled]="selectState[field.id]?.loading ?? false"
                                 [ngClass]="resolvedSchema?.style?.inputClass || 'w-full border border-gray-300 rounded px-2 py-1 text-sm'">
                                 <option value="">Select an option</option>
-                        
+
                                 <ng-container *ngFor="let opt of (field.optionsSource?.mode === 'API'
                               ? (selectState[field.id]?.options || [])
                               : (field.options || []))">
                                     <option [value]="opt.value">{{ opt.label }}</option>
                                 </ng-container>
                             </select>
-                        
+
                             <div *ngIf="field.optionsSource?.mode === 'API' && selectState[field.id]?.loading"
                                 class="mt-1 text-[11px] text-slate-500">
                                 Loading options…
                             </div>
-                        
+
                             <div *ngIf="field.optionsSource?.mode === 'API' && selectState[field.id]?.error"
                                 class="mt-1 text-[11px] text-rose-600">
                                 {{ selectState[field.id]?.error }}
                             </div>
-                        
+
                             <div *ngIf="field.optionsSource?.mode === 'API'
                                       && !selectState[field.id]?.loading
                                       && !selectState[field.id]?.error
-                                      && (selectState[field.id]?.options?.length || 0) === 0" class="mt-1 text-[11px] text-slate-500">
+                                      && (selectState[field.id]?.options?.length || 0) === 0"
+                                class="mt-1 text-[11px] text-slate-500">
                                 No options available.
                             </div>
-                        
+
                             <div *ngIf="showError(field)" class="mt-1 text-[11px] text-red-600">
                                 <div *ngIf="ctrl(field)?.errors?.['required']">Please select an option.</div>
                             </div>
                         </ng-container>
 
 
-                        
+
                         <ng-container *ngSwitchCase="'checkbox'">
                             <div class="flex items-center gap-2">
                                 <input type="checkbox" [formControlName]="controlKey(field)" />
@@ -367,7 +370,7 @@
                             </div>
                         </ng-container>
 
-                        
+
                         <ng-container *ngSwitchCase="'radio'">
                             <div
                                 [ngClass]="field.optionDirection === 'horizontal' ? 'flex flex-row gap-4 items-center' : 'flex flex-col gap-1'">
@@ -383,7 +386,7 @@
                             </div>
                         </ng-container>
 
-                        
+
                         <ng-container *ngSwitchCase="'date'">
                             <input type="date" [formControlName]="controlKey(field)"
                                 [ngClass]="resolvedSchema?.style?.inputClass || 'w-full border border-gray-300 rounded px-2 py-1 text-sm'" />
@@ -399,7 +402,7 @@
                             </div>
                         </ng-container>
 
-                        
+
                         <ng-container *ngSwitchCase="'file'">
                             <div class="flex flex-col gap-2">
                                 <div class="flex items-center gap-2">
@@ -444,7 +447,7 @@
                             </div>
                         </ng-container>
 
-                        
+
                         <ng-container *ngSwitchDefault>
                             <input type="text" [placeholder]="field.placeholder" [formControlName]="controlKey(field)"
                                 [ngClass]="resolvedSchema?.style?.inputClass || 'w-full border border-gray-300 rounded px-2 py-1 text-sm'" />

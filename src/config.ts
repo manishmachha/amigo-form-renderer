@@ -6,6 +6,7 @@ import { AMIGO_AUTH_TOKEN_PROVIDER, AmigoAuthTokenProvider } from './auth-token.
 export interface AmigoFormConfig {
   apiBaseUrl: string;
   submitActionBaseUrl: string;
+  selectOptionsBaseUrl?: string;
   endpoints?: {
     getFormById?: (id: string) => string;
   };
@@ -15,7 +16,7 @@ export const AMIGO_FORM_CONFIG = new InjectionToken<AmigoFormConfig>('AMIGO_FORM
 
 export function provideAmigoForm(
   config: AmigoFormConfig,
-  tokenProvider?: AmigoAuthTokenProvider
+  tokenProvider?: AmigoAuthTokenProvider,
 ): Provider[] {
   const providers: Provider[] = [
     { provide: AMIGO_FORM_CONFIG, useValue: config },

@@ -13,7 +13,9 @@ export class AmigoSelectOptionsService {
   constructor(
     private http: HttpClient,
     @Optional() @Inject(AMIGO_FORM_CONFIG) private cfg: AmigoFormConfig | null,
-    @Optional() @Inject(AMIGO_AUTH_TOKEN_PROVIDER) private tokenProvider: AmigoAuthTokenProvider | null
+    @Optional()
+    @Inject(AMIGO_AUTH_TOKEN_PROVIDER)
+    private tokenProvider: AmigoAuthTokenProvider | null,
   ) {}
 
   load(field: FormFieldSchema, _formValue?: Record<string, any>): Observable<FormFieldOption[]> {
@@ -43,7 +45,7 @@ export class AmigoSelectOptionsService {
       catchError((err) => {
         const msg = err?.error?.message || err?.message || 'Failed to load options.';
         return throwError(() => new Error(msg));
-      })
+      }),
     );
   }
 
@@ -61,7 +63,10 @@ export class AmigoSelectOptionsService {
     const u = (url || '').trim();
     if (!u) return u;
     if (/^https?:\/\//i.test(u)) return u;
-    const base = (this.cfg?.apiBaseUrl || '').replace(/\/+$/, '');
+
+    // Use selectOptionsBaseUrl if available, otherwise fall back into apiBaseUrl
+    const base = (this.cfg?.selectOptionsBaseUrl || this.cfg?.apiBaseUrl || '').replace(/\/+$/, '');
+
     if (!base) return u.startsWith('/') ? u : '/' + u;
     if (u.startsWith('/')) return base + u;
     return base + '/' + u;
