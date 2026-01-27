@@ -22,20 +22,14 @@
   },
   "devDependencies": {
     "@angular/compiler-cli": "^20.0.0",
+    "bootstrap-icons": "^1.13.1",
     "ng-packagr": "^20.0.0",
-    "typescript": "~5.9.2",
-    "bootstrap-icons": "^1.13.1"
+    "typescript": "~5.9.2"
   },
   "files": [
     "dist"
   ],
   "module": "dist/fesm2022/amigo-amigo-form-renderer.mjs",
-  "typings": "dist/types/amigo-amigo-form-renderer.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/types/amigo-amigo-form-renderer.d.ts",
-      "default": "./dist/fesm2022/amigo-amigo-form-renderer.mjs"
-    }
-  },
+  "typings": "dist/index.d.ts",
   "sideEffects": false
 }
