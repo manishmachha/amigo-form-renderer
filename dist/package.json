@@ -19,18 +19,18 @@
   "files": [
     "dist"
   ],
-  "module": "fesm2022/amigo-amigo-form-renderer.mjs",
-  "typings": "types/amigo-amigo-form-renderer.d.ts",
-  "sideEffects": false,
   "exports": {
-    "./package.json": {
-      "default": "./package.json"
-    },
     ".": {
       "types": "./types/amigo-amigo-form-renderer.d.ts",
       "default": "./fesm2022/amigo-amigo-form-renderer.mjs"
+    },
+    "./package.json": {
+      "default": "./package.json"
     }
   },
+  "module": "fesm2022/amigo-amigo-form-renderer.mjs",
+  "typings": "types/amigo-amigo-form-renderer.d.ts",
+  "sideEffects": false,
   "dependencies": {
     "tslib": "^2.3.0"
   }

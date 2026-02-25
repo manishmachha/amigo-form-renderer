@@ -28,7 +28,13 @@
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": {
+      "types": "./dist/types/amigo-amigo-form-renderer.d.ts",
+      "default": "./dist/fesm2022/amigo-amigo-form-renderer.mjs"
+    }
+  },
   "module": "dist/fesm2022/amigo-amigo-form-renderer.mjs",
-  "typings": "dist/index.d.ts",
+  "typings": "dist/types/amigo-amigo-form-renderer.d.ts",
   "sideEffects": false
 }
