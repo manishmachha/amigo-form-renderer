@@ -808,11 +808,16 @@ class AmigoFormComponent {
         return this.resolvedSchema?.formType === "multi" && this.totalSteps > 0;
     }
     get visibleFields() {
+        return this.fieldsForStep(this.activeStepIndex);
+    }
+    fieldsForStep(index) {
         const s = this.resolvedSchema;
         if (!s)
             return [];
         if (s.formType === "multi" && this.totalSteps > 0) {
-            const step = this.orderedSteps[this.activeStepIndex];
+            if (index < 0 || index >= this.totalSteps)
+                return [];
+            const step = this.orderedSteps[index];
             const ids = new Set(step?.fieldIds ?? []);
             if (!ids.size)
                 return [];
@@ -848,10 +853,15 @@ class AmigoFormComponent {
         if (i === this.activeStepIndex)
             return;
         if (i > this.activeStepIndex) {
-            const current = this.visibleFields;
-            this.touchFields(current);
-            if (this.hasErrors(current))
-                return;
+            // Validate all steps from 0 up to i-1
+            for (let stepIdx = 0; stepIdx < i; stepIdx++) {
+                const fields = this.fieldsForStep(stepIdx);
+                this.touchFields(fields);
+                if (this.hasErrors(fields)) {
+                    this.activeStepIndex = stepIdx;
+                    return;
+                }
+            }
         }
         this.activeStepIndex = i;
     }

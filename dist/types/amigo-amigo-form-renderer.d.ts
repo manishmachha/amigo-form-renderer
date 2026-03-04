@@ -313,6 +313,7 @@ declare class AmigoFormComponent implements OnChanges {
     get totalSteps(): number;
     get isMultiStep(): boolean;
     get visibleFields(): FormFieldSchema[];
+    fieldsForStep(index: number): FormFieldSchema[];
     get orderedSections(): any[];
     get isSectional(): boolean;
     fieldsForSection(sectionId: string): FormFieldSchema[];
