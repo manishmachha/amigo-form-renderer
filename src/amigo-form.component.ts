@@ -7,23 +7,33 @@ import {
   OnChanges,
   Output,
   SimpleChanges,
-} from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormGroup, AbstractControl } from '@angular/forms';
-import { Subscription } from 'rxjs';
-import { finalize } from 'rxjs/operators';
+} from "@angular/core";
+import { CommonModule } from "@angular/common";
+import {
+  ReactiveFormsModule,
+  FormGroup,
+  AbstractControl,
+} from "@angular/forms";
+import { Subscription } from "rxjs";
+import { finalize } from "rxjs/operators";
 
-import { FormSchema, FormFieldSchema, FormType, FormActionSchema, ActionApiConfig } from './models';
-import { AmigoFormService } from './amigo-form.service';
-import { buildFormGroup, normalizeAccept } from './form-group.builder';
-import { AmigoApiExecutionService } from './amigo-api-execution.service';
-import { AmigoSelectOptionsService } from './amigo-select-options.service';
+import {
+  FormSchema,
+  FormFieldSchema,
+  FormType,
+  FormActionSchema,
+  ActionApiConfig,
+} from "./models";
+import { AmigoFormService } from "./amigo-form.service";
+import { buildFormGroup, normalizeAccept } from "./form-group.builder";
+import { AmigoApiExecutionService } from "./amigo-api-execution.service";
+import { AmigoSelectOptionsService } from "./amigo-select-options.service";
 @Component({
-  selector: 'amigo-form',
+  selector: "amigo-form",
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './amigo-form.component.html',
-  styleUrl: './amigo-form.component.css',
+  templateUrl: "./amigo-form.component.html",
+  styleUrl: "./amigo-form.component.css",
 })
 export class AmigoFormComponent implements OnChanges {
   @Input() formId?: string;
@@ -42,19 +52,24 @@ export class AmigoFormComponent implements OnChanges {
   loadError: string | null = null;
 
   isSubmitting = false;
-  submitError: string | null = null;
 
   resolvedSchema: any | null = null;
   form: FormGroup | null = null;
 
   activeStepIndex = 0;
   submitLoading = false;
-  submitFeedback?: { type: 'success' | 'error'; message: string };
+  submitFeedback?: { type: "success" | "error"; message: string };
   isSubmitHovered = false;
   isCancelHovered = false;
-  selectState: Record<string, { loading: boolean; error?: string; options: any[] }> = {};
+  selectState: Record<
+    string,
+    { loading: boolean; error?: string; options: any[] }
+  > = {};
   buttonLoading: Record<string, boolean> = {};
-  buttonFeedback: Record<string, { type: 'success' | 'error'; message: string }> = {};
+  buttonFeedback: Record<
+    string,
+    { type: "success" | "error"; message: string }
+  > = {};
 
   private visibilitySub?: Subscription;
   private visibilityState: Record<string, boolean> = {};
@@ -69,11 +84,14 @@ export class AmigoFormComponent implements OnChanges {
   ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['schema'] || changes['formId']) {
+    if (changes["schema"] || changes["formId"]) {
       this.init();
     }
-    if (changes['initialValue'] && this.resolvedSchema) {
-      this.form = buildFormGroup(this.resolvedSchema!.fields, this.initialValue);
+    if (changes["initialValue"] && this.resolvedSchema) {
+      this.form = buildFormGroup(
+        this.resolvedSchema!.fields,
+        this.initialValue,
+      );
     }
   }
 
@@ -88,7 +106,7 @@ export class AmigoFormComponent implements OnChanges {
     if (!this.formId) {
       this.resolvedSchema = null;
       this.form = null;
-      this.loadError = 'No schema or formId provided.';
+      this.loadError = "No schema or formId provided.";
       this.cdr.detectChanges();
       return;
     }
@@ -107,7 +125,7 @@ export class AmigoFormComponent implements OnChanges {
       error: (e) => {
         this.zone.run(() => {
           this.isLoading = false;
-          this.loadError = e?.message ?? 'Failed to load form schema';
+          this.loadError = e?.message ?? "Failed to load form schema";
           this.cdr.detectChanges();
         });
       },
@@ -119,8 +137,8 @@ export class AmigoFormComponent implements OnChanges {
     const formValue = this.normalizeFormValue();
 
     for (const f of fields) {
-      if (f.type !== 'select') continue;
-      if (f.optionsSource?.mode !== 'API') continue;
+      if (f.type !== "select") continue;
+      if (f.optionsSource?.mode !== "API") continue;
 
       this.selectState[f.id] = { loading: true, options: [] };
 
@@ -132,7 +150,7 @@ export class AmigoFormComponent implements OnChanges {
         error: () => {
           this.selectState[f.id] = {
             loading: false,
-            error: 'Failed to load options.',
+            error: "Failed to load options.",
             options: [],
           };
           this.cdr.detectChanges();
@@ -142,11 +160,12 @@ export class AmigoFormComponent implements OnChanges {
   }
 
   private applySchema(raw: any): void {
-    const s: any = typeof raw === 'string' ? JSON.parse(raw) : raw;
-    const formType: FormType = (s?.formType ?? 'single') as FormType;
+    const s: any = typeof raw === "string" ? JSON.parse(raw) : raw;
+    const formType: FormType = (s?.formType ?? "single") as FormType;
 
     const fields = (s?.fields ?? []).map((f: any) => {
-      if (f?.type === 'file') return { ...f, accept: normalizeAccept(f.accept) };
+      if (f?.type === "file")
+        return { ...f, accept: normalizeAccept(f.accept) };
       return f;
     });
 
@@ -171,51 +190,51 @@ export class AmigoFormComponent implements OnChanges {
 
   isCard(field: FormFieldSchema | any): boolean {
     const t = (field as any)?.type;
-    return t === 'card' || t === 'info-card';
+    return t === "card" || t === "info-card";
   }
 
   cardIcon(field: any): string {
-    return field?.card?.icon || '';
+    return field?.card?.icon || "";
   }
 
   cardTitle(field: any): string {
-    return field?.card?.title || field?.label || 'Info';
+    return field?.card?.title || field?.label || "Info";
   }
 
   cardBody(field: any): string {
-    return field?.card?.body || '';
+    return field?.card?.body || "";
   }
 
   cardStyle(field: any): Record<string, any> {
     const cs = field?.card?.style ?? {};
     const borderWidth = cs.borderWidth ?? 1;
     const borderRadius = cs.borderRadius ?? 12;
-    const borderColor = cs.borderColor ?? '#BBF7D0';
-    const backgroundColor = cs.backgroundColor ?? '#F0FDF4';
-    const textColor = cs.textColor ?? '#166534';
+    const borderColor = cs.borderColor ?? "#BBF7D0";
+    const backgroundColor = cs.backgroundColor ?? "#F0FDF4";
+    const textColor = cs.textColor ?? "#166534";
 
     return {
-      borderStyle: 'solid',
+      borderStyle: "solid",
       borderWidth: `${borderWidth}px`,
       borderColor,
       borderRadius: `${borderRadius}px`,
       backgroundColor,
       color: textColor,
-      padding: '12px',
-      display: 'flex',
-      gap: '12px',
-      alignItems: 'flex-start',
+      padding: "12px",
+      display: "flex",
+      gap: "12px",
+      alignItems: "flex-start",
     };
   }
 
   cardIconStyle(field: any): Record<string, any> {
     const cs = field?.card?.style ?? {};
-    const textColor = cs.textColor ?? '#166534';
+    const textColor = cs.textColor ?? "#166534";
     return {
       color: cs.iconColor ?? textColor,
-      fontSize: '18px',
-      lineHeight: '1',
-      marginTop: '2px',
+      fontSize: "18px",
+      lineHeight: "1",
+      marginTop: "2px",
     };
   }
 
@@ -242,7 +261,7 @@ export class AmigoFormComponent implements OnChanges {
 
     let normalized = field.multiple ? files : files.slice(0, 1);
 
-    if (typeof field.maxFiles === 'number' && field.maxFiles > 0) {
+    if (typeof field.maxFiles === "number" && field.maxFiles > 0) {
       normalized = normalized.slice(0, field.maxFiles);
     }
 
@@ -256,7 +275,7 @@ export class AmigoFormComponent implements OnChanges {
     if (!v) return [];
     if (Array.isArray(v)) return v.map((f: File) => f?.name).filter(Boolean);
     if (v instanceof File) return [v.name];
-    if (typeof FileList !== 'undefined' && v instanceof FileList) {
+    if (typeof FileList !== "undefined" && v instanceof FileList) {
       return Array.from(v)
         .map((f) => f?.name)
         .filter(Boolean);
@@ -270,14 +289,16 @@ export class AmigoFormComponent implements OnChanges {
     c.setValue(null);
     c.markAsTouched();
     c.updateValueAndValidity();
-    if (inputEl) inputEl.value = '';
+    if (inputEl) inputEl.value = "";
   }
 
   trackByFieldId = (_: number, field: any) => field?.id ?? field?.name ?? _;
 
   get orderedSteps() {
     const s = this.resolvedSchema;
-    return [...(s?.steps ?? [])].sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
+    return [...(s?.steps ?? [])].sort(
+      (a, b) => (a?.order ?? 0) - (b?.order ?? 0),
+    );
   }
 
   get totalSteps(): number {
@@ -285,14 +306,14 @@ export class AmigoFormComponent implements OnChanges {
   }
 
   get isMultiStep(): boolean {
-    return this.resolvedSchema?.formType === 'multi' && this.totalSteps > 0;
+    return this.resolvedSchema?.formType === "multi" && this.totalSteps > 0;
   }
 
   get visibleFields(): FormFieldSchema[] {
     const s = this.resolvedSchema;
     if (!s) return [];
 
-    if (s.formType === 'multi' && this.totalSteps > 0) {
+    if (s.formType === "multi" && this.totalSteps > 0) {
       const step = this.orderedSteps[this.activeStepIndex];
       const ids = new Set(step?.fieldIds ?? []);
       if (!ids.size) return [];
@@ -306,12 +327,17 @@ export class AmigoFormComponent implements OnChanges {
 
   get orderedSections() {
     const s = this.resolvedSchema;
-    if (!s || s.formType !== 'single-sectional') return [];
-    return [...(s.sections ?? [])].sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
+    if (!s || s.formType !== "single-sectional") return [];
+    return [...(s.sections ?? [])].sort(
+      (a, b) => (a?.order ?? 0) - (b?.order ?? 0),
+    );
   }
 
   get isSectional(): boolean {
-    return this.resolvedSchema?.formType === 'single-sectional' && this.orderedSections.length > 0;
+    return (
+      this.resolvedSchema?.formType === "single-sectional" &&
+      this.orderedSections.length > 0
+    );
   }
 
   fieldsForSection(sectionId: string): FormFieldSchema[] {
@@ -338,25 +364,29 @@ export class AmigoFormComponent implements OnChanges {
 
   nextStep(): void {
     const s = this.resolvedSchema;
-    if (!s || s.formType !== 'multi') return;
+    if (!s || s.formType !== "multi") return;
 
     const current = this.visibleFields;
     this.touchFields(current);
     if (this.hasErrors(current)) return;
 
-    this.activeStepIndex = Math.min(this.totalSteps - 1, this.activeStepIndex + 1);
+    this.activeStepIndex = Math.min(
+      this.totalSteps - 1,
+      this.activeStepIndex + 1,
+    );
   }
 
   submit(): void {
     if (!this.resolvedSchema || !this.form) return;
 
-    this.submitError = null;
     this.submitFeedback = undefined;
 
     const action: any = this.resolvedSchema?.actions ?? {};
     const submitCfg = this.resolveSubmitApi();
 
-    const triggerValidation = submitCfg ? submitCfg.triggerValidation !== false : true;
+    const triggerValidation = submitCfg
+      ? submitCfg.triggerValidation !== false
+      : true;
 
     if (triggerValidation) {
       this.form.markAllAsTouched();
@@ -385,8 +415,8 @@ export class AmigoFormComponent implements OnChanges {
       .subscribe({
         next: (res) => {
           this.submitFeedback = {
-            type: 'success',
-            message: submitCfg.successMessage || 'Submitted successfully.',
+            type: "success",
+            message: submitCfg.successMessage || "Submitted successfully.",
           };
 
           this.submitted.emit({
@@ -397,15 +427,14 @@ export class AmigoFormComponent implements OnChanges {
         },
         error: (err) => {
           this.submitFeedback = {
-            type: 'error',
+            type: "error",
             message:
               submitCfg.errorMessage ||
               err?.error?.message ||
               err?.message ||
-              'Failed to submit. Please try again.',
+              "Failed to submit. Please try again.",
           };
 
-          this.submitError = this.submitFeedback.message;
           this.submitFailed.emit(err);
         },
       });
@@ -449,7 +478,7 @@ export class AmigoFormComponent implements OnChanges {
       paddingLeft: px(sp.paddingLeft),
       backgroundColor: st.backgroundColor ?? null,
       color: st.textColor ?? null,
-      borderStyle: st.borderWidth ? 'solid' : null,
+      borderStyle: st.borderWidth ? "solid" : null,
       borderWidth: st.borderWidth ? px(st.borderWidth) : null,
       borderColor: st.borderColor ?? null,
       borderRadius: st.borderRadius ? px(st.borderRadius) : null,
@@ -458,23 +487,23 @@ export class AmigoFormComponent implements OnChanges {
 
   get submitButtonStyle(): { [key: string]: string } {
     const st: any = this.resolvedSchema?.style ?? {};
-    const baseBg = st.buttonBackgroundColor ?? '#111827';
-    const baseText = st.buttonTextColor ?? '#ffffff';
+    const baseBg = st.buttonBackgroundColor ?? "#111827";
+    const baseText = st.buttonTextColor ?? "#ffffff";
     const hoverBg = st.buttonHoverBackgroundColor ?? baseBg;
     const hoverText = st.buttonHoverTextColor ?? baseText;
 
     return {
       backgroundColor: this.isSubmitHovered ? hoverBg : baseBg,
       color: this.isSubmitHovered ? hoverText : baseText,
-      borderRadius: st.borderRadius ? `${st.borderRadius}px` : '10px',
+      borderRadius: st.borderRadius ? `${st.borderRadius}px` : "10px",
     };
   }
 
   get cancelButtonStyle(): { [key: string]: string } {
     const st: any = this.resolvedSchema?.style ?? {};
-    const baseBg = '#FFFFFF';
-    const baseText = st.buttonBackgroundColor ?? '#111827';
-    const baseBorder = st.buttonBackgroundColor ?? '#111827';
+    const baseBg = "#FFFFFF";
+    const baseText = st.buttonBackgroundColor ?? "#111827";
+    const baseBorder = st.buttonBackgroundColor ?? "#111827";
 
     const hoverBg = st.buttonHoverBackgroundColor ?? baseBg;
     const hoverText = st.buttonHoverTextColor ?? baseText;
@@ -486,13 +515,13 @@ export class AmigoFormComponent implements OnChanges {
       backgroundColor: isHover ? hoverBg : baseBg,
       color: isHover ? hoverText : baseText,
       border: `1px solid ${isHover ? hoverBorder : baseBorder}`,
-      borderRadius: st.borderRadius ? `${st.borderRadius}px` : '10px',
+      borderRadius: st.borderRadius ? `${st.borderRadius}px` : "10px",
     };
   }
 
   isBootstrapIcon(icon: string | null | undefined): boolean {
-    const v = (icon || '').trim();
-    return v.startsWith('bi ') || v.startsWith('bi-') || v.includes(' bi-');
+    const v = (icon || "").trim();
+    return v.startsWith("bi ") || v.startsWith("bi-") || v.includes(" bi-");
   }
 
   get showCancelButton(): boolean {
@@ -507,8 +536,9 @@ export class AmigoFormComponent implements OnChanges {
       const key = this.controlKey(field);
       const value = payload[key];
 
-      if (field.type === 'number') {
-        normalized[key] = value === '' || value === undefined ? null : Number(value);
+      if (field.type === "number") {
+        normalized[key] =
+          value === "" || value === undefined ? null : Number(value);
       } else {
         normalized[key] = value;
       }
@@ -521,7 +551,9 @@ export class AmigoFormComponent implements OnChanges {
     if (!this.form || !this.resolvedSchema || !this.initialValue) return;
 
     const patch: Record<string, any> = {};
-    const inputFields = (this.resolvedSchema.fields ?? []).filter((f: any) => !this.isCard(f));
+    const inputFields = (this.resolvedSchema.fields ?? []).filter(
+      (f: any) => !this.isCard(f),
+    );
 
     for (const field of inputFields) {
       const key = this.controlKey(field);
@@ -533,21 +565,26 @@ export class AmigoFormComponent implements OnChanges {
 
       if (incoming === undefined) continue;
 
-      if (field.type === 'file') {
+      if (field.type === "file") {
         continue;
       }
 
-      if (field.type === 'number') {
-        patch[key] = incoming === '' || incoming === null ? null : Number(incoming);
+      if (field.type === "number") {
+        patch[key] =
+          incoming === "" || incoming === null ? null : Number(incoming);
         continue;
       }
 
-      if (field.type === 'checkbox') {
-        patch[key] = incoming === true || incoming === 'true' || incoming === 1 || incoming === '1';
+      if (field.type === "checkbox") {
+        patch[key] =
+          incoming === true ||
+          incoming === "true" ||
+          incoming === 1 ||
+          incoming === "1";
         continue;
       }
 
-      if (field.type === 'date' && incoming) {
+      if (field.type === "date" && incoming) {
         patch[key] = String(incoming).slice(0, 10);
         continue;
       }
@@ -562,12 +599,12 @@ export class AmigoFormComponent implements OnChanges {
   }
 
   isButton(field: any): boolean {
-    return (field?.type ?? '') === 'button';
+    return (field?.type ?? "") === "button";
   }
 
   private isNonInput(field: any): boolean {
     const t = field?.type;
-    return t === 'card' || t === 'info-card' || t === 'button';
+    return t === "card" || t === "info-card" || t === "button";
   }
 
   private normalizeFormValue(): Record<string, any> {
@@ -580,8 +617,8 @@ export class AmigoFormComponent implements OnChanges {
       const key = this.controlKey(field);
       const value = raw[key];
       normalized[key] =
-        field.type === 'number'
-          ? value === '' || value === undefined
+        field.type === "number"
+          ? value === "" || value === undefined
             ? null
             : Number(value)
           : value;
@@ -608,7 +645,9 @@ export class AmigoFormComponent implements OnChanges {
 
   private recomputeVisibility(): void {
     if (!this.form || !this.resolvedSchema) return;
-    const raw = (this.form as any).getRawValue ? (this.form as any).getRawValue() : this.form.value;
+    const raw = (this.form as any).getRawValue
+      ? (this.form as any).getRawValue()
+      : this.form.value;
 
     this.visibilityUpdating = true;
     try {
@@ -632,40 +671,40 @@ export class AmigoFormComponent implements OnChanges {
     const vis = field?.visibility;
     const rules = vis?.rules ?? [];
     if (!rules.length) return true;
-    const mode = String(vis?.mode || 'ALL').toUpperCase();
+    const mode = String(vis?.mode || "ALL").toUpperCase();
     const results = rules.map((r: any) => this.evaluateVisibilityRule(r, raw));
-    return mode === 'ANY' ? results.some(Boolean) : results.every(Boolean);
+    return mode === "ANY" ? results.some(Boolean) : results.every(Boolean);
   }
 
   private evaluateVisibilityRule(rule: any, raw: Record<string, any>): boolean {
     const depKey = this.resolveDependsOnKey(rule?.dependsOn);
     const v = raw?.[depKey];
-    const op = String(rule?.operator || 'EQUALS').toUpperCase();
+    const op = String(rule?.operator || "EQUALS").toUpperCase();
     const cmp = rule?.value;
 
     switch (op) {
-      case 'CHECKED':
+      case "CHECKED":
         return v === true;
-      case 'UNCHECKED':
+      case "UNCHECKED":
         return v !== true;
-      case 'HAS_VALUE':
+      case "HAS_VALUE":
         return !this.isEmptyValue(v);
-      case 'NOT_HAS_VALUE':
+      case "NOT_HAS_VALUE":
         return this.isEmptyValue(v);
-      case 'IN':
+      case "IN":
         return Array.isArray(cmp) ? cmp.includes(v) : false;
-      case 'NOT_IN':
+      case "NOT_IN":
         return Array.isArray(cmp) ? !cmp.includes(v) : true;
-      case 'NOT_EQUALS':
+      case "NOT_EQUALS":
         return Array.isArray(v) ? !v.includes(cmp) : v !== cmp;
-      case 'EQUALS':
+      case "EQUALS":
       default:
         return Array.isArray(v) ? v.includes(cmp) : v === cmp;
     }
   }
 
   private resolveDependsOnKey(dep: any): string {
-    const d = String(dep || '');
+    const d = String(dep || "");
     if (!d) return d;
     if (this.form?.get(d)) return d;
     const fields = (this.resolvedSchema?.fields ?? []) as any[];
@@ -678,7 +717,7 @@ export class AmigoFormComponent implements OnChanges {
 
   private isEmptyValue(v: any): boolean {
     if (v === null || v === undefined) return true;
-    if (typeof v === 'string' && v.trim() === '') return true;
+    if (typeof v === "string" && v.trim() === "") return true;
     if (Array.isArray(v) && v.length === 0) return true;
     return false;
   }
@@ -686,12 +725,14 @@ export class AmigoFormComponent implements OnChanges {
   onSchemaButtonClick(field: any): void {
     const btn = field?.button;
     const endpoint = btn?.api;
-    if (!btn || (btn.actionType === 'API_CALL' && !endpoint)) return;
+    if (!btn || (btn.actionType === "API_CALL" && !endpoint)) return;
 
     const triggerValidation = btn.triggerValidation !== false;
 
     if (triggerValidation) {
-      const scope = this.isMultiStep ? this.visibleFields : (this.resolvedSchema?.fields ?? []);
+      const scope = this.isMultiStep
+        ? this.visibleFields
+        : (this.resolvedSchema?.fields ?? []);
       this.touchFields(scope.filter((f: any) => !this.isNonInput(f)));
       if (this.hasErrors(scope.filter((f: any) => !this.isNonInput(f)))) return;
     }
@@ -706,14 +747,18 @@ export class AmigoFormComponent implements OnChanges {
       .subscribe({
         next: () => {
           this.buttonFeedback[field.id] = {
-            type: 'success',
-            message: btn.successMessage || 'Action completed successfully.',
+            type: "success",
+            message: btn.successMessage || "Action completed successfully.",
           };
         },
         error: (err) => {
           this.buttonFeedback[field.id] = {
-            type: 'error',
-            message: btn.errorMessage || err?.error?.message || err?.message || 'Action failed.',
+            type: "error",
+            message:
+              btn.errorMessage ||
+              err?.error?.message ||
+              err?.message ||
+              "Action failed.",
           };
         },
       });
@@ -734,7 +779,7 @@ export class AmigoFormComponent implements OnChanges {
       return {
         triggerValidation: true,
         api: {
-          method: (a.method || 'POST') as any,
+          method: (a.method || "POST") as any,
           url: a.submitApiUrl,
           headers: [],
           queryParams: [],

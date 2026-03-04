@@ -270,13 +270,12 @@ declare class AmigoFormComponent implements OnChanges {
     isLoading: boolean;
     loadError: string | null;
     isSubmitting: boolean;
-    submitError: string | null;
     resolvedSchema: any | null;
     form: FormGroup | null;
     activeStepIndex: number;
     submitLoading: boolean;
     submitFeedback?: {
-        type: 'success' | 'error';
+        type: "success" | "error";
         message: string;
     };
     isSubmitHovered: boolean;
@@ -288,7 +287,7 @@ declare class AmigoFormComponent implements OnChanges {
     }>;
     buttonLoading: Record<string, boolean>;
     buttonFeedback: Record<string, {
-        type: 'success' | 'error';
+        type: "success" | "error";
         message: string;
     }>;
     private visibilitySub?;
