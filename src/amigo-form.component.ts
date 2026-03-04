@@ -46,8 +46,6 @@ export class AmigoFormComponent implements OnChanges {
 
   @Output() submitFailed = new EventEmitter<any>();
 
-  @Output() cancelled = new EventEmitter<void>();
-
   isLoading = false;
   loadError: string | null = null;
 
@@ -60,7 +58,6 @@ export class AmigoFormComponent implements OnChanges {
   submitLoading = false;
   submitFeedback?: { type: "success" | "error"; message: string };
   isSubmitHovered = false;
-  isCancelHovered = false;
   selectState: Record<
     string,
     { loading: boolean; error?: string; options: any[] }
@@ -354,10 +351,6 @@ export class AmigoFormComponent implements OnChanges {
     this.activeStepIndex = i;
   }
 
-  onCancel(): void {
-    this.cancelled.emit();
-  }
-
   prevStep(): void {
     this.activeStepIndex = Math.max(0, this.activeStepIndex - 1);
   }
@@ -499,34 +492,10 @@ export class AmigoFormComponent implements OnChanges {
     };
   }
 
-  get cancelButtonStyle(): { [key: string]: string } {
-    const st: any = this.resolvedSchema?.style ?? {};
-    const baseBg = "#FFFFFF";
-    const baseText = st.buttonBackgroundColor ?? "#111827";
-    const baseBorder = st.buttonBackgroundColor ?? "#111827";
-
-    const hoverBg = st.buttonHoverBackgroundColor ?? baseBg;
-    const hoverText = st.buttonHoverTextColor ?? baseText;
-    const hoverBorder = st.buttonHoverBackgroundColor ?? baseBorder;
-
-    const isHover = this.isCancelHovered;
-
-    return {
-      backgroundColor: isHover ? hoverBg : baseBg,
-      color: isHover ? hoverText : baseText,
-      border: `1px solid ${isHover ? hoverBorder : baseBorder}`,
-      borderRadius: st.borderRadius ? `${st.borderRadius}px` : "10px",
-    };
-  }
 
   isBootstrapIcon(icon: string | null | undefined): boolean {
     const v = (icon || "").trim();
     return v.startsWith("bi ") || v.startsWith("bi-") || v.includes(" bi-");
-  }
-
-  get showCancelButton(): boolean {
-    const a: any = this.resolvedSchema?.actions ?? {};
-    return a.showCancel !== false;
   }
 
   private normalizePayload(payload: Record<string, any>): Record<string, any> {

@@ -233,22 +233,6 @@
             : resolvedSchema.actions?.submitLabel || "Submit"
         }}
       </button>
-
-      <button
-        *ngIf="showCancelButton"
-        type="button"
-        (click)="onCancel()"
-        (mouseenter)="isCancelHovered = true"
-        (mouseleave)="isCancelHovered = false"
-        [disabled]="isSubmitting"
-        [ngStyle]="cancelButtonStyle"
-        [ngClass]="
-          resolvedSchema.style?.buttonClass ||
-          'px-4 py-2 rounded text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed'
-        "
-      >
-        {{ resolvedSchema.actions?.cancelLabel || "Cancel" }}
-      </button>
     </div>
 
     <ng-template #fieldRenderer let-field>

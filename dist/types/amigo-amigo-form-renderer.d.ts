@@ -266,7 +266,6 @@ declare class AmigoFormComponent implements OnChanges {
     submitQueryParams?: Record<string, any>;
     submitted: EventEmitter<any>;
     submitFailed: EventEmitter<any>;
-    cancelled: EventEmitter<void>;
     isLoading: boolean;
     loadError: string | null;
     isSubmitting: boolean;
@@ -279,7 +278,6 @@ declare class AmigoFormComponent implements OnChanges {
         message: string;
     };
     isSubmitHovered: boolean;
-    isCancelHovered: boolean;
     selectState: Record<string, {
         loading: boolean;
         error?: string;
@@ -319,7 +317,6 @@ declare class AmigoFormComponent implements OnChanges {
     get isSectional(): boolean;
     fieldsForSection(sectionId: string): FormFieldSchema[];
     setActiveStep(i: number): void;
-    onCancel(): void;
     prevStep(): void;
     nextStep(): void;
     submit(): void;
@@ -329,11 +326,7 @@ declare class AmigoFormComponent implements OnChanges {
     get submitButtonStyle(): {
         [key: string]: string;
     };
-    get cancelButtonStyle(): {
-        [key: string]: string;
-    };
     isBootstrapIcon(icon: string | null | undefined): boolean;
-    get showCancelButton(): boolean;
     private normalizePayload;
     private patchInitialValue;
     isButton(field: any): boolean;
@@ -349,7 +342,7 @@ declare class AmigoFormComponent implements OnChanges {
     onSchemaButtonClick(field: any): void;
     private resolveSubmitApi;
     static ɵfac: i0.ɵɵFactoryDeclaration<AmigoFormComponent, never>;
-    static ɵcmp: i0.ɵɵComponentDeclaration<AmigoFormComponent, "amigo-form", never, { "formId": { "alias": "formId"; "required": false; }; "schema": { "alias": "schema"; "required": false; }; "initialValue": { "alias": "initialValue"; "required": false; }; "submitPathParams": { "alias": "submitPathParams"; "required": false; }; "submitQueryParams": { "alias": "submitQueryParams"; "required": false; }; }, { "submitted": "submitted"; "submitFailed": "submitFailed"; "cancelled": "cancelled"; }, never, never, true, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<AmigoFormComponent, "amigo-form", never, { "formId": { "alias": "formId"; "required": false; }; "schema": { "alias": "schema"; "required": false; }; "initialValue": { "alias": "initialValue"; "required": false; }; "submitPathParams": { "alias": "submitPathParams"; "required": false; }; "submitQueryParams": { "alias": "submitQueryParams"; "required": false; }; }, { "submitted": "submitted"; "submitFailed": "submitFailed"; }, never, never, true, never>;
 }
 
 declare function buildFormGroup(fields: FormFieldSchema[], initialValue?: Record<string, any>): FormGroup;
