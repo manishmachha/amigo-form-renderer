@@ -348,25 +348,23 @@ export class AmigoFormComponent implements OnChanges {
   }
 
   setActiveStep(i: number) {
+    if (i < 0 || i >= this.totalSteps) return;
+    if (i === this.activeStepIndex) return;
+
+    if (i > this.activeStepIndex) {
+      const current = this.visibleFields;
+      this.touchFields(current);
+      if (this.hasErrors(current)) return;
+    }
     this.activeStepIndex = i;
   }
 
   prevStep(): void {
-    this.activeStepIndex = Math.max(0, this.activeStepIndex - 1);
+    this.setActiveStep(this.activeStepIndex - 1);
   }
 
   nextStep(): void {
-    const s = this.resolvedSchema;
-    if (!s || s.formType !== "multi") return;
-
-    const current = this.visibleFields;
-    this.touchFields(current);
-    if (this.hasErrors(current)) return;
-
-    this.activeStepIndex = Math.min(
-      this.totalSteps - 1,
-      this.activeStepIndex + 1,
-    );
+    this.setActiveStep(this.activeStepIndex + 1);
   }
 
   submit(): void {
@@ -491,7 +489,6 @@ export class AmigoFormComponent implements OnChanges {
       borderRadius: st.borderRadius ? `${st.borderRadius}px` : "10px",
     };
   }
-
 
   isBootstrapIcon(icon: string | null | undefined): boolean {
     const v = (icon || "").trim();
