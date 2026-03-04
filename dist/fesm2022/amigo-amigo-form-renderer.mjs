@@ -843,20 +843,23 @@ class AmigoFormComponent {
             .filter((f) => this.isFieldVisible(f));
     }
     setActiveStep(i) {
+        if (i < 0 || i >= this.totalSteps)
+            return;
+        if (i === this.activeStepIndex)
+            return;
+        if (i > this.activeStepIndex) {
+            const current = this.visibleFields;
+            this.touchFields(current);
+            if (this.hasErrors(current))
+                return;
+        }
         this.activeStepIndex = i;
     }
     prevStep() {
-        this.activeStepIndex = Math.max(0, this.activeStepIndex - 1);
+        this.setActiveStep(this.activeStepIndex - 1);
     }
     nextStep() {
-        const s = this.resolvedSchema;
-        if (!s || s.formType !== "multi")
-            return;
-        const current = this.visibleFields;
-        this.touchFields(current);
-        if (this.hasErrors(current))
-            return;
-        this.activeStepIndex = Math.min(this.totalSteps - 1, this.activeStepIndex + 1);
+        this.setActiveStep(this.activeStepIndex + 1);
     }
     submit() {
         if (!this.resolvedSchema || !this.form)
