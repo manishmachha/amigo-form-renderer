@@ -4,8 +4,8 @@ import { FormGroup, AbstractControl } from '@angular/forms';
 import { HttpClient, HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-type FieldType = 'text' | 'password' | 'number' | 'email' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'date' | 'file' | 'card' | 'button';
-type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+type FieldType = "text" | "password" | "number" | "email" | "textarea" | "select" | "checkbox" | "radio" | "date" | "file" | "card" | "button";
+type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 interface KeyValuePair {
     key: string;
     value: string;
@@ -21,9 +21,9 @@ interface FormFieldOption {
     label: string;
     value: any;
 }
-type OptionsSourceMode = 'STATIC' | 'API';
-type SelectAuthType = 'NONE' | 'BEARER';
-type TokenFrom = 'LOCAL_STORAGE' | 'SESSION_STORAGE' | 'CUSTOM_CALLBACK';
+type OptionsSourceMode = "STATIC" | "API";
+type SelectAuthType = "NONE" | "BEARER";
+type TokenFrom = "LOCAL_STORAGE" | "SESSION_STORAGE" | "CUSTOM_CALLBACK";
 interface SelectOptionsApiResponseMapping {
     labelKey: string;
     valueKey: string;
@@ -42,14 +42,14 @@ interface SelectOptionsSourceSchema {
     mode: OptionsSourceMode;
     api?: SelectOptionsApiConfig;
 }
-type VisibilityOperator = 'CHECKED' | 'UNCHECKED' | 'EQUALS' | 'NOT_EQUALS' | 'HAS_VALUE' | 'NOT_HAS_VALUE' | 'IN' | 'NOT_IN';
+type VisibilityOperator = "CHECKED" | "UNCHECKED" | "EQUALS" | "NOT_EQUALS" | "HAS_VALUE" | "NOT_HAS_VALUE" | "IN" | "NOT_IN";
 interface VisibilityRule {
     dependsOn: string;
     operator: VisibilityOperator;
     value?: any;
 }
 interface FieldVisibilitySchema {
-    mode?: 'ALL' | 'ANY';
+    mode?: "ALL" | "ANY";
     rules: VisibilityRule[];
 }
 interface ApiEndpointConfig {
@@ -66,8 +66,8 @@ interface ActionApiConfig {
     errorMessage?: string;
     api: ApiEndpointConfig;
 }
-type ButtonStyleVariant = 'primary' | 'secondary' | 'danger';
-type ButtonActionType = 'API_CALL';
+type ButtonStyleVariant = "primary" | "secondary" | "danger";
+type ButtonActionType = "API_CALL";
 interface ButtonElementSchema {
     label: string;
     styleVariant?: ButtonStyleVariant;
@@ -100,7 +100,7 @@ interface FormFieldSchema {
     required?: boolean | string;
     colSpan?: number;
     options?: FormFieldOption[];
-    optionDirection?: 'horizontal' | 'vertical';
+    optionDirection?: "horizontal" | "vertical";
     optionsSource?: SelectOptionsSourceSchema;
     validations?: FieldValidationRules;
     multiple?: boolean;
@@ -148,10 +148,10 @@ interface FormActionSchema {
     submitApiUrl?: string;
     method?: HttpMethod;
     payloadKey?: string;
-    contentType?: 'auto' | 'json' | 'multipart';
+    contentType?: "auto" | "json" | "multipart";
     submitApi?: ActionApiConfig;
 }
-type FormType = 'single' | 'multi' | 'single-sectional';
+type FormType = "single" | "multi" | "single-sectional";
 interface FormStepConfig {
     id: string;
     label: string;

@@ -1,18 +1,18 @@
 export type FieldType =
-  | 'text'
-  | 'password'
-  | 'number'
-  | 'email'
-  | 'textarea'
-  | 'select'
-  | 'checkbox'
-  | 'radio'
-  | 'date'
-  | 'file'
-  | 'card'
-  | 'button';
+  | "text"
+  | "password"
+  | "number"
+  | "email"
+  | "textarea"
+  | "select"
+  | "checkbox"
+  | "radio"
+  | "date"
+  | "file"
+  | "card"
+  | "button";
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export interface KeyValuePair {
   key: string;
@@ -32,9 +32,9 @@ export interface FormFieldOption {
   value: any;
 }
 
-export type OptionsSourceMode = 'STATIC' | 'API';
-export type SelectAuthType = 'NONE' | 'BEARER';
-export type TokenFrom = 'LOCAL_STORAGE' | 'SESSION_STORAGE' | 'CUSTOM_CALLBACK';
+export type OptionsSourceMode = "STATIC" | "API";
+export type SelectAuthType = "NONE" | "BEARER";
+export type TokenFrom = "LOCAL_STORAGE" | "SESSION_STORAGE" | "CUSTOM_CALLBACK";
 
 export interface SelectOptionsApiResponseMapping {
   labelKey: string;
@@ -58,14 +58,14 @@ export interface SelectOptionsSourceSchema {
 }
 
 export type VisibilityOperator =
-  | 'CHECKED'
-  | 'UNCHECKED'
-  | 'EQUALS'
-  | 'NOT_EQUALS'
-  | 'HAS_VALUE'
-  | 'NOT_HAS_VALUE'
-  | 'IN'
-  | 'NOT_IN';
+  | "CHECKED"
+  | "UNCHECKED"
+  | "EQUALS"
+  | "NOT_EQUALS"
+  | "HAS_VALUE"
+  | "NOT_HAS_VALUE"
+  | "IN"
+  | "NOT_IN";
 
 export interface VisibilityRule {
   dependsOn: string;
@@ -74,7 +74,7 @@ export interface VisibilityRule {
 }
 
 export interface FieldVisibilitySchema {
-  mode?: 'ALL' | 'ANY';
+  mode?: "ALL" | "ANY";
   rules: VisibilityRule[];
 }
 
@@ -94,8 +94,8 @@ export interface ActionApiConfig {
   api: ApiEndpointConfig;
 }
 
-export type ButtonStyleVariant = 'primary' | 'secondary' | 'danger';
-export type ButtonActionType = 'API_CALL';
+export type ButtonStyleVariant = "primary" | "secondary" | "danger";
+export type ButtonActionType = "API_CALL";
 
 export interface ButtonElementSchema {
   label: string;
@@ -133,7 +133,7 @@ export interface FormFieldSchema {
   colSpan?: number;
 
   options?: FormFieldOption[];
-  optionDirection?: 'horizontal' | 'vertical';
+  optionDirection?: "horizontal" | "vertical";
 
   optionsSource?: SelectOptionsSourceSchema;
 
@@ -194,12 +194,12 @@ export interface FormActionSchema {
   method?: HttpMethod;
 
   payloadKey?: string;
-  contentType?: 'auto' | 'json' | 'multipart';
+  contentType?: "auto" | "json" | "multipart";
 
   submitApi?: ActionApiConfig;
 }
 
-export type FormType = 'single' | 'multi' | 'single-sectional';
+export type FormType = "single" | "multi" | "single-sectional";
 
 export interface FormStepConfig {
   id: string;

@@ -441,7 +441,7 @@
                   Maximum {{ field.validations?.maxLength }} characters allowed.
                 </div>
                 <div *ngIf="ctrl(field)?.errors?.['pattern']">
-                  Value does not match the required pattern.
+                  Password must contain mix of Upper and lowercase letters, numbers and special characters
                 </div>
               </div>
             </ng-container>
