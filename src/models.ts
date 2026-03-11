@@ -64,6 +64,8 @@ export interface DependentSelectConfig {
   valueKey: string; // key for child option value
 }
 
+export type EmptyValueType = "empty_string" | "null" | "undefined";
+
 export type VisibilityOperator =
   | "CHECKED"
   | "UNCHECKED"
@@ -156,6 +158,7 @@ export interface FormFieldSchema {
   button?: ButtonElementSchema;
 
   visibility?: FieldVisibilitySchema;
+  emptyValue?: EmptyValueType;
 }
 
 export interface FormLayoutSchema {

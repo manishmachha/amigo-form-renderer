@@ -48,6 +48,7 @@ interface DependentSelectConfig {
     labelKey: string;
     valueKey: string;
 }
+type EmptyValueType = "empty_string" | "null" | "undefined";
 type VisibilityOperator = "CHECKED" | "UNCHECKED" | "EQUALS" | "NOT_EQUALS" | "HAS_VALUE" | "NOT_HAS_VALUE" | "IN" | "NOT_IN";
 interface VisibilityRule {
     dependsOn: string;
@@ -117,6 +118,7 @@ interface FormFieldSchema {
     card?: InfoCardSchema;
     button?: ButtonElementSchema;
     visibility?: FieldVisibilitySchema;
+    emptyValue?: EmptyValueType;
 }
 interface FormLayoutSchema {
     columns: number;
@@ -342,6 +344,8 @@ declare class AmigoFormComponent implements OnChanges {
     };
     isBootstrapIcon(icon: string | null | undefined): boolean;
     private normalizePayload;
+    private isEmptyInput;
+    private resolveEmptyValue;
     private patchInitialValue;
     isButton(field: any): boolean;
     private isNonInput;
@@ -372,4 +376,4 @@ declare class AmigoTokenInterceptor implements HttpInterceptor {
 }
 
 export { AMIGO_AUTH_TOKEN_PROVIDER, AMIGO_FORM_CONFIG, AmigoFormComponent, AmigoFormService, AmigoTokenInterceptor, buildFormGroup, normalizeAccept, provideAmigoForm };
-export type { ActionApiConfig, AmigoAuthTokenProvider, AmigoFormConfig, ApiEndpointConfig, ButtonActionType, ButtonElementSchema, ButtonStyleVariant, DependentSelectConfig, FieldType, FieldValidationRules, FieldVisibilitySchema, FormActionSchema, FormFieldOption, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionConfig, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, HttpMethod, InfoCardSchema, InfoCardStyleSchema, KeyValuePair, OptionsSourceMode, SelectAuthType, SelectOptionsApiConfig, SelectOptionsApiResponseMapping, SelectOptionsSourceSchema, TokenFrom, VisibilityOperator, VisibilityRule };
+export type { ActionApiConfig, AmigoAuthTokenProvider, AmigoFormConfig, ApiEndpointConfig, ButtonActionType, ButtonElementSchema, ButtonStyleVariant, DependentSelectConfig, EmptyValueType, FieldType, FieldValidationRules, FieldVisibilitySchema, FormActionSchema, FormFieldOption, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionConfig, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, HttpMethod, InfoCardSchema, InfoCardStyleSchema, KeyValuePair, OptionsSourceMode, SelectAuthType, SelectOptionsApiConfig, SelectOptionsApiResponseMapping, SelectOptionsSourceSchema, TokenFrom, VisibilityOperator, VisibilityRule };

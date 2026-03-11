@@ -640,13 +640,30 @@ export class AmigoFormComponent implements OnChanges {
 
       if (field.type === "number") {
         normalized[key] =
-          value === "" || value === undefined ? null : Number(value);
+          value === "" || value === undefined || value === null
+            ? this.resolveEmptyValue(field)
+            : Number(value);
+      } else if (this.isEmptyInput(value)) {
+        normalized[key] = this.resolveEmptyValue(field);
       } else {
         normalized[key] = value;
       }
     }
 
     return normalized;
+  }
+
+  private isEmptyInput(v: any): boolean {
+    return v === "" || v === null || v === undefined;
+  }
+
+  private resolveEmptyValue(field: any): any {
+    const mode = field?.emptyValue;
+    if (mode === "null") return null;
+    if (mode === "undefined") return undefined;
+    if (mode === "empty_string") return "";
+    // default: null for numbers, empty string for everything else
+    return field?.type === "number" ? null : "";
   }
 
   private patchInitialValue(): void {
@@ -718,12 +735,16 @@ export class AmigoFormComponent implements OnChanges {
       if (this.isNonInput(field)) continue;
       const key = this.controlKey(field);
       const value = raw[key];
-      normalized[key] =
-        field.type === "number"
-          ? value === "" || value === undefined
-            ? null
-            : Number(value)
-          : value;
+      if (field.type === "number") {
+        normalized[key] =
+          value === "" || value === undefined || value === null
+            ? this.resolveEmptyValue(field)
+            : Number(value);
+      } else if (this.isEmptyInput(value)) {
+        normalized[key] = this.resolveEmptyValue(field);
+      } else {
+        normalized[key] = value;
+      }
     }
     return normalized;
   }

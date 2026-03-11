@@ -1111,13 +1111,32 @@ class AmigoFormComponent {
             const value = payload[key];
             if (field.type === "number") {
                 normalized[key] =
-                    value === "" || value === undefined ? null : Number(value);
+                    value === "" || value === undefined || value === null
+                        ? this.resolveEmptyValue(field)
+                        : Number(value);
+            }
+            else if (this.isEmptyInput(value)) {
+                normalized[key] = this.resolveEmptyValue(field);
             }
             else {
                 normalized[key] = value;
             }
         }
         return normalized;
+    }
+    isEmptyInput(v) {
+        return v === "" || v === null || v === undefined;
+    }
+    resolveEmptyValue(field) {
+        const mode = field?.emptyValue;
+        if (mode === "null")
+            return null;
+        if (mode === "undefined")
+            return undefined;
+        if (mode === "empty_string")
+            return "";
+        // default: null for numbers, empty string for everything else
+        return field?.type === "number" ? null : "";
     }
     patchInitialValue() {
         if (!this.form || !this.resolvedSchema || !this.initialValue)
@@ -1174,12 +1193,18 @@ class AmigoFormComponent {
                 continue;
             const key = this.controlKey(field);
             const value = raw[key];
-            normalized[key] =
-                field.type === "number"
-                    ? value === "" || value === undefined
-                        ? null
-                        : Number(value)
-                    : value;
+            if (field.type === "number") {
+                normalized[key] =
+                    value === "" || value === undefined || value === null
+                        ? this.resolveEmptyValue(field)
+                        : Number(value);
+            }
+            else if (this.isEmptyInput(value)) {
+                normalized[key] = this.resolveEmptyValue(field);
+            }
+            else {
+                normalized[key] = value;
+            }
         }
         return normalized;
     }
