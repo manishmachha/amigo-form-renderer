@@ -16,13 +16,13 @@ import {
 } from "@angular/forms";
 import { Subscription } from "rxjs";
 import { finalize } from "rxjs/operators";
-
 import {
   FormSchema,
   FormFieldSchema,
   FormType,
   FormActionSchema,
   ActionApiConfig,
+  DependentSelectConfig,
 } from "./models";
 import { AmigoFormService } from "./amigo-form.service";
 import { buildFormGroup, normalizeAccept } from "./form-group.builder";
@@ -71,6 +71,7 @@ export class AmigoFormComponent implements OnChanges {
   private visibilitySub?: Subscription;
   private visibilityState: Record<string, boolean> = {};
   private visibilityUpdating = false;
+  private cascadingSubs: Subscription[] = [];
 
   constructor(
     private formService: AmigoFormService,
@@ -136,6 +137,7 @@ export class AmigoFormComponent implements OnChanges {
     for (const f of fields) {
       if (f.type !== "select") continue;
       if (f.optionsSource?.mode !== "API") continue;
+      if (f.dependentSelect) continue; // skip child selects — they load via parent
 
       this.selectState[f.id] = { loading: true, options: [] };
 
@@ -183,6 +185,129 @@ export class AmigoFormComponent implements OnChanges {
     this.patchInitialValue();
     this.setupVisibility();
     this.preloadApiSelectOptions();
+    this.setupCascadingSelects();
+  }
+
+  private setupCascadingSelects(): void {
+    // Clean up old subscriptions
+    this.cascadingSubs.forEach((s) => s.unsubscribe());
+    this.cascadingSubs = [];
+
+    const fields = this.resolvedSchema?.fields ?? [];
+    const childFields = fields.filter(
+      (f: any) => f.type === "select" && f.dependentSelect,
+    );
+
+    for (const child of childFields as any[]) {
+      const dep: DependentSelectConfig = child.dependentSelect;
+      const parentField = fields.find((f: any) => f.id === dep.parentFieldId);
+      if (!parentField) continue;
+
+      const parentKey = this.controlKey(parentField);
+      const parentCtrl = this.form?.get(parentKey);
+      if (!parentCtrl) continue;
+
+      // Initialize child as empty
+      this.selectState[child.id] = { loading: false, options: [] };
+
+      const sub = parentCtrl.valueChanges.subscribe((parentValue: any) => {
+        this.updateChildOptions(child, dep, parentValue);
+      });
+      this.cascadingSubs.push(sub);
+
+      // If parent already has a value, populate child immediately
+      const currentParentValue = parentCtrl.value;
+      if (currentParentValue) {
+        this.updateChildOptions(child, dep, currentParentValue);
+      }
+    }
+  }
+
+  private updateChildOptions(
+    child: any,
+    dep: DependentSelectConfig,
+    parentValue: any,
+  ): void {
+    const childKey = this.controlKey(child);
+    const childCtrl = this.form?.get(childKey);
+
+    if (!parentValue || parentValue === "") {
+      this.selectState[child.id] = { loading: false, options: [] };
+      if (childCtrl) {
+        childCtrl.setValue("", { emitEvent: false });
+      }
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Get the parent's raw response
+    const rawResponse = this.selectOptions.getRawResponse(dep.parentFieldId);
+    if (!rawResponse) {
+      this.selectState[child.id] = { loading: false, options: [] };
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Find the parent field to determine its response mapping
+    const fields = this.resolvedSchema?.fields ?? [];
+    const parentField = fields.find((f: any) => f.id === dep.parentFieldId);
+    const parentApi = parentField?.optionsSource?.api;
+    const parentDataPath = parentApi?.responseMapping?.dataPath;
+    const parentValueKey = parentApi?.responseMapping?.valueKey || "value";
+
+    // Get the array of parent items from the raw response
+    let parentItems: any[];
+    if (parentDataPath) {
+      parentItems = this.getByPath(rawResponse, parentDataPath);
+    } else {
+      parentItems = rawResponse;
+    }
+
+    if (!Array.isArray(parentItems)) {
+      this.selectState[child.id] = { loading: false, options: [] };
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Find the selected parent item
+    const selectedParent = parentItems.find(
+      (item: any) => String(item?.[parentValueKey]) === String(parentValue),
+    );
+
+    if (!selectedParent) {
+      this.selectState[child.id] = { loading: false, options: [] };
+      if (childCtrl) {
+        childCtrl.setValue("", { emitEvent: false });
+      }
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Extract child items from the parent item
+    const childItems = this.getByPath(selectedParent, dep.childDataPath);
+    const childOptions = Array.isArray(childItems)
+      ? childItems
+          .map((item: any) => ({
+            label: String(item?.[dep.labelKey] ?? ""),
+            value: item?.[dep.valueKey],
+          }))
+          .filter((o: any) => o.label !== "" && o.value !== undefined)
+      : [];
+
+    this.selectState[child.id] = { loading: false, options: childOptions };
+
+    // Reset child value since parent changed
+    if (childCtrl) {
+      childCtrl.setValue("", { emitEvent: false });
+    }
+    this.cdr.detectChanges();
+  }
+
+  private getByPath(obj: any, path: string): any {
+    if (!obj || !path) return obj;
+    return path
+      .split(".")
+      .reduce((acc, k) => (acc == null ? undefined : acc[k]), obj);
   }
 
   isCard(field: FormFieldSchema | any): boolean {

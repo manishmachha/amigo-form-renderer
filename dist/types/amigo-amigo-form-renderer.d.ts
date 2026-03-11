@@ -42,6 +42,12 @@ interface SelectOptionsSourceSchema {
     mode: OptionsSourceMode;
     api?: SelectOptionsApiConfig;
 }
+interface DependentSelectConfig {
+    parentFieldId: string;
+    childDataPath: string;
+    labelKey: string;
+    valueKey: string;
+}
 type VisibilityOperator = "CHECKED" | "UNCHECKED" | "EQUALS" | "NOT_EQUALS" | "HAS_VALUE" | "NOT_HAS_VALUE" | "IN" | "NOT_IN";
 interface VisibilityRule {
     dependsOn: string;
@@ -102,6 +108,7 @@ interface FormFieldSchema {
     options?: FormFieldOption[];
     optionDirection?: "horizontal" | "vertical";
     optionsSource?: SelectOptionsSourceSchema;
+    dependentSelect?: DependentSelectConfig;
     validations?: FieldValidationRules;
     multiple?: boolean;
     accept?: string;
@@ -242,9 +249,11 @@ declare class AmigoSelectOptionsService {
     private cfg;
     private tokenProvider;
     private cache;
+    private rawCache;
     constructor(http: HttpClient, cfg: AmigoFormConfig | null, tokenProvider: AmigoAuthTokenProvider | null);
     load(field: FormFieldSchema, _formValue?: Record<string, any>): Observable<FormFieldOption[]>;
     clear(fieldId?: string): void;
+    getRawResponse(fieldId: string): any;
     private resolveUrl;
     private resolveToken;
     private mapOptions;
@@ -291,11 +300,15 @@ declare class AmigoFormComponent implements OnChanges {
     private visibilitySub?;
     private visibilityState;
     private visibilityUpdating;
+    private cascadingSubs;
     constructor(formService: AmigoFormService, cdr: ChangeDetectorRef, zone: NgZone, apiExec: AmigoApiExecutionService, selectOptions: AmigoSelectOptionsService);
     ngOnChanges(changes: SimpleChanges): void;
     private init;
     private preloadApiSelectOptions;
     private applySchema;
+    private setupCascadingSelects;
+    private updateChildOptions;
+    private getByPath;
     isCard(field: FormFieldSchema | any): boolean;
     cardIcon(field: any): string;
     cardTitle(field: any): string;
@@ -359,4 +372,4 @@ declare class AmigoTokenInterceptor implements HttpInterceptor {
 }
 
 export { AMIGO_AUTH_TOKEN_PROVIDER, AMIGO_FORM_CONFIG, AmigoFormComponent, AmigoFormService, AmigoTokenInterceptor, buildFormGroup, normalizeAccept, provideAmigoForm };
-export type { ActionApiConfig, AmigoAuthTokenProvider, AmigoFormConfig, ApiEndpointConfig, ButtonActionType, ButtonElementSchema, ButtonStyleVariant, FieldType, FieldValidationRules, FieldVisibilitySchema, FormActionSchema, FormFieldOption, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionConfig, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, HttpMethod, InfoCardSchema, InfoCardStyleSchema, KeyValuePair, OptionsSourceMode, SelectAuthType, SelectOptionsApiConfig, SelectOptionsApiResponseMapping, SelectOptionsSourceSchema, TokenFrom, VisibilityOperator, VisibilityRule };
+export type { ActionApiConfig, AmigoAuthTokenProvider, AmigoFormConfig, ApiEndpointConfig, ButtonActionType, ButtonElementSchema, ButtonStyleVariant, DependentSelectConfig, FieldType, FieldValidationRules, FieldVisibilitySchema, FormActionSchema, FormFieldOption, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionConfig, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, HttpMethod, InfoCardSchema, InfoCardStyleSchema, KeyValuePair, OptionsSourceMode, SelectAuthType, SelectOptionsApiConfig, SelectOptionsApiResponseMapping, SelectOptionsSourceSchema, TokenFrom, VisibilityOperator, VisibilityRule };

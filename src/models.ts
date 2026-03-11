@@ -57,6 +57,13 @@ export interface SelectOptionsSourceSchema {
   api?: SelectOptionsApiConfig;
 }
 
+export interface DependentSelectConfig {
+  parentFieldId: string; // id of the parent select field
+  childDataPath: string; // path within each parent item, e.g. "wells"
+  labelKey: string; // key for child option label
+  valueKey: string; // key for child option value
+}
+
 export type VisibilityOperator =
   | "CHECKED"
   | "UNCHECKED"
@@ -136,6 +143,7 @@ export interface FormFieldSchema {
   optionDirection?: "horizontal" | "vertical";
 
   optionsSource?: SelectOptionsSourceSchema;
+  dependentSelect?: DependentSelectConfig;
 
   validations?: FieldValidationRules;
 

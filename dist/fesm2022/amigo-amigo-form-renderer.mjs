@@ -4,7 +4,7 @@ import * as i4 from '@angular/common';
 import { CommonModule } from '@angular/common';
 import * as i5 from '@angular/forms';
 import { Validators, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { map, tap, catchError, finalize } from 'rxjs/operators';
+import { tap, map, catchError, finalize } from 'rxjs/operators';
 import { throwError, of } from 'rxjs';
 import * as i1 from '@angular/common/http';
 import { HTTP_INTERCEPTORS, HttpHeaders, HttpParams } from '@angular/common/http';
@@ -475,6 +475,7 @@ class AmigoSelectOptionsService {
     cfg;
     tokenProvider;
     cache = new Map();
+    rawCache = new Map();
     constructor(http, cfg, tokenProvider) {
         this.http = http;
         this.cfg = cfg;
@@ -484,88 +485,101 @@ class AmigoSelectOptionsService {
         const api = field.optionsSource?.api;
         if (!api?.url)
             return of([]);
-        const cacheKey = `${field.id}::${api.method || 'GET'}::${api.url}`;
+        const cacheKey = `${field.id}::${api.method || "GET"}::${api.url}`;
         const cached = this.cache.get(cacheKey);
         if (cached)
             return of(cached);
         const url = this.resolveUrl(api.url);
-        const method = (api.method || 'GET').toUpperCase();
-        const shouldBearer = api.secured === true && api.authType === 'BEARER';
+        const method = (api.method || "GET").toUpperCase();
+        const shouldBearer = api.secured === true && api.authType === "BEARER";
         let headers = new HttpHeaders();
         if (!shouldBearer) {
-            headers = headers.set('X-Amigo-Skip-Auth', '1');
+            headers = headers.set("X-Amigo-Skip-Auth", "1");
         }
         else {
             const token = this.resolveToken(api);
             if (token)
-                headers = headers.set('Authorization', `Bearer ${token}`);
+                headers = headers.set("Authorization", `Bearer ${token}`);
         }
-        return this.http.request(method, url, { headers }).pipe(map((res) => this.mapOptions(res, api)), tap((opts) => this.cache.set(cacheKey, opts)), catchError((err) => {
-            const msg = err?.error?.message || err?.message || 'Failed to load options.';
+        return this.http.request(method, url, { headers }).pipe(tap((res) => this.rawCache.set(field.id, res)), map((res) => this.mapOptions(res, api)), tap((opts) => this.cache.set(cacheKey, opts)), catchError((err) => {
+            const msg = err?.error?.message || err?.message || "Failed to load options.";
             return throwError(() => new Error(msg));
         }));
     }
     clear(fieldId) {
         if (!fieldId) {
             this.cache.clear();
+            this.rawCache.clear();
             return;
         }
         for (const k of [...this.cache.keys()]) {
-            if (k.startsWith(fieldId + '::'))
+            if (k.startsWith(fieldId + "::"))
                 this.cache.delete(k);
         }
+        this.rawCache.delete(fieldId);
+    }
+    getRawResponse(fieldId) {
+        return this.rawCache.get(fieldId) ?? null;
     }
     resolveUrl(url) {
-        const u = (url || '').trim();
+        const u = (url || "").trim();
         if (!u)
             return u;
         if (/^https?:\/\//i.test(u))
             return u;
         // Use selectOptionsBaseUrl if available, otherwise fall back into apiBaseUrl
-        const base = (this.cfg?.selectOptionsBaseUrl || this.cfg?.apiBaseUrl || '').replace(/\/+$/, '');
+        const base = (this.cfg?.selectOptionsBaseUrl ||
+            this.cfg?.apiBaseUrl ||
+            "").replace(/\/+$/, "");
         if (!base)
-            return u.startsWith('/') ? u : '/' + u;
-        if (u.startsWith('/'))
+            return u.startsWith("/") ? u : "/" + u;
+        if (u.startsWith("/"))
             return base + u;
-        return base + '/' + u;
+        return base + "/" + u;
     }
     resolveToken(api) {
-        const key = api.tokenKey || 'access_token';
-        if (api.tokenFrom === 'SESSION_STORAGE') {
+        const key = api.tokenKey || "access_token";
+        if (api.tokenFrom === "SESSION_STORAGE") {
             return sessionStorage.getItem(key);
         }
-        if (api.tokenFrom === 'LOCAL_STORAGE' || !api.tokenFrom) {
+        if (api.tokenFrom === "LOCAL_STORAGE" || !api.tokenFrom) {
             return localStorage.getItem(key);
         }
-        if (api.tokenFrom === 'CUSTOM_CALLBACK') {
+        if (api.tokenFrom === "CUSTOM_CALLBACK") {
             return this.tokenProvider?.() || null;
         }
         return null;
     }
     mapOptions(res, api) {
         const rm = api.responseMapping;
-        const labelKey = rm?.labelKey || 'label';
-        const valueKey = rm?.valueKey || 'value';
+        const labelKey = rm?.labelKey || "label";
+        const valueKey = rm?.valueKey || "value";
         const data = rm?.dataPath ? this.getByPath(res, rm.dataPath) : res;
-        const arr = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+        const arr = Array.isArray(data)
+            ? data
+            : Array.isArray(data?.items)
+                ? data.items
+                : [];
         return arr
             .map((item) => ({
-            label: item?.[labelKey] ?? '',
+            label: item?.[labelKey] ?? "",
             value: item?.[valueKey],
         }))
-            .filter((o) => o.label !== '' && o.value !== undefined);
+            .filter((o) => o.label !== "" && o.value !== undefined);
     }
     getByPath(obj, path) {
         if (!obj || !path)
             return obj;
-        return path.split('.').reduce((acc, k) => (acc == null ? undefined : acc[k]), obj);
+        return path
+            .split(".")
+            .reduce((acc, k) => (acc == null ? undefined : acc[k]), obj);
     }
     static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoSelectOptionsService, deps: [{ token: i1.HttpClient }, { token: AMIGO_FORM_CONFIG, optional: true }, { token: AMIGO_AUTH_TOKEN_PROVIDER, optional: true }], target: i0.ɵɵFactoryTarget.Injectable });
-    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoSelectOptionsService, providedIn: 'root' });
+    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoSelectOptionsService, providedIn: "root" });
 }
 i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoSelectOptionsService, decorators: [{
             type: Injectable,
-            args: [{ providedIn: 'root' }]
+            args: [{ providedIn: "root" }]
         }], ctorParameters: () => [{ type: i1.HttpClient }, { type: undefined, decorators: [{
                     type: Optional
                 }, {
@@ -606,6 +620,7 @@ class AmigoFormComponent {
     visibilitySub;
     visibilityState = {};
     visibilityUpdating = false;
+    cascadingSubs = [];
     constructor(formService, cdr, zone, apiExec, selectOptions) {
         this.formService = formService;
         this.cdr = cdr;
@@ -661,6 +676,8 @@ class AmigoFormComponent {
                 continue;
             if (f.optionsSource?.mode !== "API")
                 continue;
+            if (f.dependentSelect)
+                continue; // skip child selects — they load via parent
             this.selectState[f.id] = { loading: true, options: [] };
             this.selectOptions.load(f, formValue).subscribe({
                 next: (opts) => {
@@ -702,6 +719,106 @@ class AmigoFormComponent {
         this.patchInitialValue();
         this.setupVisibility();
         this.preloadApiSelectOptions();
+        this.setupCascadingSelects();
+    }
+    setupCascadingSelects() {
+        // Clean up old subscriptions
+        this.cascadingSubs.forEach((s) => s.unsubscribe());
+        this.cascadingSubs = [];
+        const fields = this.resolvedSchema?.fields ?? [];
+        const childFields = fields.filter((f) => f.type === "select" && f.dependentSelect);
+        for (const child of childFields) {
+            const dep = child.dependentSelect;
+            const parentField = fields.find((f) => f.id === dep.parentFieldId);
+            if (!parentField)
+                continue;
+            const parentKey = this.controlKey(parentField);
+            const parentCtrl = this.form?.get(parentKey);
+            if (!parentCtrl)
+                continue;
+            // Initialize child as empty
+            this.selectState[child.id] = { loading: false, options: [] };
+            const sub = parentCtrl.valueChanges.subscribe((parentValue) => {
+                this.updateChildOptions(child, dep, parentValue);
+            });
+            this.cascadingSubs.push(sub);
+            // If parent already has a value, populate child immediately
+            const currentParentValue = parentCtrl.value;
+            if (currentParentValue) {
+                this.updateChildOptions(child, dep, currentParentValue);
+            }
+        }
+    }
+    updateChildOptions(child, dep, parentValue) {
+        const childKey = this.controlKey(child);
+        const childCtrl = this.form?.get(childKey);
+        if (!parentValue || parentValue === "") {
+            this.selectState[child.id] = { loading: false, options: [] };
+            if (childCtrl) {
+                childCtrl.setValue("", { emitEvent: false });
+            }
+            this.cdr.detectChanges();
+            return;
+        }
+        // Get the parent's raw response
+        const rawResponse = this.selectOptions.getRawResponse(dep.parentFieldId);
+        if (!rawResponse) {
+            this.selectState[child.id] = { loading: false, options: [] };
+            this.cdr.detectChanges();
+            return;
+        }
+        // Find the parent field to determine its response mapping
+        const fields = this.resolvedSchema?.fields ?? [];
+        const parentField = fields.find((f) => f.id === dep.parentFieldId);
+        const parentApi = parentField?.optionsSource?.api;
+        const parentDataPath = parentApi?.responseMapping?.dataPath;
+        const parentValueKey = parentApi?.responseMapping?.valueKey || "value";
+        // Get the array of parent items from the raw response
+        let parentItems;
+        if (parentDataPath) {
+            parentItems = this.getByPath(rawResponse, parentDataPath);
+        }
+        else {
+            parentItems = rawResponse;
+        }
+        if (!Array.isArray(parentItems)) {
+            this.selectState[child.id] = { loading: false, options: [] };
+            this.cdr.detectChanges();
+            return;
+        }
+        // Find the selected parent item
+        const selectedParent = parentItems.find((item) => String(item?.[parentValueKey]) === String(parentValue));
+        if (!selectedParent) {
+            this.selectState[child.id] = { loading: false, options: [] };
+            if (childCtrl) {
+                childCtrl.setValue("", { emitEvent: false });
+            }
+            this.cdr.detectChanges();
+            return;
+        }
+        // Extract child items from the parent item
+        const childItems = this.getByPath(selectedParent, dep.childDataPath);
+        const childOptions = Array.isArray(childItems)
+            ? childItems
+                .map((item) => ({
+                label: String(item?.[dep.labelKey] ?? ""),
+                value: item?.[dep.valueKey],
+            }))
+                .filter((o) => o.label !== "" && o.value !== undefined)
+            : [];
+        this.selectState[child.id] = { loading: false, options: childOptions };
+        // Reset child value since parent changed
+        if (childCtrl) {
+            childCtrl.setValue("", { emitEvent: false });
+        }
+        this.cdr.detectChanges();
+    }
+    getByPath(obj, path) {
+        if (!obj || !path)
+            return obj;
+        return path
+            .split(".")
+            .reduce((acc, k) => (acc == null ? undefined : acc[k]), obj);
     }
     isCard(field) {
         const t = field?.type;
