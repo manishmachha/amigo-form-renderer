@@ -332,7 +332,7 @@ declare class AmigoFormComponent implements OnChanges {
     setActiveStep(i: number): void;
     prevStep(): void;
     nextStep(): void;
-    submit(): void;
+    submit(triggerField?: any): void;
     private touchFields;
     private hasErrors;
     getFormStyle(): Record<string, any>;
@@ -340,7 +340,6 @@ declare class AmigoFormComponent implements OnChanges {
         [key: string]: string;
     };
     isBootstrapIcon(icon: string | null | undefined): boolean;
-    private normalizePayload;
     private isEmptyInput;
     private resolveEmptyValue;
     private patchInitialValue;

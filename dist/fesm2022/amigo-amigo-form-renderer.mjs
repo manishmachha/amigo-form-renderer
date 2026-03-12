@@ -967,16 +967,63 @@ class AmigoFormComponent {
     nextStep() {
         this.setActiveStep(this.activeStepIndex + 1);
     }
-    submit() {
+    submit(triggerField) {
         if (!this.resolvedSchema || !this.form)
             return;
         this.submitFeedback = undefined;
-        this.form.markAllAsTouched();
-        if (this.form.invalid)
+        let btnField = triggerField;
+        if (!btnField && this.resolvedSchema.fields) {
+            btnField = this.resolvedSchema.fields.find((f) => f.type === 'button' && f.button?.isSubmit);
+        }
+        const btn = btnField?.button;
+        const triggerValidation = btn?.triggerValidation !== false;
+        if (triggerValidation) {
+            this.form.markAllAsTouched();
+            if (this.form.invalid)
+                return;
+        }
+        const formValue = this.normalizeFormValue();
+        const endpoint = btn?.api;
+        if (!btnField || !endpoint || !endpoint.url) {
+            this.submitted.emit(formValue);
             return;
-        const rawPayload = this.form.value;
-        const payload = this.normalizePayload(rawPayload);
-        this.submitted.emit(payload);
+        }
+        this.isSubmitting = true;
+        // For isSubmit: true, we send the entire form data as body, bypassing bodyMapping
+        const apiConfig = { ...endpoint, bodyMapping: null };
+        this.apiExec
+            .execute(apiConfig, {
+            formValue,
+            pathParams: this.submitPathParams,
+            queryParams: this.submitQueryParams,
+        })
+            .pipe(finalize(() => (this.isSubmitting = false)))
+            .subscribe({
+            next: (res) => {
+                this.submitFeedback = {
+                    type: "success",
+                    message: btn.successMessage || "Submitted successfully.",
+                };
+                this.submitted.emit({
+                    url: apiConfig.url,
+                    method: apiConfig.method || 'POST',
+                    payload: formValue,
+                    headers: apiConfig.headers || [],
+                    params: apiConfig.queryParams || [],
+                    response: res,
+                });
+            },
+            error: (err) => {
+                this.submitFeedback = {
+                    type: "error",
+                    message: btn.errorMessage ||
+                        err?.error?.message ||
+                        err?.message ||
+                        "Failed to submit. Please try again.",
+                };
+                this.submitFailed.emit(err);
+            },
+        });
     }
     touchFields(fields) {
         if (!this.form)
@@ -1039,26 +1086,6 @@ class AmigoFormComponent {
     isBootstrapIcon(icon) {
         const v = (icon || "").trim();
         return v.startsWith("bi ") || v.startsWith("bi-") || v.includes(" bi-");
-    }
-    normalizePayload(payload) {
-        const normalized = {};
-        for (const field of this.resolvedSchema?.fields ?? []) {
-            const key = this.controlKey(field);
-            const value = payload[key];
-            if (field.type === "number") {
-                normalized[key] =
-                    value === "" || value === undefined || value === null
-                        ? this.resolveEmptyValue(field)
-                        : Number(value);
-            }
-            else if (this.isEmptyInput(value)) {
-                normalized[key] = this.resolveEmptyValue(field);
-            }
-            else {
-                normalized[key] = value;
-            }
-        }
-        return normalized;
     }
     isEmptyInput(v) {
         return v === "" || v === null || v === undefined;
@@ -1250,7 +1277,7 @@ class AmigoFormComponent {
     onSchemaButtonClick(field) {
         const btn = field?.button;
         const endpoint = btn?.api;
-        if (!btn || (btn.actionType === "API_CALL" && !endpoint))
+        if (!btn || (btn.actionType === "API_CALL" && !endpoint?.url))
             return;
         const triggerValidation = btn.triggerValidation !== false;
         if (triggerValidation) {
@@ -1268,11 +1295,19 @@ class AmigoFormComponent {
             .execute(endpoint, { formValue })
             .pipe(finalize(() => (this.buttonLoading[field.id] = false)))
             .subscribe({
-            next: () => {
+            next: (res) => {
                 this.buttonFeedback[field.id] = {
                     type: "success",
                     message: btn.successMessage || "Action completed successfully.",
                 };
+                this.submitted.emit({
+                    url: endpoint.url,
+                    method: endpoint.method || 'POST',
+                    payload: formValue,
+                    headers: endpoint.headers || [],
+                    params: endpoint.queryParams || [],
+                    response: res,
+                });
             },
             error: (err) => {
                 this.buttonFeedback[field.id] = {
