@@ -103,7 +103,7 @@ export interface ActionApiConfig {
   api: ApiEndpointConfig;
 }
 
-export type ButtonStyleVariant = "primary" | "secondary" | "danger";
+export type ButtonStyleVariant = "primary" | "outline" | "link";
 export type ButtonActionType = "API_CALL";
 
 export interface ButtonElementSchema {
@@ -121,6 +121,7 @@ export interface ButtonElementSchema {
   textColor?: string;
   hoverBackgroundColor?: string;
   hoverTextColor?: string;
+  href?: string;
 }
 
 export interface InfoCardStyleSchema {

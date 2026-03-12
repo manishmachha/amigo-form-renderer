@@ -73,7 +73,7 @@ interface ActionApiConfig {
     errorMessage?: string;
     api: ApiEndpointConfig;
 }
-type ButtonStyleVariant = "primary" | "secondary" | "danger";
+type ButtonStyleVariant = "primary" | "outline" | "link";
 type ButtonActionType = "API_CALL";
 interface ButtonElementSchema {
     label: string;
@@ -88,6 +88,7 @@ interface ButtonElementSchema {
     textColor?: string;
     hoverBackgroundColor?: string;
     hoverTextColor?: string;
+    href?: string;
 }
 interface InfoCardStyleSchema {
     borderWidth?: number;

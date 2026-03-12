@@ -820,6 +820,11 @@ export class AmigoFormComponent implements OnChanges {
 
   onSchemaButtonClick(field: any): void {
     const btn = field?.button;
+    if (btn?.styleVariant === 'link' && btn?.href) {
+      window.open(btn.href, '_blank');
+      return;
+    }
+    
     const endpoint = btn?.api;
     if (!btn || (btn.actionType === "API_CALL" && !endpoint?.url)) return;
 
