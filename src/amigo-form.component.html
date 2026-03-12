@@ -250,7 +250,7 @@
           <div class="w-full">
             <button
               [type]="field.button?.isSubmit ? 'submit' : 'button'"
-              (click)="!field.button?.isSubmit && onSchemaButtonClick(field)"
+              (click)="field.button?.isSubmit ? submit() : onSchemaButtonClick(field)"
               [disabled]="field.button?.isSubmit ? isSubmitting : (buttonLoading[field.id] ?? false)"
               class="w-full transition disabled:opacity-60 disabled:cursor-not-allowed"
               [ngClass]="[
