@@ -84,6 +84,10 @@ interface ButtonElementSchema {
     errorMessage?: string;
     triggerValidation?: boolean;
     isSubmit?: boolean;
+    backgroundColor?: string;
+    textColor?: string;
+    hoverBackgroundColor?: string;
+    hoverTextColor?: string;
 }
 interface InfoCardStyleSchema {
     borderWidth?: number;
@@ -142,10 +146,6 @@ interface FormStyleSchema {
     borderColor: string;
     backgroundColor: string;
     textColor: string;
-    buttonBackgroundColor: string;
-    buttonTextColor: string;
-    buttonHoverBackgroundColor?: string;
-    buttonHoverTextColor?: string;
     formClass?: string;
     fieldWrapperClass?: string;
     labelClass?: string;
@@ -286,6 +286,7 @@ declare class AmigoFormComponent implements OnChanges {
         message: string;
     };
     isSubmitHovered: boolean;
+    hoverState: Record<string, boolean>;
     selectState: Record<string, {
         loading: boolean;
         error?: string;
@@ -336,9 +337,6 @@ declare class AmigoFormComponent implements OnChanges {
     private touchFields;
     private hasErrors;
     getFormStyle(): Record<string, any>;
-    get submitButtonStyle(): {
-        [key: string]: string;
-    };
     isBootstrapIcon(icon: string | null | undefined): boolean;
     private isEmptyInput;
     private resolveEmptyValue;

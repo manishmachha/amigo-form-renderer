@@ -58,6 +58,7 @@ export class AmigoFormComponent implements OnChanges {
   submitLoading = false;
   submitFeedback?: { type: "success" | "error"; message: string };
   isSubmitHovered = false;
+  hoverState: Record<string, boolean> = {};
   selectState: Record<
     string,
     { loading: boolean; error?: string; options: any[] }
@@ -616,19 +617,7 @@ export class AmigoFormComponent implements OnChanges {
     };
   }
 
-  get submitButtonStyle(): { [key: string]: string } {
-    const st: any = this.resolvedSchema?.style ?? {};
-    const baseBg = st.buttonBackgroundColor ?? "#111827";
-    const baseText = st.buttonTextColor ?? "#ffffff";
-    const hoverBg = st.buttonHoverBackgroundColor ?? baseBg;
-    const hoverText = st.buttonHoverTextColor ?? baseText;
 
-    return {
-      backgroundColor: this.isSubmitHovered ? hoverBg : baseBg,
-      color: this.isSubmitHovered ? hoverText : baseText,
-      borderRadius: st.borderRadius ? `${st.borderRadius}px` : "10px",
-    };
-  }
 
   isBootstrapIcon(icon: string | null | undefined): boolean {
     const v = (icon || "").trim();

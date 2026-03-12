@@ -116,6 +116,11 @@ export interface ButtonElementSchema {
   triggerValidation?: boolean;
   
   isSubmit?: boolean;
+
+  backgroundColor?: string;
+  textColor?: string;
+  hoverBackgroundColor?: string;
+  hoverTextColor?: string;
 }
 
 export interface InfoCardStyleSchema {
@@ -186,11 +191,6 @@ export interface FormStyleSchema {
   borderColor: string;
   backgroundColor: string;
   textColor: string;
-
-  buttonBackgroundColor: string;
-  buttonTextColor: string;
-  buttonHoverBackgroundColor?: string;
-  buttonHoverTextColor?: string;
 
   formClass?: string;
   fieldWrapperClass?: string;

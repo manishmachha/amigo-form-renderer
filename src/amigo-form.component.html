@@ -47,10 +47,9 @@
     >
       <div class="w-full h-1 bg-gray-200 rounded-full relative mb-6">
         <div
-          class="h-1 rounded-full transition-all duration-300"
+          class="h-1 rounded-full transition-all duration-300 bg-blue-600"
           [ngStyle]="{
-            width: ((activeStepIndex + 1) / totalSteps) * 100 + '%',
-            backgroundColor: submitButtonStyle['backgroundColor'],
+            width: ((activeStepIndex + 1) / totalSteps) * 100 + '%'
           }"
         ></div>
       </div>
@@ -66,9 +65,9 @@
             [ngStyle]="
               i === activeStepIndex
                 ? {
-                    backgroundColor: submitButtonStyle['backgroundColor'],
-                    borderColor: submitButtonStyle['backgroundColor'],
-                    color: submitButtonStyle['color'],
+                    backgroundColor: '#2563eb',
+                    borderColor: '#2563eb',
+                    color: '#ffffff',
                   }
                 : {
                     backgroundColor: '#FFFFFF',
@@ -87,7 +86,7 @@
                 class="text-lg"
                 [ngStyle]="
                   i === activeStepIndex
-                    ? { color: submitButtonStyle['color'] }
+                    ? { color: '#ffffff' }
                     : { color: '#6B7280' }
                 "
               >
@@ -253,14 +252,21 @@
               (click)="field.button?.isSubmit ? submit() : onSchemaButtonClick(field)"
               [disabled]="field.button?.isSubmit ? isSubmitting : (buttonLoading[field.id] ?? false)"
               class="w-full transition disabled:opacity-60 disabled:cursor-not-allowed"
+              (mouseenter)="hoverState[field.id] = true"
+              (mouseleave)="hoverState[field.id] = false"
+              [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
+              [ngStyle]="{
+                'background-color': hoverState[field.id] ? (field.button?.hoverBackgroundColor || field.button?.backgroundColor || '') : (field.button?.backgroundColor || ''),
+                'color': hoverState[field.id] ? (field.button?.hoverTextColor || field.button?.textColor || '') : (field.button?.textColor || ''),
+                'border-color': hoverState[field.id] ? (field.button?.hoverBackgroundColor || field.button?.backgroundColor || '') : (field.button?.backgroundColor || '')
+              }"
               [ngClass]="[
-                resolvedSchema?.style?.inputClass ||
-                  'w-full border border-gray-300 rounded px-2 py-1 text-sm',
-                (field.button?.styleVariant || 'primary') === 'primary'
+                resolvedSchema?.style?.inputClass ? resolvedSchema.style.inputClass.replace('rounded', '') : 'w-full border px-2 py-1 text-sm',
+                (!field.button?.backgroundColor && (field.button?.styleVariant || 'primary') === 'primary')
                   ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
-                  : (field.button?.styleVariant || 'primary') === 'danger'
+                  : (!field.button?.backgroundColor && (field.button?.styleVariant || 'primary') === 'danger')
                     ? 'bg-red-600 text-white border-red-600 hover:bg-red-700'
-                    : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50',
+                    : (!field.button?.backgroundColor) ? 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50' : ''
               ]"
             >
               <span class="inline-flex items-center justify-center gap-2">
@@ -312,6 +318,7 @@
                 type="text"
                 [placeholder]="field.placeholder"
                 [formControlName]="controlKey(field)"
+                [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
                 [ngClass]="
                   resolvedSchema?.style?.inputClass ||
                   'w-full border border-gray-300 rounded px-2 py-1 text-sm'
@@ -343,6 +350,7 @@
                 type="password"
                 [placeholder]="field.placeholder"
                 [formControlName]="controlKey(field)"
+                [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
                 [ngClass]="
                   resolvedSchema?.style?.inputClass ||
                   'w-full border border-gray-300 rounded px-2 py-1 text-sm'
@@ -374,6 +382,7 @@
                 type="number"
                 [placeholder]="field.placeholder"
                 [formControlName]="controlKey(field)"
+                [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
                 [ngClass]="
                   resolvedSchema?.style?.inputClass ||
                   'w-full border border-gray-300 rounded px-2 py-1 text-sm'
@@ -401,6 +410,7 @@
                 type="email"
                 [placeholder]="field.placeholder"
                 [formControlName]="controlKey(field)"
+                [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
                 [ngClass]="
                   resolvedSchema?.style?.inputClass ||
                   'w-full border border-gray-300 rounded px-2 py-1 text-sm'
@@ -435,6 +445,7 @@
                 [placeholder]="field.placeholder"
                 [formControlName]="controlKey(field)"
                 rows="4"
+                [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
                 [ngClass]="
                   resolvedSchema?.style?.inputClass ||
                   'w-full border border-gray-300 rounded px-2 py-1 text-sm'
@@ -465,6 +476,7 @@
               <select
                 [formControlName]="controlKey(field)"
                 [disabled]="selectState[field.id]?.loading ?? false"
+                [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
                 [ngClass]="
                   resolvedSchema?.style?.inputClass ||
                   'w-full border border-gray-300 rounded px-2 py-1 text-sm'
@@ -576,6 +588,7 @@
               <input
                 type="date"
                 [formControlName]="controlKey(field)"
+                [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
                 [ngClass]="
                   resolvedSchema?.style?.inputClass ||
                   'w-full border border-gray-300 rounded px-2 py-1 text-sm'
@@ -608,6 +621,7 @@
                     [attr.multiple]="field.multiple ? '' : null"
                     (change)="onFileChange($event, field)"
                     (blur)="ctrl(field)?.markAsTouched()"
+                    [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
                     [ngClass]="
                       resolvedSchema?.style?.inputClass ||
                       'w-full border border-gray-300 rounded px-2 py-1 text-sm'
@@ -672,6 +686,7 @@
                 type="text"
                 [placeholder]="field.placeholder"
                 [formControlName]="controlKey(field)"
+                [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
                 [ngClass]="
                   resolvedSchema?.style?.inputClass ||
                   'w-full border border-gray-300 rounded px-2 py-1 text-sm'
