@@ -114,6 +114,8 @@ export interface ButtonElementSchema {
   successMessage?: string;
   errorMessage?: string;
   triggerValidation?: boolean;
+  
+  isSubmit?: boolean;
 }
 
 export interface InfoCardStyleSchema {
@@ -199,15 +201,9 @@ export interface FormStyleSchema {
 
 export interface FormActionSchema {
   submitLabel: string;
-  cancelLabel: string;
-
-  submitApiUrl?: string;
   method?: HttpMethod;
-
   payloadKey?: string;
   contentType?: "auto" | "json" | "multipart";
-
-  submitApi?: ActionApiConfig;
 }
 
 export type FormType = "single" | "multi" | "single-sectional";

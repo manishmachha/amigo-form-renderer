@@ -19,29 +19,5 @@ export class AmigoFormService {
     return this.http.get<FormSchema>(url);
   }
 
-  submitByAction(action: FormActionSchema, payload: Record<string, any>): Observable<any> {
-    const api = (action as any)?.submitApi?.api as ApiEndpointConfig | undefined;
 
-    const endpoint: ApiEndpointConfig | null =
-      api?.url
-        ? api
-        : action?.submitApiUrl
-        ? {
-            method: ((action.method || 'POST') as string).toUpperCase() as HttpMethod,
-            url: action.submitApiUrl,
-            headers: [],
-            queryParams: [],
-          }
-        : null;
-
-    if (!endpoint?.url) {
-      return throwError(() => new Error('No submit API configuration found'));
-    }
-
-    return this.apiExec.execute(endpoint, {
-      formValue: payload,
-      payloadKey: action.payloadKey || undefined,
-      contentType: (action.contentType as any) || 'auto',
-    });
-  }
 }

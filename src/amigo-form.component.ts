@@ -49,7 +49,7 @@ export class AmigoFormComponent implements OnChanges {
   isLoading = false;
   loadError: string | null = null;
 
-  isSubmitting = false;
+  @Input() isSubmitting = false;
 
   resolvedSchema: any | null = null;
   form: FormGroup | null = null;
@@ -508,63 +508,13 @@ export class AmigoFormComponent implements OnChanges {
 
     this.submitFeedback = undefined;
 
-    const action: any = this.resolvedSchema?.actions ?? {};
-    const submitCfg = this.resolveSubmitApi();
-
-    const triggerValidation = submitCfg
-      ? submitCfg.triggerValidation !== false
-      : true;
-
-    if (triggerValidation) {
-      this.form.markAllAsTouched();
-      if (this.form.invalid) return;
-    }
+    this.form.markAllAsTouched();
+    if (this.form.invalid) return;
 
     const rawPayload = this.form.value;
     const payload = this.normalizePayload(rawPayload);
 
-    if (!submitCfg?.api?.url) {
-      this.submitted.emit(payload);
-      return;
-    }
-
-    this.isSubmitting = true;
-
-    this.apiExec
-      .execute(submitCfg.api, {
-        formValue: payload,
-        pathParams: this.submitPathParams,
-        queryParams: this.submitQueryParams,
-        payloadKey: action.payloadKey,
-        contentType: action.contentType,
-      })
-      .pipe(finalize(() => (this.isSubmitting = false)))
-      .subscribe({
-        next: (res) => {
-          this.submitFeedback = {
-            type: "success",
-            message: submitCfg.successMessage || "Submitted successfully.",
-          };
-
-          this.submitted.emit({
-            payload,
-            response: res,
-            action: this.resolvedSchema?.actions,
-          });
-        },
-        error: (err) => {
-          this.submitFeedback = {
-            type: "error",
-            message:
-              submitCfg.errorMessage ||
-              err?.error?.message ||
-              err?.message ||
-              "Failed to submit. Please try again.",
-          };
-
-          this.submitFailed.emit(err);
-        },
-      });
+    this.submitted.emit(payload);
   }
 
   private touchFields(fields: FormFieldSchema[]): void {
@@ -887,31 +837,7 @@ export class AmigoFormComponent implements OnChanges {
       });
   }
 
-  private resolveSubmitApi(): ActionApiConfig | null {
-    const a: any = this.resolvedSchema?.actions;
-    if (a?.submitApi?.api?.url) {
-      return {
-        triggerValidation: a.submitApi.triggerValidation !== false,
-        successMessage: a.submitApi.successMessage,
-        errorMessage: a.submitApi.errorMessage,
-        api: a.submitApi.api,
-      };
-    }
 
-    if (a?.submitApiUrl) {
-      return {
-        triggerValidation: true,
-        api: {
-          method: (a.method || "POST") as any,
-          url: a.submitApiUrl,
-          headers: [],
-          queryParams: [],
-        },
-      };
-    }
-
-    return null;
-  }
 }
 
 function px(v: any): string | null {

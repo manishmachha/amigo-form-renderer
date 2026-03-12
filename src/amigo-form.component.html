@@ -215,25 +215,7 @@
       {{ submitFeedback.message }}
     </div>
 
-    <div class="mt-4 flex items-center gap-2">
-      <button
-        type="submit"
-        (mouseenter)="isSubmitHovered = true"
-        (mouseleave)="isSubmitHovered = false"
-        [ngStyle]="submitButtonStyle"
-        [disabled]="isSubmitting"
-        [ngClass]="
-          resolvedSchema.style?.buttonClass ||
-          'px-4 py-2 rounded text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed'
-        "
-      >
-        {{
-          isSubmitting
-            ? "Submitting..."
-            : resolvedSchema.actions?.submitLabel || "Submit"
-        }}
-      </button>
-    </div>
+    <!-- Removed Fixed Submit Button Container -->
 
     <ng-template #fieldRenderer let-field>
       <ng-container *ngIf="isCard(field); else notCard">
@@ -267,9 +249,9 @@
         <ng-container *ngIf="isButton(field); else inputField">
           <div class="w-full">
             <button
-              type="button"
-              (click)="onSchemaButtonClick(field)"
-              [disabled]="buttonLoading[field.id] ?? false"
+              [type]="field.button?.isSubmit ? 'submit' : 'button'"
+              (click)="!field.button?.isSubmit && onSchemaButtonClick(field)"
+              [disabled]="field.button?.isSubmit ? isSubmitting : (buttonLoading[field.id] ?? false)"
               class="w-full transition disabled:opacity-60 disabled:cursor-not-allowed"
               [ngClass]="[
                 resolvedSchema?.style?.inputClass ||
@@ -282,8 +264,10 @@
               ]"
             >
               <span class="inline-flex items-center justify-center gap-2">
-                <span>{{ field.button?.label || field.label }}</span>
-                <span *ngIf="buttonLoading[field.id]" class="text-xs opacity-80"
+                <span>
+                  {{ (field.button?.isSubmit && isSubmitting) ? 'Submitting...' : (field.button?.label || field.label) }}
+                </span>
+                <span *ngIf="!field.button?.isSubmit && buttonLoading[field.id]" class="text-xs opacity-80"
                   >…</span
                 >
               </span>
