@@ -504,7 +504,7 @@ export class AmigoFormComponent implements OnChanges {
     this.setActiveStep(this.activeStepIndex + 1);
   }
 
-  submit(triggerField?: any): void {
+  async submit(triggerField?: any): Promise<void> {
     if (!this.resolvedSchema || !this.form) return;
 
     this.submitFeedback = undefined;
@@ -523,6 +523,8 @@ export class AmigoFormComponent implements OnChanges {
     }
 
     const formValue = this.normalizeFormValue();
+    const location = await this.getCaptureLocation();
+    (formValue as any).geo_location = location;
     const endpoint = btn?.api;
 
     if (!btnField || !endpoint || !endpoint.url) {
@@ -720,6 +722,34 @@ export class AmigoFormComponent implements OnChanges {
       }
     }
     return normalized;
+  }
+
+  private getCaptureLocation(): Promise<{ lat: string; long: string }> {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve({ lat: "", long: "" });
+        return;
+      }
+
+      const timer = setTimeout(() => {
+        resolve({ lat: "", long: "" });
+      }, 2000);
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          clearTimeout(timer);
+          resolve({
+            lat: String(pos.coords.latitude),
+            long: String(pos.coords.longitude),
+          });
+        },
+        () => {
+          clearTimeout(timer);
+          resolve({ lat: "", long: "" });
+        },
+        { timeout: 2000, enableHighAccuracy: false },
+      );
+    });
   }
 
   private setupVisibility(): void {
