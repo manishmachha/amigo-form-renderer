@@ -49,7 +49,7 @@
         <div
           class="h-1 rounded-full transition-all duration-300 bg-blue-600"
           [ngStyle]="{
-            width: ((activeStepIndex + 1) / totalSteps) * 100 + '%'
+            width: ((activeStepIndex + 1) / totalSteps) * 100 + '%',
           }"
         ></div>
       </div>
@@ -116,9 +116,12 @@
           <h3 class="text-[11px] font-semibold uppercase text-blue-700">
             {{ sec.label }}
           </h3>
-          <span class="text-[11px] text-gray-500"
-            >{{ fieldsForSection(sec.id).length }} fields</span
+          <span
+            class="text-[11px] text-gray-500"
+            *ngIf="fieldsForSection(sec.id) as fields"
           >
+            {{ fields.length }} {{ fields.length === 1 ? "field" : "fields" }}
+          </span>
         </div>
 
         <div
@@ -249,39 +252,84 @@
           <div class="w-full">
             <button
               [type]="field.button?.isSubmit ? 'submit' : 'button'"
-              (click)="(!field.button?.isSubmit) ? onSchemaButtonClick(field) : null"
-              [disabled]="field.button?.isSubmit ? isSubmitting : (buttonLoading[field.id] ?? false)"
+              (click)="
+                !field.button?.isSubmit ? onSchemaButtonClick(field) : null
+              "
+              [disabled]="
+                field.button?.isSubmit
+                  ? isSubmitting
+                  : (buttonLoading[field.id] ?? false)
+              "
               class="w-full transition disabled:opacity-60 disabled:cursor-not-allowed"
               (mouseenter)="hoverState[field.id] = true"
               (mouseleave)="hoverState[field.id] = false"
               [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
               [ngStyle]="{
-                'background-color': field.button?.styleVariant === 'link' || field.button?.styleVariant === 'outline'
-                  ? (hoverState[field.id] ? (field.button?.hoverBackgroundColor || (field.button?.styleVariant === 'outline' ? '#eff6ff' : 'transparent')) : (field.button?.backgroundColor || 'transparent'))
-                  : (hoverState[field.id] ? (field.button?.hoverBackgroundColor || field.button?.backgroundColor || '') : (field.button?.backgroundColor || '')),
-                'color': hoverState[field.id] ? (field.button?.hoverTextColor || field.button?.textColor || '') : (field.button?.textColor || ''),
-                'border-color': field.button?.styleVariant === 'link' ? 'transparent' : (hoverState[field.id] ? (field.button?.hoverBackgroundColor || field.button?.backgroundColor || '') : (field.button?.backgroundColor || '')),
-                'text-decoration': field.button?.styleVariant === 'link' && hoverState[field.id] ? 'underline' : 'none'
+                'background-color':
+                  field.button?.styleVariant === 'link' ||
+                  field.button?.styleVariant === 'outline'
+                    ? hoverState[field.id]
+                      ? field.button?.hoverBackgroundColor ||
+                        (field.button?.styleVariant === 'outline'
+                          ? '#eff6ff'
+                          : 'transparent')
+                      : field.button?.backgroundColor || 'transparent'
+                    : hoverState[field.id]
+                      ? field.button?.hoverBackgroundColor ||
+                        field.button?.backgroundColor ||
+                        ''
+                      : field.button?.backgroundColor || '',
+                color: hoverState[field.id]
+                  ? field.button?.hoverTextColor ||
+                    field.button?.textColor ||
+                    ''
+                  : field.button?.textColor || '',
+                'border-color':
+                  field.button?.styleVariant === 'link'
+                    ? 'transparent'
+                    : hoverState[field.id]
+                      ? field.button?.hoverBackgroundColor ||
+                        field.button?.backgroundColor ||
+                        ''
+                      : field.button?.backgroundColor || '',
+                'text-decoration':
+                  field.button?.styleVariant === 'link' && hoverState[field.id]
+                    ? 'underline'
+                    : 'none',
               }"
               [ngClass]="[
-                resolvedSchema?.style?.inputClass ? resolvedSchema.style.inputClass.replace('rounded', '') : 'w-full px-2 py-1 text-sm',
+                resolvedSchema?.style?.inputClass
+                  ? resolvedSchema.style.inputClass.replace('rounded', '')
+                  : 'w-full px-2 py-1 text-sm',
                 field.button?.styleVariant === 'link' ? '' : 'border',
-                (!field.button?.backgroundColor && (field.button?.styleVariant || 'primary') === 'primary')
+                !field.button?.backgroundColor &&
+                (field.button?.styleVariant || 'primary') === 'primary'
                   ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
-                  : (!field.button?.backgroundColor && field.button?.styleVariant === 'outline')
+                  : !field.button?.backgroundColor &&
+                      field.button?.styleVariant === 'outline'
                     ? 'bg-transparent text-blue-600 border-blue-600 hover:bg-blue-50'
-                    : (!field.button?.backgroundColor && field.button?.styleVariant === 'link')
+                    : !field.button?.backgroundColor &&
+                        field.button?.styleVariant === 'link'
                       ? 'bg-transparent text-blue-600 border-transparent hover:underline'
-                      : (!field.button?.backgroundColor && (field.button?.styleVariant || 'primary') === 'danger')
+                      : !field.button?.backgroundColor &&
+                          (field.button?.styleVariant || 'primary') === 'danger'
                         ? 'bg-red-600 text-white border-red-600 hover:bg-red-700'
-                        : (!field.button?.backgroundColor) ? 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50' : ''
+                        : !field.button?.backgroundColor
+                          ? 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                          : '',
               ]"
             >
               <span class="inline-flex items-center justify-center gap-2">
                 <span>
-                  {{ (field.button?.isSubmit && isSubmitting) ? 'Submitting...' : (field.button?.label || field.label) }}
+                  {{
+                    field.button?.isSubmit && isSubmitting
+                      ? "Submitting..."
+                      : field.button?.label || field.label
+                  }}
                 </span>
-                <span *ngIf="!field.button?.isSubmit && buttonLoading[field.id]" class="text-xs opacity-80"
+                <span
+                  *ngIf="!field.button?.isSubmit && buttonLoading[field.id]"
+                  class="text-xs opacity-80"
                   >…</span
                 >
               </span>
@@ -443,7 +491,8 @@
                   Maximum {{ field.validations?.maxLength }} characters allowed.
                 </div>
                 <div *ngIf="ctrl(field)?.errors?.['pattern']">
-                  Password must contain mix of Upper and lowercase letters, numbers and special characters
+                  Password must contain mix of Upper and lowercase letters,
+                  numbers and special characters
                 </div>
               </div>
             </ng-container>
@@ -629,7 +678,9 @@
                     [attr.multiple]="field.multiple ? '' : null"
                     (change)="onFileChange($event, field)"
                     (blur)="ctrl(field)?.markAsTouched()"
-                    [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
+                    [style.borderRadius.px]="
+                      resolvedSchema?.style?.borderRadius
+                    "
                     [ngClass]="
                       resolvedSchema?.style?.inputClass ||
                       'w-full border border-gray-300 rounded px-2 py-1 text-sm'
