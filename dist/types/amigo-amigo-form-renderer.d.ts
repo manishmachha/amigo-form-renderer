@@ -298,6 +298,8 @@ declare class AmigoFormComponent implements OnChanges {
         type: "success" | "error";
         message: string;
     }>;
+    showReviewDialog: boolean;
+    isReviewed: boolean;
     private visibilitySub?;
     private visibilityState;
     private visibilityUpdating;
@@ -334,7 +336,7 @@ declare class AmigoFormComponent implements OnChanges {
     setActiveStep(i: number): void;
     prevStep(): void;
     nextStep(): void;
-    submit(triggerField?: any): void;
+    submit(triggerField?: any): Promise<void>;
     private touchFields;
     private hasErrors;
     getFormStyle(): Record<string, any>;
@@ -345,7 +347,9 @@ declare class AmigoFormComponent implements OnChanges {
     isButton(field: any): boolean;
     private isNonInput;
     private normalizeFormValue;
+    private getCaptureLocation;
     private setupVisibility;
+    isFieldVisibleOriginal(field: any): boolean;
     isFieldVisible(field: any): boolean;
     private recomputeVisibility;
     private evaluateVisibility;
@@ -353,6 +357,18 @@ declare class AmigoFormComponent implements OnChanges {
     private resolveDependsOnKey;
     private isEmptyValue;
     onSchemaButtonClick(field: any): void;
+    openReviewDialog(): void;
+    closeReviewDialog(): void;
+    confirmReview(): void;
+    get reviewData(): {
+        step: string;
+        fields: {
+            label: string;
+            value: any;
+        }[];
+    }[];
+    getFieldsForReview(step: any): any;
+    getReviewValue(field: any): string;
     static ɵfac: i0.ɵɵFactoryDeclaration<AmigoFormComponent, never>;
     static ɵcmp: i0.ɵɵComponentDeclaration<AmigoFormComponent, "amigo-form", never, { "formId": { "alias": "formId"; "required": false; }; "schema": { "alias": "schema"; "required": false; }; "initialValue": { "alias": "initialValue"; "required": false; }; "submitPathParams": { "alias": "submitPathParams"; "required": false; }; "submitQueryParams": { "alias": "submitQueryParams"; "required": false; }; "isSubmitting": { "alias": "isSubmitting"; "required": false; }; }, { "submitted": "submitted"; "submitFailed": "submitFailed"; }, never, never, true, never>;
 }

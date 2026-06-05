@@ -69,6 +69,9 @@ export class AmigoFormComponent implements OnChanges {
     { type: "success" | "error"; message: string }
   > = {};
 
+  showReviewDialog = false;
+  isReviewed = false;
+
   private visibilitySub?: Subscription;
   private visibilityState: Record<string, boolean> = {};
   private visibilityUpdating = false;
@@ -182,6 +185,7 @@ export class AmigoFormComponent implements OnChanges {
     };
 
     this.activeStepIndex = 0;
+    this.isReviewed = false;
     this.form = buildFormGroup(this.resolvedSchema!.fields, this.initialValue);
     this.patchInitialValue();
     this.setupVisibility();
@@ -762,11 +766,20 @@ export class AmigoFormComponent implements OnChanges {
     });
   }
 
-  isFieldVisible(field: any): boolean {
+  isFieldVisibleOriginal(field: any): boolean {
     const rules = field?.visibility?.rules;
     if (!rules || !rules.length) return true;
     const key = field?.id || field?.name;
     return this.visibilityState[key] !== false;
+  }
+
+  isFieldVisible(field: any): boolean {
+    if (field?.type === 'button' && field?.button?.isSubmit) {
+      if (this.isMultiStep && !this.isReviewed) {
+        return false;
+      }
+    }
+    return this.isFieldVisibleOriginal(field);
   }
 
   private recomputeVisibility(): void {
@@ -904,7 +917,72 @@ export class AmigoFormComponent implements OnChanges {
       });
   }
 
+  openReviewDialog() {
+    const fields = this.fieldsForStep(this.activeStepIndex);
+    this.touchFields(fields);
+    if (this.hasErrors(fields)) return;
+    this.showReviewDialog = true;
+  }
 
+  closeReviewDialog() {
+    this.showReviewDialog = false;
+  }
+
+  confirmReview() {
+    this.isReviewed = true;
+    this.showReviewDialog = false;
+  }
+
+  get reviewData() {
+    const data: { step: string, fields: { label: string, value: any }[] }[] = [];
+    if (this.isMultiStep) {
+      for (let i = 0; i < this.totalSteps; i++) {
+        const step = this.orderedSteps[i];
+        const stepFields = this.getFieldsForReview(step);
+        if (stepFields.length > 0) {
+          data.push({
+            step: step.label || `Step ${i + 1}`,
+            fields: stepFields
+          });
+        }
+      }
+    }
+    return data;
+  }
+
+  getFieldsForReview(step: any) {
+    const s = this.resolvedSchema;
+    if (!s) return [];
+    const ids = new Set(step?.fieldIds ?? []);
+    return (s.fields ?? [])
+      .filter((f: any) => ids.has(f.id) && !this.isNonInput(f) && this.isFieldVisibleOriginal(f))
+      .map((f: any) => {
+        return {
+          label: f.label,
+          value: this.getReviewValue(f)
+        };
+      });
+  }
+
+  getReviewValue(field: any): string {
+    const val = this.form?.get(this.controlKey(field))?.value;
+    if (val === null || val === undefined || val === '') return '-';
+    
+    if (field.type === 'select' || field.type === 'radio') {
+      const opts = field.optionsSource?.mode === 'API' ? this.selectState[field.id]?.options : field.options;
+      const selectedOpt = (opts || []).find((o: any) => String(o.value) === String(val));
+      return selectedOpt ? selectedOpt.label : val;
+    }
+    if (field.type === 'checkbox') {
+      return val ? 'Yes' : 'No';
+    }
+    if (field.type === 'file') {
+      const names = this.fileNames(field);
+      return names.length ? names.join(', ') : '-';
+    }
+    
+    return val;
+  }
 }
 
 function px(v: any): string | null {
