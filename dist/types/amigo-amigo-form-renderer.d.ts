@@ -1,6 +1,7 @@
 import * as i0 from '@angular/core';
-import { InjectionToken, Provider, OnChanges, EventEmitter, ChangeDetectorRef, NgZone, SimpleChanges } from '@angular/core';
+import { InjectionToken, Provider, OnChanges, EventEmitter, TemplateRef, ChangeDetectorRef, NgZone, SimpleChanges } from '@angular/core';
 import { FormGroup, AbstractControl } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
 import { HttpClient, HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
@@ -268,6 +269,7 @@ declare class AmigoFormComponent implements OnChanges {
     private zone;
     private apiExec;
     private selectOptions;
+    private dialog;
     formId?: string;
     schema?: FormSchema;
     initialValue?: Record<string, any>;
@@ -300,11 +302,12 @@ declare class AmigoFormComponent implements OnChanges {
     }>;
     showReviewDialog: boolean;
     isReviewed: boolean;
+    reviewDialogTemplate: TemplateRef<any>;
     private visibilitySub?;
     private visibilityState;
     private visibilityUpdating;
     private cascadingSubs;
-    constructor(formService: AmigoFormService, cdr: ChangeDetectorRef, zone: NgZone, apiExec: AmigoApiExecutionService, selectOptions: AmigoSelectOptionsService);
+    constructor(formService: AmigoFormService, cdr: ChangeDetectorRef, zone: NgZone, apiExec: AmigoApiExecutionService, selectOptions: AmigoSelectOptionsService, dialog: MatDialog);
     ngOnChanges(changes: SimpleChanges): void;
     private init;
     private preloadApiSelectOptions;

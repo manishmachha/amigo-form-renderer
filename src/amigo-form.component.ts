@@ -7,6 +7,8 @@ import {
   OnChanges,
   Output,
   SimpleChanges,
+  ViewChild,
+  TemplateRef,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import {
@@ -14,6 +16,7 @@ import {
   FormGroup,
   AbstractControl,
 } from "@angular/forms";
+import { MatDialogModule, MatDialog } from "@angular/material/dialog";
 import { Subscription } from "rxjs";
 import { finalize } from "rxjs/operators";
 import {
@@ -31,7 +34,7 @@ import { AmigoSelectOptionsService } from "./amigo-select-options.service";
 @Component({
   selector: "amigo-form",
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, MatDialogModule],
   templateUrl: "./amigo-form.component.html",
   styleUrl: "./amigo-form.component.css",
 })
@@ -71,6 +74,7 @@ export class AmigoFormComponent implements OnChanges {
 
   showReviewDialog = false;
   isReviewed = false;
+  @ViewChild('reviewDialogTemplate') reviewDialogTemplate!: TemplateRef<any>;
 
   private visibilitySub?: Subscription;
   private visibilityState: Record<string, boolean> = {};
@@ -83,6 +87,7 @@ export class AmigoFormComponent implements OnChanges {
     private zone: NgZone,
     private apiExec: AmigoApiExecutionService,
     private selectOptions: AmigoSelectOptionsService,
+    private dialog: MatDialog,
   ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -761,6 +766,10 @@ export class AmigoFormComponent implements OnChanges {
     if (!this.form || !this.resolvedSchema) return;
     this.recomputeVisibility();
     this.visibilitySub = this.form.valueChanges.subscribe(() => {
+      if (this.isReviewed) {
+        this.isReviewed = false;
+        this.cdr.detectChanges();
+      }
       if (this.visibilityUpdating) return;
       this.recomputeVisibility();
     });
@@ -774,7 +783,9 @@ export class AmigoFormComponent implements OnChanges {
   }
 
   isFieldVisible(field: any): boolean {
-    if (field?.type === 'button' && field?.button?.isSubmit) {
+    const isSubmit = field?.type === 'button' && 
+      (field?.button?.isSubmit || field?.button?.label?.toLowerCase().includes('submit'));
+    if (isSubmit) {
       if (this.isMultiStep && !this.isReviewed) {
         return false;
       }
@@ -921,16 +932,22 @@ export class AmigoFormComponent implements OnChanges {
     const fields = this.fieldsForStep(this.activeStepIndex);
     this.touchFields(fields);
     if (this.hasErrors(fields)) return;
-    this.showReviewDialog = true;
+    this.dialog.open(this.reviewDialogTemplate, {
+      width: '800px',
+      maxWidth: '90vw',
+      maxHeight: '90vh',
+      disableClose: true,
+      panelClass: 'amigo-review-dialog'
+    });
   }
 
   closeReviewDialog() {
-    this.showReviewDialog = false;
+    this.dialog.closeAll();
   }
 
   confirmReview() {
     this.isReviewed = true;
-    this.showReviewDialog = false;
+    this.dialog.closeAll();
   }
 
   get reviewData() {
