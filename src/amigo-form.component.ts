@@ -784,7 +784,7 @@ export class AmigoFormComponent implements OnChanges {
 
   isFieldVisible(field: any): boolean {
     const isSubmit = field?.type === 'button' && 
-      (field?.button?.isSubmit || field?.button?.label?.toLowerCase().includes('submit'));
+      (field?.button?.isSubmit || field?.label?.toLowerCase().includes('submit'));
     if (isSubmit) {
       if (this.isMultiStep && !this.isReviewed) {
         return false;
