@@ -29,15 +29,44 @@ export class AmigoSelectOptionsService {
   load(
     field: FormFieldSchema,
     _formValue?: Record<string, any>,
+    parentValue?: any,
   ): Observable<FormFieldOption[]> {
     const api = field.optionsSource?.api;
     if (!api?.url) return of([]);
 
-    const cacheKey = `${field.id}::${api.method || "GET"}::${api.url}`;
+    let rawUrl = api.url;
+
+    // Apply URL placeholder replacement if type is 'api' and urlPlaceholder is configured
+    if (
+      field.dependentSelect?.type === "api" &&
+      field.dependentSelect.urlPlaceholder &&
+      parentValue !== undefined &&
+      parentValue !== null
+    ) {
+      rawUrl = rawUrl.replace(
+        field.dependentSelect.urlPlaceholder,
+        encodeURIComponent(String(parentValue))
+      );
+    }
+
+    let url = this.resolveUrl(rawUrl);
+
+    // Apply query param if type is 'api' and queryParamName is configured
+    if (
+      field.dependentSelect?.type === "api" &&
+      field.dependentSelect.queryParamName &&
+      parentValue !== undefined &&
+      parentValue !== null
+    ) {
+      const paramName = field.dependentSelect.queryParamName;
+      const separator = url.includes("?") ? "&" : "?";
+      url = `${url}${separator}${paramName}=${encodeURIComponent(String(parentValue))}`;
+    }
+
+    const cacheKey = `${field.id}::${api.method || "GET"}::${url}`;
     const cached = this.cache.get(cacheKey);
     if (cached) return of(cached);
 
-    const url = this.resolveUrl(api.url);
     const method = ((api.method || "GET") as string).toUpperCase();
 
     const shouldBearer = api.secured === true && api.authType === "BEARER";

@@ -84,6 +84,30 @@ export class FormSelectOptionsManagerService {
       return;
     }
 
+    if (dep.type === "api") {
+      const s = this.schemaManager.resolvedSchema();
+      const formValue = this.valueManager.normalizeFormValue(form, s!);
+
+      this.updateSelectState(child.id, { loading: true, options: [] });
+      this.selectOptions.clear(child.id);
+
+      this.selectOptions.load(child, formValue, parentValue).subscribe({
+        next: (opts) => {
+          this.updateSelectState(child.id, { loading: false, options: opts });
+        },
+        error: () => {
+          this.updateSelectState(child.id, {
+            loading: false,
+            error: "Failed to load options.",
+            options: [],
+          });
+        },
+      });
+
+      if (childCtrl) childCtrl.setValue("", { emitEvent: false });
+      return;
+    }
+
     const rawResponse = this.selectOptions.getRawResponse(dep.parentFieldId);
     if (!rawResponse) {
       this.updateSelectState(child.id, { loading: false, options: [] });
@@ -119,12 +143,12 @@ export class FormSelectOptionsManagerService {
       return;
     }
 
-    const childItems = this.getByPath(selectedParent, dep.childDataPath);
+    const childItems = this.getByPath(selectedParent, dep.childDataPath!);
     const childOptions = Array.isArray(childItems)
       ? childItems
           .map((item: any) => ({
-            label: String(item?.[dep.labelKey] ?? ""),
-            value: item?.[dep.valueKey],
+            label: String(item?.[dep.labelKey!] ?? ""),
+            value: item?.[dep.valueKey!],
           }))
           .filter((o: any) => o.label !== "" && o.value !== undefined)
       : [];

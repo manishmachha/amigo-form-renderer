@@ -45,9 +45,12 @@ interface SelectOptionsSourceSchema {
 }
 interface DependentSelectConfig {
     parentFieldId: string;
-    childDataPath: string;
-    labelKey: string;
-    valueKey: string;
+    childDataPath?: string;
+    labelKey?: string;
+    valueKey?: string;
+    type?: 'local' | 'api';
+    queryParamName?: string;
+    urlPlaceholder?: string;
 }
 type EmptyValueType = "empty_string" | "null" | "undefined";
 type VisibilityOperator = "CHECKED" | "UNCHECKED" | "EQUALS" | "NOT_EQUALS" | "HAS_VALUE" | "NOT_HAS_VALUE" | "IN" | "NOT_IN";

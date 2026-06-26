@@ -59,9 +59,12 @@ export interface SelectOptionsSourceSchema {
 
 export interface DependentSelectConfig {
   parentFieldId: string; // id of the parent select field
-  childDataPath: string; // path within each parent item, e.g. "wells"
-  labelKey: string; // key for child option label
-  valueKey: string; // key for child option value
+  childDataPath?: string; // path within each parent item, e.g. "wells"
+  labelKey?: string; // key for child option label
+  valueKey?: string; // key for child option value
+  type?: 'local' | 'api';
+  queryParamName?: string;
+  urlPlaceholder?: string;
 }
 
 export type EmptyValueType = "empty_string" | "null" | "undefined";

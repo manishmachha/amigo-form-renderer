@@ -1383,15 +1383,32 @@ class AmigoSelectOptionsService {
         this.cfg = cfg;
         this.tokenProvider = tokenProvider;
     }
-    load(field, _formValue) {
+    load(field, _formValue, parentValue) {
         const api = field.optionsSource?.api;
         if (!api?.url)
             return of([]);
-        const cacheKey = `${field.id}::${api.method || "GET"}::${api.url}`;
+        let rawUrl = api.url;
+        // Apply URL placeholder replacement if type is 'api' and urlPlaceholder is configured
+        if (field.dependentSelect?.type === "api" &&
+            field.dependentSelect.urlPlaceholder &&
+            parentValue !== undefined &&
+            parentValue !== null) {
+            rawUrl = rawUrl.replace(field.dependentSelect.urlPlaceholder, encodeURIComponent(String(parentValue)));
+        }
+        let url = this.resolveUrl(rawUrl);
+        // Apply query param if type is 'api' and queryParamName is configured
+        if (field.dependentSelect?.type === "api" &&
+            field.dependentSelect.queryParamName &&
+            parentValue !== undefined &&
+            parentValue !== null) {
+            const paramName = field.dependentSelect.queryParamName;
+            const separator = url.includes("?") ? "&" : "?";
+            url = `${url}${separator}${paramName}=${encodeURIComponent(String(parentValue))}`;
+        }
+        const cacheKey = `${field.id}::${api.method || "GET"}::${url}`;
         const cached = this.cache.get(cacheKey);
         if (cached)
             return of(cached);
-        const url = this.resolveUrl(api.url);
         const method = (api.method || "GET").toUpperCase();
         const shouldBearer = api.secured === true && api.authType === "BEARER";
         let headers = new HttpHeaders();
@@ -1556,6 +1573,27 @@ class FormSelectOptionsManagerService {
         const childCtrl = form?.get(childKey);
         if (!parentValue || parentValue === "") {
             this.updateSelectState(child.id, { loading: false, options: [] });
+            if (childCtrl)
+                childCtrl.setValue("", { emitEvent: false });
+            return;
+        }
+        if (dep.type === "api") {
+            const s = this.schemaManager.resolvedSchema();
+            const formValue = this.valueManager.normalizeFormValue(form, s);
+            this.updateSelectState(child.id, { loading: true, options: [] });
+            this.selectOptions.clear(child.id);
+            this.selectOptions.load(child, formValue, parentValue).subscribe({
+                next: (opts) => {
+                    this.updateSelectState(child.id, { loading: false, options: opts });
+                },
+                error: () => {
+                    this.updateSelectState(child.id, {
+                        loading: false,
+                        error: "Failed to load options.",
+                        options: [],
+                    });
+                },
+            });
             if (childCtrl)
                 childCtrl.setValue("", { emitEvent: false });
             return;
