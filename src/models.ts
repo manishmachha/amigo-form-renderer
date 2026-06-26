@@ -58,13 +58,18 @@ export interface SelectOptionsSourceSchema {
 }
 
 export interface DependentSelectConfig {
-  parentFieldId: string; // id of the parent select field
+  parentFieldId: string; // primary id of the parent select field
   childDataPath?: string; // path within each parent item, e.g. "wells"
   labelKey?: string; // key for child option label
   valueKey?: string; // key for child option value
   type?: 'local' | 'api';
   queryParamName?: string;
   urlPlaceholder?: string;
+  additionalParents?: {
+    parentFieldId: string;
+    queryParamName?: string;
+    urlPlaceholder?: string;
+  }[];
 }
 
 export type EmptyValueType = "empty_string" | "null" | "undefined";
@@ -143,6 +148,12 @@ export interface InfoCardSchema {
   style?: InfoCardStyleSchema;
 }
 
+export interface FieldCalculationConfig {
+  sourceFieldId?: string; // Optional if using custom expression
+  type: 'dailyToMonthly' | 'dailyToYearly' | 'hourlyToDaily' | 'weeklyToMonthly' | 'quarterlyToYearly' | 'halfYearlyToYearly' | 'custom';
+  customExpression?: string; // e.g. "fieldA * fieldB + 10"
+}
+
 export interface FormFieldSchema {
   id: string;
   label: string;
@@ -170,6 +181,7 @@ export interface FormFieldSchema {
 
   visibility?: FieldVisibilitySchema;
   emptyValue?: EmptyValueType;
+  calculation?: FieldCalculationConfig;
 }
 
 export interface FormLayoutSchema {
@@ -220,11 +232,12 @@ export interface FormStepConfig {
   icon?: string;
 }
 
-export interface FormSectionConfig {
+export interface FormSectionSchema {
   id: string;
   label: string;
   order: number;
-  fieldIds: string[];
+  fieldIds?: string[];
+  stepId?: string;
 }
 
 export interface FormSchema {
@@ -238,5 +251,5 @@ export interface FormSchema {
   actions: FormActionSchema;
   formType?: FormType;
   steps?: FormStepConfig[];
-  sections?: FormSectionConfig[];
+  sections?: FormSectionSchema[];
 }

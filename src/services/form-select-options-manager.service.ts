@@ -53,49 +53,81 @@ export class FormSelectOptionsManagerService {
 
     for (const child of childFields as any[]) {
       const dep: DependentSelectConfig = child.dependentSelect;
-      const parentField = fields.find((f: any) => f.id === dep.parentFieldId);
-      if (!parentField) continue;
+      
+      const parentKeys: string[] = [];
+      const primaryParent = fields.find((f: any) => f.id === dep.parentFieldId);
+      if (primaryParent) parentKeys.push(this.controlKey(primaryParent));
 
-      const parentKey = this.controlKey(parentField);
-      const parentCtrl = form?.get(parentKey);
-      if (!parentCtrl) continue;
+      for (const p of dep.additionalParents || []) {
+        const pf = fields.find((f: any) => f.id === p.parentFieldId);
+        if (pf) parentKeys.push(this.controlKey(pf));
+      }
+
+      if (parentKeys.length === 0) continue;
 
       this.updateSelectState(child.id, { loading: false, options: [] });
 
-      const sub = parentCtrl.valueChanges.subscribe((parentValue: any) => {
-        this.updateChildOptions(child, dep, parentValue, form);
-      });
-      this.cascadingSubs.push(sub);
-
-      const currentParentValue = parentCtrl.value;
-      if (currentParentValue) {
-        this.updateChildOptions(child, dep, currentParentValue, form);
+      for (const pk of parentKeys) {
+        const ctrl = form?.get(pk);
+        if (!ctrl) continue;
+        const sub = ctrl.valueChanges.subscribe(() => {
+          this.updateChildOptions(child, dep, form);
+        });
+        this.cascadingSubs.push(sub);
       }
+
+      this.updateChildOptions(child, dep, form);
     }
   }
 
-  private updateChildOptions(child: any, dep: DependentSelectConfig, parentValue: any, form: FormGroup): void {
+  private updateChildOptions(child: any, dep: DependentSelectConfig, form: FormGroup): void {
+    const s = this.schemaManager.resolvedSchema();
+    const fields = s?.fields ?? [];
+    
+    const parentValuesMap: Record<string, any> = {};
+    let primaryValue: any = null;
+
+    const primaryParent = fields.find((f: any) => f.id === dep.parentFieldId);
+    if (primaryParent) {
+      const pk = this.controlKey(primaryParent);
+      primaryValue = form?.get(pk)?.value;
+      parentValuesMap[dep.parentFieldId] = primaryValue;
+    }
+
+    for (const p of dep.additionalParents || []) {
+      const pf = fields.find((f: any) => f.id === p.parentFieldId);
+      if (pf) {
+        const pk = this.controlKey(pf);
+        parentValuesMap[p.parentFieldId] = form?.get(pk)?.value;
+      }
+    }
+
+    console.log(`[FormSelectOptionsManager] updateChildOptions for child: ${child.id}, parentValues:`, parentValuesMap);
+
     const childKey = this.controlKey(child);
     const childCtrl = form?.get(childKey);
 
-    if (!parentValue || parentValue === "") {
+    if (!primaryValue || primaryValue === "") {
+      console.log(`[FormSelectOptionsManager] Primary parent value is empty, clearing child options.`);
       this.updateSelectState(child.id, { loading: false, options: [] });
       if (childCtrl) childCtrl.setValue("", { emitEvent: false });
       return;
     }
 
     if (dep.type === "api") {
-      const s = this.schemaManager.resolvedSchema();
+      console.log(`[FormSelectOptionsManager] Triggering API request for child: ${child.id}`);
       const formValue = this.valueManager.normalizeFormValue(form, s!);
 
       this.updateSelectState(child.id, { loading: true, options: [] });
       this.selectOptions.clear(child.id);
 
-      this.selectOptions.load(child, formValue, parentValue).subscribe({
+      this.selectOptions.load(child, formValue, parentValuesMap).subscribe({
         next: (opts) => {
+          console.log(`[FormSelectOptionsManager] API request successful, received options:`, opts);
           this.updateSelectState(child.id, { loading: false, options: opts });
         },
-        error: () => {
+        error: (err) => {
+          console.error(`[FormSelectOptionsManager] API request failed:`, err);
           this.updateSelectState(child.id, {
             loading: false,
             error: "Failed to load options.",
@@ -108,14 +140,14 @@ export class FormSelectOptionsManagerService {
       return;
     }
 
+    console.log(`[FormSelectOptionsManager] Fallback to local filtering for child: ${child.id}`);
+
     const rawResponse = this.selectOptions.getRawResponse(dep.parentFieldId);
     if (!rawResponse) {
       this.updateSelectState(child.id, { loading: false, options: [] });
       return;
     }
 
-    const s = this.schemaManager.resolvedSchema();
-    const fields = s?.fields ?? [];
     const parentField = fields.find((f: any) => f.id === dep.parentFieldId);
     const parentApi = parentField?.optionsSource?.api;
     const parentDataPath = parentApi?.responseMapping?.dataPath;
@@ -134,7 +166,7 @@ export class FormSelectOptionsManagerService {
     }
 
     const selectedParent = parentItems.find(
-      (item: any) => String(item?.[parentValueKey]) === String(parentValue)
+      (item: any) => String(item?.[parentValueKey]) === String(primaryValue)
     );
 
     if (!selectedParent) {

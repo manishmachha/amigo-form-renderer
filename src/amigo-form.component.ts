@@ -27,6 +27,7 @@ import { FormSchemaManagerService } from "./services/form-schema-manager.service
 import { FormValueManagerService } from "./services/form-value-manager.service";
 import { FormStepSectionManagerService } from "./services/form-step-section-manager.service";
 import { FormSelectOptionsManagerService } from "./services/form-select-options-manager.service";
+import { FormCalculationManagerService } from './services/form-calculation-manager.service';
 
 import { AmigoStepperComponent } from "./components/amigo-stepper/amigo-stepper.component";
 import { AmigoFieldRendererComponent } from "./components/amigo-field-renderer/amigo-field-renderer.component";
@@ -45,6 +46,16 @@ import { AmigoReviewDialogComponent } from "./components/amigo-review-dialog/ami
   ],
   templateUrl: "./amigo-form.component.html",
   styleUrl: "./amigo-form.component.css",
+  providers: [
+    FormSchemaManagerService,
+    FormStepSectionManagerService,
+    FormValueManagerService,
+    FormVisibilityService,
+    FormSelectOptionsManagerService,
+    FormReviewService,
+    FormSubmissionService,
+    FormCalculationManagerService
+  ]
 })
 export class AmigoFormComponent implements OnChanges, OnDestroy {
   @Input() formId?: string;
@@ -75,7 +86,8 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
     public schemaManager: FormSchemaManagerService,
     public valueManager: FormValueManagerService,
     public stepSectionManager: FormStepSectionManagerService,
-    public selectOptionsManager: FormSelectOptionsManagerService
+    public selectOptionsManager: FormSelectOptionsManagerService,
+    private calculationManager: FormCalculationManagerService
   ) {
     // Re-initialize form when schema resolves
     effect(() => {
@@ -96,6 +108,7 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
 
         this.selectOptionsManager.preloadApiSelectOptions(this.form);
         this.selectOptionsManager.setupCascadingSelects(this.form);
+        this.calculationManager.setupCalculations(this.form, s.fields || []);
       } else {
         this.form = null;
       }
@@ -115,6 +128,7 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
   ngOnDestroy(): void {
     this.visibility.cleanup();
     this.selectOptionsManager.cleanup();
+    this.calculationManager.cleanup();
   }
 
   // View Helpers Delegations
@@ -139,6 +153,37 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
 
   fieldsForStep(index: number): FormFieldSchema[] {
     return this.stepSectionManager.fieldsForStep(index);
+  }
+
+  sectionsForStep(index: number) {
+    if (index < 0 || index >= this.totalSteps) return [];
+    const stepId = this.orderedSteps[index].id;
+    return this.orderedSections.filter(s => s.stepId === stepId);
+  }
+
+  get sectionsForActiveStep() {
+    return this.sectionsForStep(this.activeStepIndex);
+  }
+
+  fieldsForSectionInActiveStep(sectionId: string): FormFieldSchema[] {
+    const stepFields = this.visibleFields;
+    const s = this.resolvedSchema;
+    if (!s) return [];
+    const section = (s.sections ?? []).find((x: any) => x.id === sectionId);
+    const ids = new Set(section?.fieldIds ?? []);
+    return stepFields.filter(f => ids.has(f.id));
+  }
+
+  get unsectionedFieldsForActiveStep(): FormFieldSchema[] {
+    const stepFields = this.visibleFields;
+    const s = this.resolvedSchema;
+    if (!s) return stepFields;
+    const sections = this.sectionsForActiveStep;
+    const sectionedIds = new Set<string>();
+    for (const sec of sections) {
+      (sec.fieldIds ?? []).forEach(id => sectionedIds.add(id));
+    }
+    return stepFields.filter(f => !sectionedIds.has(f.id));
   }
 
   fieldsForSection(sectionId: string): FormFieldSchema[] {

@@ -101,27 +101,37 @@
     </div>
 
     <ng-template #normalOrMulti>
-      <div
-        class="grid"
-        [ngStyle]="{
-          'grid-template-columns':
-            'repeat(' +
-            (resolvedSchema.layout?.columns || 1) +
-            ', minmax(0, 1fr))',
-          'column-gap': (resolvedSchema.spacing?.gapX ?? 12) + 'px',
-          'row-gap': (resolvedSchema.spacing?.gapY ?? 12) + 'px',
-        }"
-      >
-        <div
-          *ngFor="let field of visibleFields; trackBy: trackByFieldId"
-          [ngStyle]="{ 'grid-column': 'span ' + (field.colSpan || 1) }"
-          [ngClass]="resolvedSchema.style?.fieldWrapperClass || 'mb-3'"
-        >
-          <ng-container
-            *ngTemplateOutlet="fieldRenderer; context: { $implicit: field }"
-          ></ng-container>
+      <ng-container *ngIf="isMultiStep && sectionsForActiveStep.length > 0; else flatGrid">
+        <div *ngFor="let sec of sectionsForActiveStep" class="mb-6 bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
+            <h3 class="text-sm font-semibold text-gray-800">{{ sec.label }}</h3>
+            <span class="text-[11px] text-gray-500 bg-gray-100 px-2 py-1 rounded" *ngIf="fieldsForSectionInActiveStep(sec.id) as fields">
+              {{ fields.length }} {{ fields.length === 1 ? "field" : "fields" }}
+            </span>
+          </div>
+
+          <div class="grid" [ngStyle]="{ 'grid-template-columns': 'repeat(' + (resolvedSchema.layout?.columns || 1) + ', minmax(0, 1fr))', 'column-gap': (resolvedSchema.spacing?.gapX ?? 12) + 'px', 'row-gap': (resolvedSchema.spacing?.gapY ?? 12) + 'px' }">
+            <div *ngFor="let field of fieldsForSectionInActiveStep(sec.id); trackBy: trackByFieldId" [ngStyle]="{ 'grid-column': 'span ' + (field.colSpan || 1) }" [ngClass]="resolvedSchema.style?.fieldWrapperClass || 'mb-3'">
+              <ng-container *ngTemplateOutlet="fieldRenderer; context: { $implicit: field }"></ng-container>
+            </div>
+          </div>
         </div>
-      </div>
+
+        <!-- Render unsectioned fields at the bottom -->
+        <div *ngIf="unsectionedFieldsForActiveStep.length > 0" class="mt-4 border-t border-gray-200 pt-4 grid" [ngStyle]="{ 'grid-template-columns': 'repeat(' + (resolvedSchema.layout?.columns || 1) + ', minmax(0, 1fr))', 'column-gap': (resolvedSchema.spacing?.gapX ?? 12) + 'px', 'row-gap': (resolvedSchema.spacing?.gapY ?? 12) + 'px' }">
+          <div *ngFor="let field of unsectionedFieldsForActiveStep; trackBy: trackByFieldId" [ngStyle]="{ 'grid-column': 'span ' + (field.colSpan || 1) }" [ngClass]="resolvedSchema.style?.fieldWrapperClass || 'mb-3'">
+            <ng-container *ngTemplateOutlet="fieldRenderer; context: { $implicit: field }"></ng-container>
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-template #flatGrid>
+        <div class="grid" [ngStyle]="{ 'grid-template-columns': 'repeat(' + (resolvedSchema.layout?.columns || 1) + ', minmax(0, 1fr))', 'column-gap': (resolvedSchema.spacing?.gapX ?? 12) + 'px', 'row-gap': (resolvedSchema.spacing?.gapY ?? 12) + 'px' }">
+          <div *ngFor="let field of visibleFields; trackBy: trackByFieldId" [ngStyle]="{ 'grid-column': 'span ' + (field.colSpan || 1) }" [ngClass]="resolvedSchema.style?.fieldWrapperClass || 'mb-3'">
+            <ng-container *ngTemplateOutlet="fieldRenderer; context: { $implicit: field }"></ng-container>
+          </div>
+        </div>
+      </ng-template>
     </ng-template>
 
     <div

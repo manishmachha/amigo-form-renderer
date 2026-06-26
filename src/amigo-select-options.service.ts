@@ -29,38 +29,60 @@ export class AmigoSelectOptionsService {
   load(
     field: FormFieldSchema,
     _formValue?: Record<string, any>,
-    parentValue?: any,
+    parentValuesMap?: Record<string, any>,
   ): Observable<FormFieldOption[]> {
+    console.log(`[AmigoSelectOptionsService] load called for field: ${field.id}, parentValuesMap:`, parentValuesMap);
     const api = field.optionsSource?.api;
-    if (!api?.url) return of([]);
+    if (!api?.url) {
+      console.log(`[AmigoSelectOptionsService] No api.url found for field: ${field.id}. Returning empty.`);
+      return of([]);
+    }
 
     let rawUrl = api.url;
+    console.log(`[AmigoSelectOptionsService] Raw URL:`, rawUrl);
 
-    // Apply URL placeholder replacement if type is 'api' and urlPlaceholder is configured
-    if (
-      field.dependentSelect?.type === "api" &&
-      field.dependentSelect.urlPlaceholder &&
-      parentValue !== undefined &&
-      parentValue !== null
-    ) {
-      rawUrl = rawUrl.replace(
-        field.dependentSelect.urlPlaceholder,
-        encodeURIComponent(String(parentValue))
-      );
+    if (field.dependentSelect?.type === "api" && parentValuesMap) {
+      const parents = [];
+      if (field.dependentSelect.parentFieldId) parents.push(field.dependentSelect);
+      for (const ap of field.dependentSelect.additionalParents || []) {
+        parents.push(ap);
+      }
+
+      for (const p of parents) {
+        let val = parentValuesMap[p.parentFieldId];
+        if (val === undefined || val === null) continue;
+        
+        val = this.capitalize(val);
+
+        if (p.urlPlaceholder) {
+          console.log(`[AmigoSelectOptionsService] Replacing placeholder ${p.urlPlaceholder} with ${val}`);
+          rawUrl = rawUrl.replace(p.urlPlaceholder, encodeURIComponent(String(val)));
+        }
+      }
     }
 
     let url = this.resolveUrl(rawUrl);
+    console.log(`[AmigoSelectOptionsService] Resolved URL before query params:`, url);
 
-    // Apply query param if type is 'api' and queryParamName is configured
-    if (
-      field.dependentSelect?.type === "api" &&
-      field.dependentSelect.queryParamName &&
-      parentValue !== undefined &&
-      parentValue !== null
-    ) {
-      const paramName = field.dependentSelect.queryParamName;
-      const separator = url.includes("?") ? "&" : "?";
-      url = `${url}${separator}${paramName}=${encodeURIComponent(String(parentValue))}`;
+    if (field.dependentSelect?.type === "api" && parentValuesMap) {
+      const parents = [];
+      if (field.dependentSelect.parentFieldId) parents.push(field.dependentSelect);
+      for (const ap of field.dependentSelect.additionalParents || []) {
+        parents.push(ap);
+      }
+
+      for (const p of parents) {
+        let val = parentValuesMap[p.parentFieldId];
+        if (val === undefined || val === null) continue;
+        
+        val = this.capitalize(val);
+
+        if (p.queryParamName) {
+          const separator = url.includes("?") ? "&" : "?";
+          url = `${url}${separator}${p.queryParamName}=${encodeURIComponent(String(val))}`;
+          console.log(`[AmigoSelectOptionsService] Appended query parameter:`, url);
+        }
+      }
     }
 
     const cacheKey = `${field.id}::${api.method || "GET"}::${url}`;
@@ -107,8 +129,20 @@ export class AmigoSelectOptionsService {
     return this.rawCache.get(fieldId) ?? null;
   }
 
+  private capitalize(val: any): string {
+    console.log(`[AmigoSelectOptionsService] capitalize input:`, val, typeof val);
+    if (Array.isArray(val) && val.length > 0) {
+      val = val[0];
+    }
+    if (typeof val !== "string") val = String(val);
+    if (!val) return val;
+    const result = val.charAt(0).toUpperCase() + val.slice(1);
+    console.log(`[AmigoSelectOptionsService] capitalize output:`, result);
+    return result;
+  }
+
   private resolveUrl(url: string): string {
-    const u = (url || "").trim();
+    const u = (url || "").trim().replace(/^['"]+|['"]+$/g, "");
     if (!u) return u;
     if (/^https?:\/\//i.test(u)) return u;
 

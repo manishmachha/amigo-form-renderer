@@ -1,5 +1,5 @@
 import * as i0 from '@angular/core';
-import { InjectionToken, Provider, OnChanges, OnDestroy, EventEmitter, TemplateRef, ChangeDetectorRef, SimpleChanges } from '@angular/core';
+import { InjectionToken, Provider, OnDestroy, OnChanges, EventEmitter, TemplateRef, ChangeDetectorRef, SimpleChanges } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { HttpClient, HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
@@ -51,6 +51,11 @@ interface DependentSelectConfig {
     type?: 'local' | 'api';
     queryParamName?: string;
     urlPlaceholder?: string;
+    additionalParents?: {
+        parentFieldId: string;
+        queryParamName?: string;
+        urlPlaceholder?: string;
+    }[];
 }
 type EmptyValueType = "empty_string" | "null" | "undefined";
 type VisibilityOperator = "CHECKED" | "UNCHECKED" | "EQUALS" | "NOT_EQUALS" | "HAS_VALUE" | "NOT_HAS_VALUE" | "IN" | "NOT_IN";
@@ -108,6 +113,11 @@ interface InfoCardSchema {
     icon?: string;
     style?: InfoCardStyleSchema;
 }
+interface FieldCalculationConfig {
+    sourceFieldId?: string;
+    type: 'dailyToMonthly' | 'dailyToYearly' | 'hourlyToDaily' | 'weeklyToMonthly' | 'quarterlyToYearly' | 'halfYearlyToYearly' | 'custom';
+    customExpression?: string;
+}
 interface FormFieldSchema {
     id: string;
     label: string;
@@ -129,6 +139,7 @@ interface FormFieldSchema {
     button?: ButtonElementSchema;
     visibility?: FieldVisibilitySchema;
     emptyValue?: EmptyValueType;
+    calculation?: FieldCalculationConfig;
 }
 interface FormLayoutSchema {
     columns: number;
@@ -171,11 +182,12 @@ interface FormStepConfig {
     fieldIds: string[];
     icon?: string;
 }
-interface FormSectionConfig {
+interface FormSectionSchema {
     id: string;
     label: string;
     order: number;
-    fieldIds: string[];
+    fieldIds?: string[];
+    stepId?: string;
 }
 interface FormSchema {
     id: string;
@@ -188,7 +200,7 @@ interface FormSchema {
     actions: FormActionSchema;
     formType?: FormType;
     steps?: FormStepConfig[];
-    sections?: FormSectionConfig[];
+    sections?: FormSectionSchema[];
 }
 
 type AmigoAuthTokenProvider = () => string | null;
@@ -378,6 +390,15 @@ declare class FormSelectOptionsManagerService {
     static ɵprov: i0.ɵɵInjectableDeclaration<FormSelectOptionsManagerService>;
 }
 
+declare class FormCalculationManagerService implements OnDestroy {
+    private subs;
+    setupCalculations(form: FormGroup, fields: FormFieldSchema[]): void;
+    cleanup(): void;
+    ngOnDestroy(): void;
+    static ɵfac: i0.ɵɵFactoryDeclaration<FormCalculationManagerService, never>;
+    static ɵprov: i0.ɵɵInjectableDeclaration<FormCalculationManagerService>;
+}
+
 declare class AmigoFormComponent implements OnChanges, OnDestroy {
     private cdr;
     private dialog;
@@ -389,6 +410,7 @@ declare class AmigoFormComponent implements OnChanges, OnDestroy {
     valueManager: FormValueManagerService;
     stepSectionManager: FormStepSectionManagerService;
     selectOptionsManager: FormSelectOptionsManagerService;
+    private calculationManager;
     formId?: string;
     schema?: FormSchema;
     initialValue?: Record<string, any>;
@@ -408,7 +430,7 @@ declare class AmigoFormComponent implements OnChanges, OnDestroy {
         message: string;
     }>;
     reviewDialogTemplate: TemplateRef<any>;
-    constructor(cdr: ChangeDetectorRef, dialog: MatDialog, apiExec: AmigoApiExecutionService, visibility: FormVisibilityService, submission: FormSubmissionService, reviewService: FormReviewService, schemaManager: FormSchemaManagerService, valueManager: FormValueManagerService, stepSectionManager: FormStepSectionManagerService, selectOptionsManager: FormSelectOptionsManagerService);
+    constructor(cdr: ChangeDetectorRef, dialog: MatDialog, apiExec: AmigoApiExecutionService, visibility: FormVisibilityService, submission: FormSubmissionService, reviewService: FormReviewService, schemaManager: FormSchemaManagerService, valueManager: FormValueManagerService, stepSectionManager: FormStepSectionManagerService, selectOptionsManager: FormSelectOptionsManagerService, calculationManager: FormCalculationManagerService);
     ngOnChanges(changes: SimpleChanges): void;
     ngOnDestroy(): void;
     get isLoading(): boolean;
@@ -428,6 +450,10 @@ declare class AmigoFormComponent implements OnChanges, OnDestroy {
     }>;
     get visibleFields(): FormFieldSchema[];
     fieldsForStep(index: number): FormFieldSchema[];
+    sectionsForStep(index: number): any[];
+    get sectionsForActiveStep(): any[];
+    fieldsForSectionInActiveStep(sectionId: string): FormFieldSchema[];
+    get unsectionedFieldsForActiveStep(): FormFieldSchema[];
     fieldsForSection(sectionId: string): FormFieldSchema[];
     setActiveStep(i: number): void;
     prevStep(): void;
@@ -467,4 +493,4 @@ declare class AmigoTokenInterceptor implements HttpInterceptor {
 }
 
 export { AMIGO_AUTH_TOKEN_PROVIDER, AMIGO_FORM_CONFIG, AmigoFormComponent, AmigoFormService, AmigoTokenInterceptor, buildFormGroup, normalizeAccept, provideAmigoForm };
-export type { ActionApiConfig, AmigoAuthTokenProvider, AmigoFormConfig, ApiEndpointConfig, ButtonActionType, ButtonElementSchema, ButtonStyleVariant, DependentSelectConfig, EmptyValueType, FieldType, FieldValidationRules, FieldVisibilitySchema, FormActionSchema, FormFieldOption, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionConfig, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, HttpMethod, InfoCardSchema, InfoCardStyleSchema, KeyValuePair, OptionsSourceMode, SelectAuthType, SelectOptionsApiConfig, SelectOptionsApiResponseMapping, SelectOptionsSourceSchema, TokenFrom, VisibilityOperator, VisibilityRule };
+export type { ActionApiConfig, AmigoAuthTokenProvider, AmigoFormConfig, ApiEndpointConfig, ButtonActionType, ButtonElementSchema, ButtonStyleVariant, DependentSelectConfig, EmptyValueType, FieldCalculationConfig, FieldType, FieldValidationRules, FieldVisibilitySchema, FormActionSchema, FormFieldOption, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionSchema, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, HttpMethod, InfoCardSchema, InfoCardStyleSchema, KeyValuePair, OptionsSourceMode, SelectAuthType, SelectOptionsApiConfig, SelectOptionsApiResponseMapping, SelectOptionsSourceSchema, TokenFrom, VisibilityOperator, VisibilityRule };

@@ -28,13 +28,13 @@ export class FormStepSectionManagerService {
 
   readonly orderedSections = computed(() => {
     const s = this.schemaManager.resolvedSchema();
-    if (!s || s.formType !== "single-sectional") return [];
+    if (!s) return [];
     return [...(s.sections ?? [])].sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
   });
 
   readonly isSectional = computed(() => {
     const s = this.schemaManager.resolvedSchema();
-    return s?.formType === "single-sectional" && this.orderedSections().length > 0;
+    return s?.formType === "single-sectional";
   });
 
   readonly visibleFields = computed(() => {

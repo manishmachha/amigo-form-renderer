@@ -1,15 +1,18 @@
 import * as i0 from '@angular/core';
-import { EventEmitter, Output, Input, Component, InjectionToken, Optional, Inject, Injectable, signal, inject, computed, effect, ViewChild } from '@angular/core';
-import * as i1 from '@angular/common';
+import { Injectable, InjectionToken, Optional, Inject, signal, inject, computed, EventEmitter, Output, Input, Component, effect, ViewChild } from '@angular/core';
+import * as i1$1 from '@angular/common';
 import { CommonModule } from '@angular/common';
 import * as i2 from '@angular/forms';
 import { Validators, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import * as i1$2 from '@angular/material/dialog';
 import { MatDialogModule } from '@angular/material/dialog';
 import { finalize, tap, map, catchError } from 'rxjs/operators';
-import * as i1$1 from '@angular/common/http';
+import * as i1 from '@angular/common/http';
 import { HTTP_INTERCEPTORS, HttpHeaders, HttpParams } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
+import * as i3 from '@angular/material/icon';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 
 function buildFormGroup(fields, initialValue) {
     const group = {};
@@ -135,331 +138,137 @@ function fileAcceptValidator(accept) {
     };
 }
 
-class AmigoStepperComponent {
-    orderedSteps = [];
-    activeStepIndex = 0;
-    totalSteps = 0;
-    visibleFieldsCount = 0;
-    stepChanged = new EventEmitter();
-    onStepClick(index) {
-        this.stepChanged.emit(index);
+class FormVisibilityService {
+    visibilitySub;
+    visibilityState = {};
+    visibilityUpdating = false;
+    setupVisibility(form, resolvedSchema, onVisibilityChange) {
+        this.visibilitySub?.unsubscribe();
+        if (!form || !resolvedSchema)
+            return;
+        this.recomputeVisibility(form, resolvedSchema);
+        this.visibilitySub = form.valueChanges.subscribe(() => {
+            if (onVisibilityChange) {
+                onVisibilityChange();
+            }
+            if (this.visibilityUpdating)
+                return;
+            this.recomputeVisibility(form, resolvedSchema);
+        });
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoStepperComponent, deps: [], target: i0.ɵɵFactoryTarget.Component });
-    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoStepperComponent, isStandalone: true, selector: "amigo-stepper", inputs: { orderedSteps: "orderedSteps", activeStepIndex: "activeStepIndex", totalSteps: "totalSteps", visibleFieldsCount: "visibleFieldsCount" }, outputs: { stepChanged: "stepChanged" }, ngImport: i0, template: "<div class=\"w-full mb-6 flex flex-col items-center my-3\">\n  <div class=\"w-full h-1 bg-gray-200 rounded-full relative mb-6\">\n    <div\n      class=\"h-1 rounded-full transition-all duration-300 bg-blue-600\"\n      [ngStyle]=\"{\n        width: ((activeStepIndex + 1) / totalSteps) * 100 + '%'\n      }\"\n    ></div>\n  </div>\n\n  <div class=\"flex items-center justify-between w-full\">\n    <div\n      *ngFor=\"let step of orderedSteps; let i = index\"\n      class=\"flex flex-col items-center cursor-pointer\"\n      (click)=\"onStepClick(i)\"\n    >\n      <div\n        class=\"w-10 h-10 flex items-center justify-center rounded-full border-2 transition-all duration-300\"\n        [ngStyle]=\"\n          i === activeStepIndex\n            ? {\n                backgroundColor: '#2563eb',\n                borderColor: '#2563eb',\n                color: '#ffffff'\n              }\n            : {\n                backgroundColor: '#FFFFFF',\n                borderColor: '#9CA3AF',\n                color: '#374151'\n              }\n        \"\n      >\n        <ng-container *ngIf=\"!step.icon\">\n          {{ i + 1 }}\n        </ng-container>\n\n        <ng-container *ngIf=\"step.icon\">\n          <i\n            [class]=\"step.icon\"\n            class=\"text-lg\"\n            [ngStyle]=\"\n              i === activeStepIndex\n                ? { color: '#ffffff' }\n                : { color: '#6B7280' }\n            \"\n          >\n          </i>\n        </ng-container>\n      </div>\n\n      <div class=\"mt-2 text-xs text-gray-600 font-medium\">\n        {{ step.label }}\n      </div>\n    </div>\n  </div>\n\n  <div\n    *ngIf=\"visibleFieldsCount === 0\"\n    class=\"text-xs text-gray-500 my-5\"\n  >\n    No fields assigned to this step yet.\n  </div>\n</div>\n", dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1.NgForOf, selector: "[ngFor][ngForOf]", inputs: ["ngForOf", "ngForTrackBy", "ngForTemplate"] }, { kind: "directive", type: i1.NgIf, selector: "[ngIf]", inputs: ["ngIf", "ngIfThen", "ngIfElse"] }, { kind: "directive", type: i1.NgStyle, selector: "[ngStyle]", inputs: ["ngStyle"] }] });
-}
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoStepperComponent, decorators: [{
-            type: Component,
-            args: [{ selector: 'amigo-stepper', standalone: true, imports: [CommonModule], template: "<div class=\"w-full mb-6 flex flex-col items-center my-3\">\n  <div class=\"w-full h-1 bg-gray-200 rounded-full relative mb-6\">\n    <div\n      class=\"h-1 rounded-full transition-all duration-300 bg-blue-600\"\n      [ngStyle]=\"{\n        width: ((activeStepIndex + 1) / totalSteps) * 100 + '%'\n      }\"\n    ></div>\n  </div>\n\n  <div class=\"flex items-center justify-between w-full\">\n    <div\n      *ngFor=\"let step of orderedSteps; let i = index\"\n      class=\"flex flex-col items-center cursor-pointer\"\n      (click)=\"onStepClick(i)\"\n    >\n      <div\n        class=\"w-10 h-10 flex items-center justify-center rounded-full border-2 transition-all duration-300\"\n        [ngStyle]=\"\n          i === activeStepIndex\n            ? {\n                backgroundColor: '#2563eb',\n                borderColor: '#2563eb',\n                color: '#ffffff'\n              }\n            : {\n                backgroundColor: '#FFFFFF',\n                borderColor: '#9CA3AF',\n                color: '#374151'\n              }\n        \"\n      >\n        <ng-container *ngIf=\"!step.icon\">\n          {{ i + 1 }}\n        </ng-container>\n\n        <ng-container *ngIf=\"step.icon\">\n          <i\n            [class]=\"step.icon\"\n            class=\"text-lg\"\n            [ngStyle]=\"\n              i === activeStepIndex\n                ? { color: '#ffffff' }\n                : { color: '#6B7280' }\n            \"\n          >\n          </i>\n        </ng-container>\n      </div>\n\n      <div class=\"mt-2 text-xs text-gray-600 font-medium\">\n        {{ step.label }}\n      </div>\n    </div>\n  </div>\n\n  <div\n    *ngIf=\"visibleFieldsCount === 0\"\n    class=\"text-xs text-gray-500 my-5\"\n  >\n    No fields assigned to this step yet.\n  </div>\n</div>\n" }]
-        }], propDecorators: { orderedSteps: [{
-                type: Input
-            }], activeStepIndex: [{
-                type: Input
-            }], totalSteps: [{
-                type: Input
-            }], visibleFieldsCount: [{
-                type: Input
-            }], stepChanged: [{
-                type: Output
-            }] } });
-
-class AmigoCardComponent {
-    field;
-    cardIcon() {
-        return this.field?.card?.icon || "";
+    isFieldVisibleOriginal(field) {
+        const rules = field?.visibility?.rules;
+        if (!rules || !rules.length)
+            return true;
+        const key = field?.id || field?.name;
+        return this.visibilityState[key] !== false;
     }
-    cardTitle() {
-        return this.field?.card?.title || this.field?.label || "Info";
+    isFieldVisible(field, isMultiStep, isReviewed) {
+        const isSubmit = field?.type === 'button' &&
+            (field?.button?.isSubmit || field?.label?.toLowerCase().includes('submit'));
+        if (isSubmit) {
+            if (isMultiStep && !isReviewed) {
+                return false;
+            }
+        }
+        return this.isFieldVisibleOriginal(field);
     }
-    cardBody() {
-        return this.field?.card?.body || "";
-    }
-    cardStyle() {
-        const cs = this.field?.card?.style ?? {};
-        const borderWidth = cs.borderWidth ?? 1;
-        const borderRadius = cs.borderRadius ?? 12;
-        const borderColor = cs.borderColor ?? "#BBF7D0";
-        const backgroundColor = cs.backgroundColor ?? "#F0FDF4";
-        const textColor = cs.textColor ?? "#166534";
-        return {
-            borderStyle: "solid",
-            borderWidth: `${borderWidth}px`,
-            borderColor,
-            borderRadius: `${borderRadius}px`,
-            backgroundColor,
-            color: textColor,
-            padding: "12px",
-            display: "flex",
-            gap: "12px",
-            alignItems: "flex-start",
-        };
-    }
-    cardIconStyle() {
-        const cs = this.field?.card?.style ?? {};
-        const textColor = cs.textColor ?? "#166534";
-        return {
-            color: cs.iconColor ?? textColor,
-            fontSize: "18px",
-            lineHeight: "1",
-            marginTop: "2px",
-        };
-    }
-    isBootstrapIcon(icon) {
-        const v = (icon || "").trim();
-        return v.startsWith("bi ") || v.startsWith("bi-") || v.includes(" bi-");
-    }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoCardComponent, deps: [], target: i0.ɵɵFactoryTarget.Component });
-    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoCardComponent, isStandalone: true, selector: "amigo-card", inputs: { field: "field" }, ngImport: i0, template: "<div [ngStyle]=\"cardStyle()\" class=\"w-full flex items-start gap-3\">\n  <div\n    class=\"shrink-0 mt-0.5 text-lg leading-none\"\n    [ngStyle]=\"cardIconStyle()\"\n  >\n    <i\n      *ngIf=\"isBootstrapIcon(cardIcon())\"\n      [class]=\"cardIcon()\"\n    ></i>\n    <span *ngIf=\"!isBootstrapIcon(cardIcon())\">{{ cardIcon() }}</span>\n  </div>\n\n  <div class=\"min-w-0\">\n    <div class=\"text-sm font-semibold leading-tight\">\n      {{ cardTitle() }}\n    </div>\n\n    <div *ngIf=\"cardBody()\" class=\"mt-1 text-xs opacity-90\">\n      {{ cardBody() }}\n    </div>\n  </div>\n</div>\n", dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1.NgIf, selector: "[ngIf]", inputs: ["ngIf", "ngIfThen", "ngIfElse"] }, { kind: "directive", type: i1.NgStyle, selector: "[ngStyle]", inputs: ["ngStyle"] }] });
-}
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoCardComponent, decorators: [{
-            type: Component,
-            args: [{ selector: 'amigo-card', standalone: true, imports: [CommonModule], template: "<div [ngStyle]=\"cardStyle()\" class=\"w-full flex items-start gap-3\">\n  <div\n    class=\"shrink-0 mt-0.5 text-lg leading-none\"\n    [ngStyle]=\"cardIconStyle()\"\n  >\n    <i\n      *ngIf=\"isBootstrapIcon(cardIcon())\"\n      [class]=\"cardIcon()\"\n    ></i>\n    <span *ngIf=\"!isBootstrapIcon(cardIcon())\">{{ cardIcon() }}</span>\n  </div>\n\n  <div class=\"min-w-0\">\n    <div class=\"text-sm font-semibold leading-tight\">\n      {{ cardTitle() }}\n    </div>\n\n    <div *ngIf=\"cardBody()\" class=\"mt-1 text-xs opacity-90\">\n      {{ cardBody() }}\n    </div>\n  </div>\n</div>\n" }]
-        }], propDecorators: { field: [{
-                type: Input
-            }] } });
-
-class AmigoButtonComponent {
-    field;
-    resolvedSchema;
-    isSubmitting = false;
-    buttonLoading = {};
-    buttonFeedback = {};
-    buttonClick = new EventEmitter();
-    isHovered = false;
-    onButtonClickHandler() {
-        if (!this.field.button?.isSubmit) {
-            this.buttonClick.emit(this.field);
+    recomputeVisibility(form, resolvedSchema) {
+        if (!form || !resolvedSchema)
+            return;
+        const raw = form.getRawValue
+            ? form.getRawValue()
+            : form.value;
+        this.visibilityUpdating = true;
+        try {
+            for (const f of resolvedSchema.fields) {
+                const visible = this.evaluateVisibility(f, raw);
+                const stateKey = f.id || f.name;
+                this.visibilityState[stateKey] = visible;
+                if (this.isNonInput(f))
+                    continue;
+                const c = form.get(this.controlKey(f));
+                if (!c)
+                    continue;
+                if (!visible && c.enabled)
+                    c.disable({ emitEvent: false });
+                if (visible && c.disabled)
+                    c.enable({ emitEvent: false });
+            }
+        }
+        finally {
+            this.visibilityUpdating = false;
         }
     }
-    get isLoading() {
-        return this.field.button?.isSubmit ? this.isSubmitting : (this.buttonLoading[this.field.id] ?? false);
+    evaluateVisibility(field, raw) {
+        const vis = field?.visibility;
+        const rules = vis?.rules ?? [];
+        if (!rules.length)
+            return true;
+        const mode = String(vis?.mode || "ALL").toUpperCase();
+        const results = rules.map((r) => this.evaluateVisibilityRule(r, raw));
+        return mode === "ANY" ? results.some(Boolean) : results.every(Boolean);
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoButtonComponent, deps: [], target: i0.ɵɵFactoryTarget.Component });
-    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoButtonComponent, isStandalone: true, selector: "amigo-button", inputs: { field: "field", resolvedSchema: "resolvedSchema", isSubmitting: "isSubmitting", buttonLoading: "buttonLoading", buttonFeedback: "buttonFeedback" }, outputs: { buttonClick: "buttonClick" }, ngImport: i0, template: "<div class=\"w-full\">\n  <button\n    [type]=\"field.button?.isSubmit ? 'submit' : 'button'\"\n    (click)=\"onButtonClickHandler()\"\n    [disabled]=\"isLoading\"\n    class=\"w-full transition disabled:opacity-60 disabled:cursor-not-allowed\"\n    (mouseenter)=\"isHovered = true\"\n    (mouseleave)=\"isHovered = false\"\n    [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n    [ngStyle]=\"{\n      'background-color':\n        field.button?.styleVariant === 'link' ||\n        field.button?.styleVariant === 'outline'\n          ? isHovered\n            ? field.button?.hoverBackgroundColor ||\n              (field.button?.styleVariant === 'outline'\n                ? '#eff6ff'\n                : 'transparent')\n            : field.button?.backgroundColor || 'transparent'\n          : isHovered\n            ? field.button?.hoverBackgroundColor ||\n              field.button?.backgroundColor ||\n              ''\n            : field.button?.backgroundColor || '',\n      color: isHovered\n        ? field.button?.hoverTextColor ||\n          field.button?.textColor ||\n          ''\n        : field.button?.textColor || '',\n      'border-color':\n        field.button?.styleVariant === 'link'\n          ? 'transparent'\n          : isHovered\n            ? field.button?.hoverBackgroundColor ||\n              field.button?.backgroundColor ||\n              ''\n            : field.button?.backgroundColor || '',\n      'text-decoration':\n        field.button?.styleVariant === 'link' && isHovered\n          ? 'underline'\n          : 'none',\n    }\"\n    [ngClass]=\"[\n      resolvedSchema?.style?.inputClass\n        ? resolvedSchema.style.inputClass.replace('rounded', '')\n        : 'w-full px-2 py-1 text-sm',\n      field.button?.styleVariant === 'link' ? '' : 'border',\n      !field.button?.backgroundColor &&\n      (field.button?.styleVariant || 'primary') === 'primary'\n        ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'\n        : !field.button?.backgroundColor &&\n            field.button?.styleVariant === 'outline'\n          ? 'bg-transparent text-blue-600 border-blue-600 hover:bg-blue-50'\n          : !field.button?.backgroundColor &&\n              field.button?.styleVariant === 'link'\n            ? 'bg-transparent text-blue-600 border-transparent hover:underline'\n            : !field.button?.backgroundColor &&\n                (field.button?.styleVariant || 'primary') === 'danger'\n              ? 'bg-red-600 text-white border-red-600 hover:bg-red-700'\n              : !field.button?.backgroundColor\n                ? 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'\n                : '',\n    ]\"\n  >\n    <span class=\"inline-flex items-center justify-center gap-2\">\n      <span>\n        {{\n          field.button?.isSubmit && isSubmitting\n            ? \"Submitting...\"\n            : field.button?.label || field.label\n        }}\n      </span>\n      <span\n        *ngIf=\"!field.button?.isSubmit && buttonLoading[field.id]\"\n        class=\"text-xs opacity-80\"\n        >\u2026</span\n      >\n    </span>\n  </button>\n\n  <div\n    *ngIf=\"buttonFeedback[field.id]\"\n    class=\"mt-2 text-xs rounded-lg px-3 py-2 border\"\n    [ngClass]=\"\n      buttonFeedback[field.id].type === 'success'\n        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'\n        : 'bg-rose-50 border-rose-200 text-rose-800'\n    \"\n  >\n    {{ buttonFeedback[field.id].message }}\n  </div>\n</div>\n", dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1.NgClass, selector: "[ngClass]", inputs: ["class", "ngClass"] }, { kind: "directive", type: i1.NgIf, selector: "[ngIf]", inputs: ["ngIf", "ngIfThen", "ngIfElse"] }, { kind: "directive", type: i1.NgStyle, selector: "[ngStyle]", inputs: ["ngStyle"] }] });
-}
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoButtonComponent, decorators: [{
-            type: Component,
-            args: [{ selector: 'amigo-button', standalone: true, imports: [CommonModule], template: "<div class=\"w-full\">\n  <button\n    [type]=\"field.button?.isSubmit ? 'submit' : 'button'\"\n    (click)=\"onButtonClickHandler()\"\n    [disabled]=\"isLoading\"\n    class=\"w-full transition disabled:opacity-60 disabled:cursor-not-allowed\"\n    (mouseenter)=\"isHovered = true\"\n    (mouseleave)=\"isHovered = false\"\n    [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n    [ngStyle]=\"{\n      'background-color':\n        field.button?.styleVariant === 'link' ||\n        field.button?.styleVariant === 'outline'\n          ? isHovered\n            ? field.button?.hoverBackgroundColor ||\n              (field.button?.styleVariant === 'outline'\n                ? '#eff6ff'\n                : 'transparent')\n            : field.button?.backgroundColor || 'transparent'\n          : isHovered\n            ? field.button?.hoverBackgroundColor ||\n              field.button?.backgroundColor ||\n              ''\n            : field.button?.backgroundColor || '',\n      color: isHovered\n        ? field.button?.hoverTextColor ||\n          field.button?.textColor ||\n          ''\n        : field.button?.textColor || '',\n      'border-color':\n        field.button?.styleVariant === 'link'\n          ? 'transparent'\n          : isHovered\n            ? field.button?.hoverBackgroundColor ||\n              field.button?.backgroundColor ||\n              ''\n            : field.button?.backgroundColor || '',\n      'text-decoration':\n        field.button?.styleVariant === 'link' && isHovered\n          ? 'underline'\n          : 'none',\n    }\"\n    [ngClass]=\"[\n      resolvedSchema?.style?.inputClass\n        ? resolvedSchema.style.inputClass.replace('rounded', '')\n        : 'w-full px-2 py-1 text-sm',\n      field.button?.styleVariant === 'link' ? '' : 'border',\n      !field.button?.backgroundColor &&\n      (field.button?.styleVariant || 'primary') === 'primary'\n        ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'\n        : !field.button?.backgroundColor &&\n            field.button?.styleVariant === 'outline'\n          ? 'bg-transparent text-blue-600 border-blue-600 hover:bg-blue-50'\n          : !field.button?.backgroundColor &&\n              field.button?.styleVariant === 'link'\n            ? 'bg-transparent text-blue-600 border-transparent hover:underline'\n            : !field.button?.backgroundColor &&\n                (field.button?.styleVariant || 'primary') === 'danger'\n              ? 'bg-red-600 text-white border-red-600 hover:bg-red-700'\n              : !field.button?.backgroundColor\n                ? 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'\n                : '',\n    ]\"\n  >\n    <span class=\"inline-flex items-center justify-center gap-2\">\n      <span>\n        {{\n          field.button?.isSubmit && isSubmitting\n            ? \"Submitting...\"\n            : field.button?.label || field.label\n        }}\n      </span>\n      <span\n        *ngIf=\"!field.button?.isSubmit && buttonLoading[field.id]\"\n        class=\"text-xs opacity-80\"\n        >\u2026</span\n      >\n    </span>\n  </button>\n\n  <div\n    *ngIf=\"buttonFeedback[field.id]\"\n    class=\"mt-2 text-xs rounded-lg px-3 py-2 border\"\n    [ngClass]=\"\n      buttonFeedback[field.id].type === 'success'\n        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'\n        : 'bg-rose-50 border-rose-200 text-rose-800'\n    \"\n  >\n    {{ buttonFeedback[field.id].message }}\n  </div>\n</div>\n" }]
-        }], propDecorators: { field: [{
-                type: Input
-            }], resolvedSchema: [{
-                type: Input
-            }], isSubmitting: [{
-                type: Input
-            }], buttonLoading: [{
-                type: Input
-            }], buttonFeedback: [{
-                type: Input
-            }], buttonClick: [{
-                type: Output
-            }] } });
-
-class AmigoInputComponent {
-    field;
-    form;
-    resolvedSchema;
-    controlKey() {
-        return this.field?.name ?? this.field?.id;
-    }
-    ctrl() {
-        return this.form?.get(this.controlKey()) ?? null;
-    }
-    showError() {
-        const c = this.ctrl();
-        return !!(c && c.invalid && (c.touched || c.dirty));
-    }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoInputComponent, deps: [], target: i0.ɵɵFactoryTarget.Component });
-    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoInputComponent, isStandalone: true, selector: "amigo-input", inputs: { field: "field", form: "form", resolvedSchema: "resolvedSchema" }, ngImport: i0, template: "<ng-container [formGroup]=\"form\">\n  <ng-container [ngSwitch]=\"field.type\">\n    <ng-container *ngSwitchCase=\"'text'\">\n      <input\n        type=\"text\"\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['minlength']\">\n          Minimum {{ field.validations?.minLength }} characters\n          required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['maxlength']\">\n          Maximum {{ field.validations?.maxLength }} characters allowed.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['pattern']\">\n          Value does not match the required pattern.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'password'\">\n      <input\n        type=\"password\"\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['minlength']\">\n          Minimum {{ field.validations?.minLength }} characters\n          required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['maxlength']\">\n          Maximum {{ field.validations?.maxLength }} characters allowed.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['pattern']\">\n          Value does not match the required pattern.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'number'\">\n      <input\n        type=\"number\"\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['min']\">\n          Value should be \u2265 {{ field.validations?.min }}.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['max']\">\n          Value should be \u2264 {{ field.validations?.max }}.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'email'\">\n      <input\n        type=\"email\"\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['email']\">\n          Please enter a valid email address.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['minlength']\">\n          Minimum {{ field.validations?.minLength }} characters\n          required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['maxlength']\">\n          Maximum {{ field.validations?.maxLength }} characters allowed.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['pattern']\">\n          Value does not match the required pattern.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'textarea'\">\n      <textarea\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        rows=\"4\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      ></textarea>\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['minlength']\">\n          Minimum {{ field.validations?.minLength }} characters\n          required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['maxlength']\">\n          Maximum {{ field.validations?.maxLength }} characters allowed.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['pattern']\">\n          Value does not match the required pattern.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'date'\">\n      <input\n        type=\"date\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['min']\">\n          Date should be on or after {{ field.validations?.min }}.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['max']\">\n          Date should be on or before {{ field.validations?.max }}.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchDefault>\n      <input\n        type=\"text\"\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n    </ng-container>\n  </ng-container>\n</ng-container>\n", dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1.NgClass, selector: "[ngClass]", inputs: ["class", "ngClass"] }, { kind: "directive", type: i1.NgIf, selector: "[ngIf]", inputs: ["ngIf", "ngIfThen", "ngIfElse"] }, { kind: "directive", type: i1.NgSwitch, selector: "[ngSwitch]", inputs: ["ngSwitch"] }, { kind: "directive", type: i1.NgSwitchCase, selector: "[ngSwitchCase]", inputs: ["ngSwitchCase"] }, { kind: "directive", type: i1.NgSwitchDefault, selector: "[ngSwitchDefault]" }, { kind: "ngmodule", type: ReactiveFormsModule }, { kind: "directive", type: i2.DefaultValueAccessor, selector: "input:not([type=checkbox])[formControlName],textarea[formControlName],input:not([type=checkbox])[formControl],textarea[formControl],input:not([type=checkbox])[ngModel],textarea[ngModel],[ngDefaultControl]" }, { kind: "directive", type: i2.NumberValueAccessor, selector: "input[type=number][formControlName],input[type=number][formControl],input[type=number][ngModel]" }, { kind: "directive", type: i2.NgControlStatus, selector: "[formControlName],[ngModel],[formControl]" }, { kind: "directive", type: i2.NgControlStatusGroup, selector: "[formGroupName],[formArrayName],[ngModelGroup],[formGroup],[formArray],form:not([ngNoForm]),[ngForm]" }, { kind: "directive", type: i2.FormGroupDirective, selector: "[formGroup]", inputs: ["formGroup"], outputs: ["ngSubmit"], exportAs: ["ngForm"] }, { kind: "directive", type: i2.FormControlName, selector: "[formControlName]", inputs: ["formControlName", "disabled", "ngModel"], outputs: ["ngModelChange"] }] });
-}
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoInputComponent, decorators: [{
-            type: Component,
-            args: [{ selector: 'amigo-input', standalone: true, imports: [CommonModule, ReactiveFormsModule], template: "<ng-container [formGroup]=\"form\">\n  <ng-container [ngSwitch]=\"field.type\">\n    <ng-container *ngSwitchCase=\"'text'\">\n      <input\n        type=\"text\"\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['minlength']\">\n          Minimum {{ field.validations?.minLength }} characters\n          required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['maxlength']\">\n          Maximum {{ field.validations?.maxLength }} characters allowed.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['pattern']\">\n          Value does not match the required pattern.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'password'\">\n      <input\n        type=\"password\"\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['minlength']\">\n          Minimum {{ field.validations?.minLength }} characters\n          required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['maxlength']\">\n          Maximum {{ field.validations?.maxLength }} characters allowed.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['pattern']\">\n          Value does not match the required pattern.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'number'\">\n      <input\n        type=\"number\"\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['min']\">\n          Value should be \u2265 {{ field.validations?.min }}.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['max']\">\n          Value should be \u2264 {{ field.validations?.max }}.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'email'\">\n      <input\n        type=\"email\"\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['email']\">\n          Please enter a valid email address.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['minlength']\">\n          Minimum {{ field.validations?.minLength }} characters\n          required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['maxlength']\">\n          Maximum {{ field.validations?.maxLength }} characters allowed.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['pattern']\">\n          Value does not match the required pattern.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'textarea'\">\n      <textarea\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        rows=\"4\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      ></textarea>\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['minlength']\">\n          Minimum {{ field.validations?.minLength }} characters\n          required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['maxlength']\">\n          Maximum {{ field.validations?.maxLength }} characters allowed.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['pattern']\">\n          Value does not match the required pattern.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'date'\">\n      <input\n        type=\"date\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['min']\">\n          Date should be on or after {{ field.validations?.min }}.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['max']\">\n          Date should be on or before {{ field.validations?.max }}.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchDefault>\n      <input\n        type=\"text\"\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n    </ng-container>\n  </ng-container>\n</ng-container>\n" }]
-        }], propDecorators: { field: [{
-                type: Input
-            }], form: [{
-                type: Input
-            }], resolvedSchema: [{
-                type: Input
-            }] } });
-
-class AmigoSelectComponent {
-    field;
-    form;
-    resolvedSchema;
-    selectState = {};
-    controlKey() {
-        return this.field?.name ?? this.field?.id;
-    }
-    ctrl() {
-        return this.form?.get(this.controlKey()) ?? null;
-    }
-    showError() {
-        const c = this.ctrl();
-        return !!(c && c.invalid && (c.touched || c.dirty));
-    }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoSelectComponent, deps: [], target: i0.ɵɵFactoryTarget.Component });
-    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoSelectComponent, isStandalone: true, selector: "amigo-select", inputs: { field: "field", form: "form", resolvedSchema: "resolvedSchema", selectState: "selectState" }, ngImport: i0, template: "<ng-container [formGroup]=\"form\">\n  <ng-container [ngSwitch]=\"field.type\">\n    <ng-container *ngSwitchCase=\"'select'\">\n      <select\n        [formControlName]=\"controlKey()\"\n        [disabled]=\"selectState[field.id]?.loading ?? false\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      >\n        <option value=\"\">Select an option</option>\n\n        <ng-container\n          *ngFor=\"\n            let opt of field.optionsSource?.mode === 'API'\n              ? selectState[field.id]?.options || []\n              : field.options || []\n          \"\n        >\n          <option [value]=\"opt.value\">{{ opt.label }}</option>\n        </ng-container>\n      </select>\n\n      <div\n        *ngIf=\"\n          field.optionsSource?.mode === 'API' &&\n          selectState[field.id]?.loading\n        \"\n        class=\"mt-1 text-[11px] text-slate-500\"\n      >\n        Loading options\u2026\n      </div>\n\n      <div\n        *ngIf=\"\n          field.optionsSource?.mode === 'API' &&\n          selectState[field.id]?.error\n        \"\n        class=\"mt-1 text-[11px] text-rose-600\"\n      >\n        {{ selectState[field.id]?.error }}\n      </div>\n\n      <div\n        *ngIf=\"\n          field.optionsSource?.mode === 'API' &&\n          !selectState[field.id]?.loading &&\n          !selectState[field.id]?.error &&\n          (selectState[field.id]?.options?.length || 0) === 0\n        \"\n        class=\"mt-1 text-[11px] text-slate-500\"\n      >\n        No options available.\n      </div>\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          Please select an option.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'checkbox'\">\n      <div class=\"flex items-center gap-2\">\n        <input type=\"checkbox\" [formControlName]=\"controlKey()\" />\n        <span class=\"text-xs text-gray-700\">Check</span>\n      </div>\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['requiredTrue']\">\n          Please check this box.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'radio'\">\n      <div\n        [ngClass]=\"\n          field.optionDirection === 'horizontal'\n            ? 'flex flex-row gap-4 items-center'\n            : 'flex flex-col gap-1'\n        \"\n      >\n        <label\n          *ngFor=\"let opt of field.options || []\"\n          class=\"inline-flex items-center gap-2 text-xs text-gray-700\"\n        >\n          <input\n            type=\"radio\"\n            [value]=\"opt.value\"\n            [formControlName]=\"controlKey()\"\n          />\n          <span>{{ opt.label }}</span>\n        </label>\n      </div>\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          Please choose an option.\n        </div>\n      </div>\n    </ng-container>\n  </ng-container>\n</ng-container>\n", dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1.NgClass, selector: "[ngClass]", inputs: ["class", "ngClass"] }, { kind: "directive", type: i1.NgForOf, selector: "[ngFor][ngForOf]", inputs: ["ngForOf", "ngForTrackBy", "ngForTemplate"] }, { kind: "directive", type: i1.NgIf, selector: "[ngIf]", inputs: ["ngIf", "ngIfThen", "ngIfElse"] }, { kind: "directive", type: i1.NgSwitch, selector: "[ngSwitch]", inputs: ["ngSwitch"] }, { kind: "directive", type: i1.NgSwitchCase, selector: "[ngSwitchCase]", inputs: ["ngSwitchCase"] }, { kind: "ngmodule", type: ReactiveFormsModule }, { kind: "directive", type: i2.NgSelectOption, selector: "option", inputs: ["ngValue", "value"] }, { kind: "directive", type: i2.ɵNgSelectMultipleOption, selector: "option", inputs: ["ngValue", "value"] }, { kind: "directive", type: i2.DefaultValueAccessor, selector: "input:not([type=checkbox])[formControlName],textarea[formControlName],input:not([type=checkbox])[formControl],textarea[formControl],input:not([type=checkbox])[ngModel],textarea[ngModel],[ngDefaultControl]" }, { kind: "directive", type: i2.CheckboxControlValueAccessor, selector: "input[type=checkbox][formControlName],input[type=checkbox][formControl],input[type=checkbox][ngModel]" }, { kind: "directive", type: i2.SelectControlValueAccessor, selector: "select:not([multiple])[formControlName],select:not([multiple])[formControl],select:not([multiple])[ngModel]", inputs: ["compareWith"] }, { kind: "directive", type: i2.RadioControlValueAccessor, selector: "input[type=radio][formControlName],input[type=radio][formControl],input[type=radio][ngModel]", inputs: ["name", "formControlName", "value"] }, { kind: "directive", type: i2.NgControlStatus, selector: "[formControlName],[ngModel],[formControl]" }, { kind: "directive", type: i2.NgControlStatusGroup, selector: "[formGroupName],[formArrayName],[ngModelGroup],[formGroup],[formArray],form:not([ngNoForm]),[ngForm]" }, { kind: "directive", type: i2.FormGroupDirective, selector: "[formGroup]", inputs: ["formGroup"], outputs: ["ngSubmit"], exportAs: ["ngForm"] }, { kind: "directive", type: i2.FormControlName, selector: "[formControlName]", inputs: ["formControlName", "disabled", "ngModel"], outputs: ["ngModelChange"] }] });
-}
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoSelectComponent, decorators: [{
-            type: Component,
-            args: [{ selector: 'amigo-select', standalone: true, imports: [CommonModule, ReactiveFormsModule], template: "<ng-container [formGroup]=\"form\">\n  <ng-container [ngSwitch]=\"field.type\">\n    <ng-container *ngSwitchCase=\"'select'\">\n      <select\n        [formControlName]=\"controlKey()\"\n        [disabled]=\"selectState[field.id]?.loading ?? false\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      >\n        <option value=\"\">Select an option</option>\n\n        <ng-container\n          *ngFor=\"\n            let opt of field.optionsSource?.mode === 'API'\n              ? selectState[field.id]?.options || []\n              : field.options || []\n          \"\n        >\n          <option [value]=\"opt.value\">{{ opt.label }}</option>\n        </ng-container>\n      </select>\n\n      <div\n        *ngIf=\"\n          field.optionsSource?.mode === 'API' &&\n          selectState[field.id]?.loading\n        \"\n        class=\"mt-1 text-[11px] text-slate-500\"\n      >\n        Loading options\u2026\n      </div>\n\n      <div\n        *ngIf=\"\n          field.optionsSource?.mode === 'API' &&\n          selectState[field.id]?.error\n        \"\n        class=\"mt-1 text-[11px] text-rose-600\"\n      >\n        {{ selectState[field.id]?.error }}\n      </div>\n\n      <div\n        *ngIf=\"\n          field.optionsSource?.mode === 'API' &&\n          !selectState[field.id]?.loading &&\n          !selectState[field.id]?.error &&\n          (selectState[field.id]?.options?.length || 0) === 0\n        \"\n        class=\"mt-1 text-[11px] text-slate-500\"\n      >\n        No options available.\n      </div>\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          Please select an option.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'checkbox'\">\n      <div class=\"flex items-center gap-2\">\n        <input type=\"checkbox\" [formControlName]=\"controlKey()\" />\n        <span class=\"text-xs text-gray-700\">Check</span>\n      </div>\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['requiredTrue']\">\n          Please check this box.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'radio'\">\n      <div\n        [ngClass]=\"\n          field.optionDirection === 'horizontal'\n            ? 'flex flex-row gap-4 items-center'\n            : 'flex flex-col gap-1'\n        \"\n      >\n        <label\n          *ngFor=\"let opt of field.options || []\"\n          class=\"inline-flex items-center gap-2 text-xs text-gray-700\"\n        >\n          <input\n            type=\"radio\"\n            [value]=\"opt.value\"\n            [formControlName]=\"controlKey()\"\n          />\n          <span>{{ opt.label }}</span>\n        </label>\n      </div>\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          Please choose an option.\n        </div>\n      </div>\n    </ng-container>\n  </ng-container>\n</ng-container>\n" }]
-        }], propDecorators: { field: [{
-                type: Input
-            }], form: [{
-                type: Input
-            }], resolvedSchema: [{
-                type: Input
-            }], selectState: [{
-                type: Input
-            }] } });
-
-class AmigoFileComponent {
-    field;
-    form;
-    resolvedSchema;
-    fileChange = new EventEmitter();
-    clearFile = new EventEmitter();
-    controlKey() {
-        return this.field?.name ?? this.field?.id;
-    }
-    ctrl() {
-        return this.form?.get(this.controlKey()) ?? null;
-    }
-    showError() {
-        const c = this.ctrl();
-        return !!(c && c.invalid && (c.touched || c.dirty));
-    }
-    onFileChangeHandler(evt) {
-        this.fileChange.emit({ evt, field: this.field });
-    }
-    clearFileHandler(inputEl) {
-        this.clearFile.emit({ field: this.field, inputEl });
-    }
-    fileNames() {
-        const v = this.ctrl()?.value;
-        if (!v)
-            return [];
-        if (Array.isArray(v))
-            return v.map((f) => f?.name).filter(Boolean);
-        if (v instanceof File)
-            return [v.name];
-        if (typeof FileList !== "undefined" && v instanceof FileList) {
-            return Array.from(v)
-                .map((f) => f?.name)
-                .filter(Boolean);
+    evaluateVisibilityRule(rule, raw) {
+        const depKey = this.resolveDependsOnKey(rule?.dependsOn);
+        const v = raw?.[depKey];
+        const op = String(rule?.operator || "EQUALS").toUpperCase();
+        const cmp = rule?.value;
+        switch (op) {
+            case "CHECKED":
+                return v === true;
+            case "UNCHECKED":
+                return v !== true;
+            case "HAS_VALUE":
+                return !this.isEmptyValue(v);
+            case "NOT_HAS_VALUE":
+                return this.isEmptyValue(v);
+            case "IN":
+                return Array.isArray(cmp) ? cmp.includes(v) : false;
+            case "NOT_IN":
+                return Array.isArray(cmp) ? !cmp.includes(v) : true;
+            case "NOT_EQUALS":
+                return Array.isArray(v) ? !v.includes(cmp) : v !== cmp;
+            case "EQUALS":
+            default:
+                return Array.isArray(v) ? v.includes(cmp) : v === cmp;
         }
-        return [];
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoFileComponent, deps: [], target: i0.ɵɵFactoryTarget.Component });
-    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoFileComponent, isStandalone: true, selector: "amigo-file", inputs: { field: "field", form: "form", resolvedSchema: "resolvedSchema" }, outputs: { fileChange: "fileChange", clearFile: "clearFile" }, ngImport: i0, template: "<ng-container [formGroup]=\"form\">\n  <div class=\"flex flex-col gap-2\">\n    <div class=\"flex items-center gap-2\">\n      <input\n        #fileInput\n        type=\"file\"\n        [attr.accept]=\"field.accept || null\"\n        [attr.multiple]=\"field.multiple ? '' : null\"\n        (change)=\"onFileChangeHandler($event)\"\n        (blur)=\"ctrl()?.markAsTouched()\"\n        [style.borderRadius.px]=\"\n          resolvedSchema?.style?.borderRadius\n        \"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <button\n        *ngIf=\"fileNames().length\"\n        type=\"button\"\n        class=\"px-2 py-1 text-[11px] border border-gray-300 rounded hover:bg-gray-100\"\n        (click)=\"clearFileHandler(fileInput)\"\n      >\n        Clear\n      </button>\n    </div>\n\n    <div class=\"text-[11px] text-gray-500\">\n      <span *ngIf=\"field.accept\">Allowed: {{ field.accept }}</span>\n      <span *ngIf=\"field.maxSizeMB\">\n        \u2022 Max {{ field.maxSizeMB }}MB per file</span\n      >\n      <span *ngIf=\"field.maxFiles\">\n        \u2022 Max {{ field.maxFiles }} file(s)</span\n      >\n    </div>\n\n    <div\n      *ngIf=\"fileNames().length\"\n      class=\"text-[11px] text-gray-600\"\n    >\n      Selected: {{ fileNames().join(\", \") }}\n    </div>\n  </div>\n\n  <div\n    *ngIf=\"showError()\"\n    class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n  >\n    <div *ngIf=\"ctrl()?.errors?.['required']\">\n      This field is required.\n    </div>\n\n    <div *ngIf=\"ctrl()?.errors?.['maxFiles']\">\n      You can upload up to\n      {{ ctrl()?.errors?.[\"maxFiles\"]?.max }} file(s).\n    </div>\n\n    <div *ngIf=\"ctrl()?.errors?.['maxSizeMB']\">\n      {{ ctrl()?.errors?.[\"maxSizeMB\"]?.file }} is too large.\n      Max {{ ctrl()?.errors?.[\"maxSizeMB\"]?.max }}MB.\n    </div>\n\n    <div *ngIf=\"ctrl()?.errors?.['accept']\">\n      {{ ctrl()?.errors?.[\"accept\"]?.file }} is not an allowed\n      file type.\n    </div>\n  </div>\n</ng-container>\n", dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1.NgClass, selector: "[ngClass]", inputs: ["class", "ngClass"] }, { kind: "directive", type: i1.NgIf, selector: "[ngIf]", inputs: ["ngIf", "ngIfThen", "ngIfElse"] }, { kind: "ngmodule", type: ReactiveFormsModule }, { kind: "directive", type: i2.NgControlStatusGroup, selector: "[formGroupName],[formArrayName],[ngModelGroup],[formGroup],[formArray],form:not([ngNoForm]),[ngForm]" }, { kind: "directive", type: i2.FormGroupDirective, selector: "[formGroup]", inputs: ["formGroup"], outputs: ["ngSubmit"], exportAs: ["ngForm"] }] });
+    resolveDependsOnKey(dependsOn) {
+        if (!dependsOn)
+            return "";
+        if (typeof dependsOn === "string")
+            return dependsOn;
+        return dependsOn.id || dependsOn.name || "";
+    }
+    isEmptyValue(v) {
+        if (v === null || v === undefined)
+            return true;
+        if (typeof v === "string" && v.trim() === "")
+            return true;
+        if (Array.isArray(v) && v.length === 0)
+            return true;
+        return false;
+    }
+    isNonInput(field) {
+        const t = field?.type;
+        return t === "card" || t === "info-card" || t === "button";
+    }
+    controlKey(field) {
+        return field?.name ?? field?.id;
+    }
+    cleanup() {
+        this.visibilitySub?.unsubscribe();
+    }
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: FormVisibilityService, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
+    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: FormVisibilityService, providedIn: 'root' });
 }
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoFileComponent, decorators: [{
-            type: Component,
-            args: [{ selector: 'amigo-file', standalone: true, imports: [CommonModule, ReactiveFormsModule], template: "<ng-container [formGroup]=\"form\">\n  <div class=\"flex flex-col gap-2\">\n    <div class=\"flex items-center gap-2\">\n      <input\n        #fileInput\n        type=\"file\"\n        [attr.accept]=\"field.accept || null\"\n        [attr.multiple]=\"field.multiple ? '' : null\"\n        (change)=\"onFileChangeHandler($event)\"\n        (blur)=\"ctrl()?.markAsTouched()\"\n        [style.borderRadius.px]=\"\n          resolvedSchema?.style?.borderRadius\n        \"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <button\n        *ngIf=\"fileNames().length\"\n        type=\"button\"\n        class=\"px-2 py-1 text-[11px] border border-gray-300 rounded hover:bg-gray-100\"\n        (click)=\"clearFileHandler(fileInput)\"\n      >\n        Clear\n      </button>\n    </div>\n\n    <div class=\"text-[11px] text-gray-500\">\n      <span *ngIf=\"field.accept\">Allowed: {{ field.accept }}</span>\n      <span *ngIf=\"field.maxSizeMB\">\n        \u2022 Max {{ field.maxSizeMB }}MB per file</span\n      >\n      <span *ngIf=\"field.maxFiles\">\n        \u2022 Max {{ field.maxFiles }} file(s)</span\n      >\n    </div>\n\n    <div\n      *ngIf=\"fileNames().length\"\n      class=\"text-[11px] text-gray-600\"\n    >\n      Selected: {{ fileNames().join(\", \") }}\n    </div>\n  </div>\n\n  <div\n    *ngIf=\"showError()\"\n    class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n  >\n    <div *ngIf=\"ctrl()?.errors?.['required']\">\n      This field is required.\n    </div>\n\n    <div *ngIf=\"ctrl()?.errors?.['maxFiles']\">\n      You can upload up to\n      {{ ctrl()?.errors?.[\"maxFiles\"]?.max }} file(s).\n    </div>\n\n    <div *ngIf=\"ctrl()?.errors?.['maxSizeMB']\">\n      {{ ctrl()?.errors?.[\"maxSizeMB\"]?.file }} is too large.\n      Max {{ ctrl()?.errors?.[\"maxSizeMB\"]?.max }}MB.\n    </div>\n\n    <div *ngIf=\"ctrl()?.errors?.['accept']\">\n      {{ ctrl()?.errors?.[\"accept\"]?.file }} is not an allowed\n      file type.\n    </div>\n  </div>\n</ng-container>\n" }]
-        }], propDecorators: { field: [{
-                type: Input
-            }], form: [{
-                type: Input
-            }], resolvedSchema: [{
-                type: Input
-            }], fileChange: [{
-                type: Output
-            }], clearFile: [{
-                type: Output
-            }] } });
-
-class AmigoFieldRendererComponent {
-    field;
-    form;
-    resolvedSchema;
-    isSubmitting = false;
-    buttonLoading = {};
-    buttonFeedback = {};
-    selectState = {};
-    buttonClick = new EventEmitter();
-    fileChange = new EventEmitter();
-    clearFile = new EventEmitter();
-    isCard() {
-        const t = this.field?.type;
-        return t === "card" || t === "info-card";
-    }
-    isButton() {
-        return (this.field?.type ?? "") === "button";
-    }
-    isSelectOrRadioOrCheckbox() {
-        const t = this.field?.type;
-        return t === "select" || t === "radio" || t === "checkbox";
-    }
-    isFile() {
-        return this.field?.type === "file";
-    }
-    onButtonClickHandler(field) {
-        this.buttonClick.emit(field);
-    }
-    onFileChangeHandler(eventData) {
-        this.fileChange.emit(eventData);
-    }
-    onClearFileHandler(eventData) {
-        this.clearFile.emit(eventData);
-    }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoFieldRendererComponent, deps: [], target: i0.ɵɵFactoryTarget.Component });
-    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoFieldRendererComponent, isStandalone: true, selector: "amigo-field-renderer", inputs: { field: "field", form: "form", resolvedSchema: "resolvedSchema", isSubmitting: "isSubmitting", buttonLoading: "buttonLoading", buttonFeedback: "buttonFeedback", selectState: "selectState" }, outputs: { buttonClick: "buttonClick", fileChange: "fileChange", clearFile: "clearFile" }, ngImport: i0, template: "<ng-container *ngIf=\"isCard(); else notCard\">\n  <amigo-card [field]=\"field\"></amigo-card>\n</ng-container>\n\n<ng-template #notCard>\n  <ng-container *ngIf=\"isButton(); else inputGroup\">\n    <amigo-button\n      [field]=\"field\"\n      [resolvedSchema]=\"resolvedSchema\"\n      [isSubmitting]=\"isSubmitting\"\n      [buttonLoading]=\"buttonLoading\"\n      [buttonFeedback]=\"buttonFeedback\"\n      (buttonClick)=\"onButtonClickHandler($event)\"\n    ></amigo-button>\n  </ng-container>\n\n  <ng-template #inputGroup>\n    <label\n      [ngClass]=\"\n        resolvedSchema?.style?.labelClass ||\n        'block text-sm font-medium mb-1'\n      \"\n    >\n      {{ field.label }}\n      <span\n        *ngIf=\"\n          field.required === true ||\n          field.required === 'true' ||\n          field.validations?.required\n        \"\n        class=\"text-red-500\"\n        >*</span\n      >\n    </label>\n\n    <ng-container *ngIf=\"isSelectOrRadioOrCheckbox(); else fileOrInput\">\n      <amigo-select\n        [field]=\"field\"\n        [form]=\"form\"\n        [resolvedSchema]=\"resolvedSchema\"\n        [selectState]=\"selectState\"\n      ></amigo-select>\n    </ng-container>\n    \n    <ng-template #fileOrInput>\n      <ng-container *ngIf=\"isFile(); else standardInput\">\n        <amigo-file\n          [field]=\"field\"\n          [form]=\"form\"\n          [resolvedSchema]=\"resolvedSchema\"\n          (fileChange)=\"onFileChangeHandler($event)\"\n          (clearFile)=\"onClearFileHandler($event)\"\n        ></amigo-file>\n      </ng-container>\n      \n      <ng-template #standardInput>\n        <amigo-input\n          [field]=\"field\"\n          [form]=\"form\"\n          [resolvedSchema]=\"resolvedSchema\"\n        ></amigo-input>\n      </ng-template>\n    </ng-template>\n  </ng-template>\n</ng-template>\n", dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1.NgClass, selector: "[ngClass]", inputs: ["class", "ngClass"] }, { kind: "directive", type: i1.NgIf, selector: "[ngIf]", inputs: ["ngIf", "ngIfThen", "ngIfElse"] }, { kind: "ngmodule", type: ReactiveFormsModule }, { kind: "component", type: AmigoCardComponent, selector: "amigo-card", inputs: ["field"] }, { kind: "component", type: AmigoButtonComponent, selector: "amigo-button", inputs: ["field", "resolvedSchema", "isSubmitting", "buttonLoading", "buttonFeedback"], outputs: ["buttonClick"] }, { kind: "component", type: AmigoInputComponent, selector: "amigo-input", inputs: ["field", "form", "resolvedSchema"] }, { kind: "component", type: AmigoSelectComponent, selector: "amigo-select", inputs: ["field", "form", "resolvedSchema", "selectState"] }, { kind: "component", type: AmigoFileComponent, selector: "amigo-file", inputs: ["field", "form", "resolvedSchema"], outputs: ["fileChange", "clearFile"] }] });
-}
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoFieldRendererComponent, decorators: [{
-            type: Component,
-            args: [{ selector: 'amigo-field-renderer', standalone: true, imports: [
-                        CommonModule,
-                        ReactiveFormsModule,
-                        AmigoCardComponent,
-                        AmigoButtonComponent,
-                        AmigoInputComponent,
-                        AmigoSelectComponent,
-                        AmigoFileComponent
-                    ], template: "<ng-container *ngIf=\"isCard(); else notCard\">\n  <amigo-card [field]=\"field\"></amigo-card>\n</ng-container>\n\n<ng-template #notCard>\n  <ng-container *ngIf=\"isButton(); else inputGroup\">\n    <amigo-button\n      [field]=\"field\"\n      [resolvedSchema]=\"resolvedSchema\"\n      [isSubmitting]=\"isSubmitting\"\n      [buttonLoading]=\"buttonLoading\"\n      [buttonFeedback]=\"buttonFeedback\"\n      (buttonClick)=\"onButtonClickHandler($event)\"\n    ></amigo-button>\n  </ng-container>\n\n  <ng-template #inputGroup>\n    <label\n      [ngClass]=\"\n        resolvedSchema?.style?.labelClass ||\n        'block text-sm font-medium mb-1'\n      \"\n    >\n      {{ field.label }}\n      <span\n        *ngIf=\"\n          field.required === true ||\n          field.required === 'true' ||\n          field.validations?.required\n        \"\n        class=\"text-red-500\"\n        >*</span\n      >\n    </label>\n\n    <ng-container *ngIf=\"isSelectOrRadioOrCheckbox(); else fileOrInput\">\n      <amigo-select\n        [field]=\"field\"\n        [form]=\"form\"\n        [resolvedSchema]=\"resolvedSchema\"\n        [selectState]=\"selectState\"\n      ></amigo-select>\n    </ng-container>\n    \n    <ng-template #fileOrInput>\n      <ng-container *ngIf=\"isFile(); else standardInput\">\n        <amigo-file\n          [field]=\"field\"\n          [form]=\"form\"\n          [resolvedSchema]=\"resolvedSchema\"\n          (fileChange)=\"onFileChangeHandler($event)\"\n          (clearFile)=\"onClearFileHandler($event)\"\n        ></amigo-file>\n      </ng-container>\n      \n      <ng-template #standardInput>\n        <amigo-input\n          [field]=\"field\"\n          [form]=\"form\"\n          [resolvedSchema]=\"resolvedSchema\"\n        ></amigo-input>\n      </ng-template>\n    </ng-template>\n  </ng-template>\n</ng-template>\n" }]
-        }], propDecorators: { field: [{
-                type: Input
-            }], form: [{
-                type: Input
-            }], resolvedSchema: [{
-                type: Input
-            }], isSubmitting: [{
-                type: Input
-            }], buttonLoading: [{
-                type: Input
-            }], buttonFeedback: [{
-                type: Input
-            }], selectState: [{
-                type: Input
-            }], buttonClick: [{
-                type: Output
-            }], fileChange: [{
-                type: Output
-            }], clearFile: [{
-                type: Output
-            }] } });
-
-class AmigoReviewDialogComponent {
-    reviewData = [];
-    close = new EventEmitter();
-    confirm = new EventEmitter();
-    onClose() {
-        this.close.emit();
-    }
-    onConfirm() {
-        this.confirm.emit();
-    }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoReviewDialogComponent, deps: [], target: i0.ɵɵFactoryTarget.Component });
-    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoReviewDialogComponent, isStandalone: true, selector: "amigo-review-dialog", inputs: { reviewData: "reviewData" }, outputs: { close: "close", confirm: "confirm" }, ngImport: i0, template: "<div class=\"bg-white flex flex-col max-h-[90vh]\">\n  <div class=\"px-6 py-4 border-b border-gray-200 flex justify-between items-center shrink-0\">\n    <h3 class=\"text-lg font-semibold text-gray-800 m-0\">Review Form Details</h3>\n    <button type=\"button\" (click)=\"onClose()\" class=\"text-gray-400 hover:text-gray-600 focus:outline-none bg-transparent border-none cursor-pointer p-0\">\n      <svg class=\"w-6 h-6\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M6 18L18 6M6 6l12 12\"></path></svg>\n    </button>\n  </div>\n  \n  <div class=\"p-6 overflow-y-auto flex-1\">\n    <div *ngFor=\"let stepData of reviewData\" class=\"mb-6 last:mb-0\">\n      <h4 class=\"font-medium text-blue-700 border-b border-gray-100 pb-2 mb-4 mt-0\">{{ stepData.step }}</h4>\n      <div class=\"grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4\">\n        <div *ngFor=\"let fData of stepData.fields\" class=\"flex flex-col\">\n          <span class=\"text-xs text-gray-500 mb-1\">{{ fData.label }}</span>\n          <span class=\"text-sm font-medium text-gray-800 break-words whitespace-pre-wrap\">{{ fData.value }}</span>\n        </div>\n      </div>\n    </div>\n  </div>\n  \n  <div class=\"px-6 py-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50 shrink-0\">\n    <button type=\"button\" class=\"px-4 py-2 text-sm border border-gray-300 rounded bg-white hover:bg-gray-100 text-gray-700 cursor-pointer transition-colors\" (click)=\"onClose()\">Edit Form</button>\n    <button type=\"button\" class=\"px-4 py-2 text-sm bg-blue-600 border border-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer transition-colors shadow-sm\" (click)=\"onConfirm()\">Confirm & Close</button>\n  </div>\n</div>\n", dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1.NgForOf, selector: "[ngFor][ngForOf]", inputs: ["ngForOf", "ngForTrackBy", "ngForTemplate"] }] });
-}
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoReviewDialogComponent, decorators: [{
-            type: Component,
-            args: [{ selector: 'amigo-review-dialog', standalone: true, imports: [CommonModule], template: "<div class=\"bg-white flex flex-col max-h-[90vh]\">\n  <div class=\"px-6 py-4 border-b border-gray-200 flex justify-between items-center shrink-0\">\n    <h3 class=\"text-lg font-semibold text-gray-800 m-0\">Review Form Details</h3>\n    <button type=\"button\" (click)=\"onClose()\" class=\"text-gray-400 hover:text-gray-600 focus:outline-none bg-transparent border-none cursor-pointer p-0\">\n      <svg class=\"w-6 h-6\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M6 18L18 6M6 6l12 12\"></path></svg>\n    </button>\n  </div>\n  \n  <div class=\"p-6 overflow-y-auto flex-1\">\n    <div *ngFor=\"let stepData of reviewData\" class=\"mb-6 last:mb-0\">\n      <h4 class=\"font-medium text-blue-700 border-b border-gray-100 pb-2 mb-4 mt-0\">{{ stepData.step }}</h4>\n      <div class=\"grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4\">\n        <div *ngFor=\"let fData of stepData.fields\" class=\"flex flex-col\">\n          <span class=\"text-xs text-gray-500 mb-1\">{{ fData.label }}</span>\n          <span class=\"text-sm font-medium text-gray-800 break-words whitespace-pre-wrap\">{{ fData.value }}</span>\n        </div>\n      </div>\n    </div>\n  </div>\n  \n  <div class=\"px-6 py-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50 shrink-0\">\n    <button type=\"button\" class=\"px-4 py-2 text-sm border border-gray-300 rounded bg-white hover:bg-gray-100 text-gray-700 cursor-pointer transition-colors\" (click)=\"onClose()\">Edit Form</button>\n    <button type=\"button\" class=\"px-4 py-2 text-sm bg-blue-600 border border-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer transition-colors shadow-sm\" (click)=\"onConfirm()\">Confirm & Close</button>\n  </div>\n</div>\n" }]
-        }], propDecorators: { reviewData: [{
-                type: Input
-            }], close: [{
-                type: Output
-            }], confirm: [{
-                type: Output
-            }] } });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: FormVisibilityService, decorators: [{
+            type: Injectable,
+            args: [{
+                    providedIn: 'root'
+                }]
+        }] });
 
 /**
  * Host app will provide this.
@@ -739,150 +548,18 @@ class AmigoApiExecutionService {
         }
         return p;
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoApiExecutionService, deps: [{ token: i1$1.HttpClient }, { token: AMIGO_FORM_CONFIG, optional: true }], target: i0.ɵɵFactoryTarget.Injectable });
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoApiExecutionService, deps: [{ token: i1.HttpClient }, { token: AMIGO_FORM_CONFIG, optional: true }], target: i0.ɵɵFactoryTarget.Injectable });
     static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoApiExecutionService, providedIn: 'root' });
 }
 i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoApiExecutionService, decorators: [{
             type: Injectable,
             args: [{ providedIn: 'root' }]
-        }], ctorParameters: () => [{ type: i1$1.HttpClient }, { type: undefined, decorators: [{
+        }], ctorParameters: () => [{ type: i1.HttpClient }, { type: undefined, decorators: [{
                     type: Optional
                 }, {
                     type: Inject,
                     args: [AMIGO_FORM_CONFIG]
                 }] }] });
-
-class FormVisibilityService {
-    visibilitySub;
-    visibilityState = {};
-    visibilityUpdating = false;
-    setupVisibility(form, resolvedSchema, onVisibilityChange) {
-        this.visibilitySub?.unsubscribe();
-        if (!form || !resolvedSchema)
-            return;
-        this.recomputeVisibility(form, resolvedSchema);
-        this.visibilitySub = form.valueChanges.subscribe(() => {
-            if (onVisibilityChange) {
-                onVisibilityChange();
-            }
-            if (this.visibilityUpdating)
-                return;
-            this.recomputeVisibility(form, resolvedSchema);
-        });
-    }
-    isFieldVisibleOriginal(field) {
-        const rules = field?.visibility?.rules;
-        if (!rules || !rules.length)
-            return true;
-        const key = field?.id || field?.name;
-        return this.visibilityState[key] !== false;
-    }
-    isFieldVisible(field, isMultiStep, isReviewed) {
-        const isSubmit = field?.type === 'button' &&
-            (field?.button?.isSubmit || field?.label?.toLowerCase().includes('submit'));
-        if (isSubmit) {
-            if (isMultiStep && !isReviewed) {
-                return false;
-            }
-        }
-        return this.isFieldVisibleOriginal(field);
-    }
-    recomputeVisibility(form, resolvedSchema) {
-        if (!form || !resolvedSchema)
-            return;
-        const raw = form.getRawValue
-            ? form.getRawValue()
-            : form.value;
-        this.visibilityUpdating = true;
-        try {
-            for (const f of resolvedSchema.fields) {
-                const visible = this.evaluateVisibility(f, raw);
-                const stateKey = f.id || f.name;
-                this.visibilityState[stateKey] = visible;
-                if (this.isNonInput(f))
-                    continue;
-                const c = form.get(this.controlKey(f));
-                if (!c)
-                    continue;
-                if (!visible && c.enabled)
-                    c.disable({ emitEvent: false });
-                if (visible && c.disabled)
-                    c.enable({ emitEvent: false });
-            }
-        }
-        finally {
-            this.visibilityUpdating = false;
-        }
-    }
-    evaluateVisibility(field, raw) {
-        const vis = field?.visibility;
-        const rules = vis?.rules ?? [];
-        if (!rules.length)
-            return true;
-        const mode = String(vis?.mode || "ALL").toUpperCase();
-        const results = rules.map((r) => this.evaluateVisibilityRule(r, raw));
-        return mode === "ANY" ? results.some(Boolean) : results.every(Boolean);
-    }
-    evaluateVisibilityRule(rule, raw) {
-        const depKey = this.resolveDependsOnKey(rule?.dependsOn);
-        const v = raw?.[depKey];
-        const op = String(rule?.operator || "EQUALS").toUpperCase();
-        const cmp = rule?.value;
-        switch (op) {
-            case "CHECKED":
-                return v === true;
-            case "UNCHECKED":
-                return v !== true;
-            case "HAS_VALUE":
-                return !this.isEmptyValue(v);
-            case "NOT_HAS_VALUE":
-                return this.isEmptyValue(v);
-            case "IN":
-                return Array.isArray(cmp) ? cmp.includes(v) : false;
-            case "NOT_IN":
-                return Array.isArray(cmp) ? !cmp.includes(v) : true;
-            case "NOT_EQUALS":
-                return Array.isArray(v) ? !v.includes(cmp) : v !== cmp;
-            case "EQUALS":
-            default:
-                return Array.isArray(v) ? v.includes(cmp) : v === cmp;
-        }
-    }
-    resolveDependsOnKey(dependsOn) {
-        if (!dependsOn)
-            return "";
-        if (typeof dependsOn === "string")
-            return dependsOn;
-        return dependsOn.id || dependsOn.name || "";
-    }
-    isEmptyValue(v) {
-        if (v === null || v === undefined)
-            return true;
-        if (typeof v === "string" && v.trim() === "")
-            return true;
-        if (Array.isArray(v) && v.length === 0)
-            return true;
-        return false;
-    }
-    isNonInput(field) {
-        const t = field?.type;
-        return t === "card" || t === "info-card" || t === "button";
-    }
-    controlKey(field) {
-        return field?.name ?? field?.id;
-    }
-    cleanup() {
-        this.visibilitySub?.unsubscribe();
-    }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: FormVisibilityService, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
-    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: FormVisibilityService, providedIn: 'root' });
-}
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: FormVisibilityService, decorators: [{
-            type: Injectable,
-            args: [{
-                    providedIn: 'root'
-                }]
-        }] });
 
 class FormSubmissionService {
     apiExec;
@@ -1087,13 +764,13 @@ class AmigoFormService {
         const url = pathBuilder ? `${this.cfg.apiBaseUrl}${pathBuilder(id)}` : `${this.cfg.apiBaseUrl}/${id}`;
         return this.http.get(url);
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoFormService, deps: [{ token: i1$1.HttpClient }, { token: AmigoApiExecutionService }, { token: AMIGO_FORM_CONFIG }], target: i0.ɵɵFactoryTarget.Injectable });
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoFormService, deps: [{ token: i1.HttpClient }, { token: AmigoApiExecutionService }, { token: AMIGO_FORM_CONFIG }], target: i0.ɵɵFactoryTarget.Injectable });
     static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoFormService, providedIn: 'root' });
 }
 i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoFormService, decorators: [{
             type: Injectable,
             args: [{ providedIn: 'root' }]
-        }], ctorParameters: () => [{ type: i1$1.HttpClient }, { type: AmigoApiExecutionService }, { type: undefined, decorators: [{
+        }], ctorParameters: () => [{ type: i1.HttpClient }, { type: AmigoApiExecutionService }, { type: undefined, decorators: [{
                     type: Inject,
                     args: [AMIGO_FORM_CONFIG]
                 }] }] });
@@ -1268,13 +945,13 @@ class FormStepSectionManagerService {
     }, ...(ngDevMode ? [{ debugName: "isMultiStep" }] : []));
     orderedSections = computed(() => {
         const s = this.schemaManager.resolvedSchema();
-        if (!s || s.formType !== "single-sectional")
+        if (!s)
             return [];
         return [...(s.sections ?? [])].sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
     }, ...(ngDevMode ? [{ debugName: "orderedSections" }] : []));
     isSectional = computed(() => {
         const s = this.schemaManager.resolvedSchema();
-        return s?.formType === "single-sectional" && this.orderedSections().length > 0;
+        return s?.formType === "single-sectional";
     }, ...(ngDevMode ? [{ debugName: "isSectional" }] : []));
     visibleFields = computed(() => {
         return this.fieldsForStep(this.activeStepIndex());
@@ -1383,27 +1060,53 @@ class AmigoSelectOptionsService {
         this.cfg = cfg;
         this.tokenProvider = tokenProvider;
     }
-    load(field, _formValue, parentValue) {
+    load(field, _formValue, parentValuesMap) {
+        console.log(`[AmigoSelectOptionsService] load called for field: ${field.id}, parentValuesMap:`, parentValuesMap);
         const api = field.optionsSource?.api;
-        if (!api?.url)
+        if (!api?.url) {
+            console.log(`[AmigoSelectOptionsService] No api.url found for field: ${field.id}. Returning empty.`);
             return of([]);
+        }
         let rawUrl = api.url;
-        // Apply URL placeholder replacement if type is 'api' and urlPlaceholder is configured
-        if (field.dependentSelect?.type === "api" &&
-            field.dependentSelect.urlPlaceholder &&
-            parentValue !== undefined &&
-            parentValue !== null) {
-            rawUrl = rawUrl.replace(field.dependentSelect.urlPlaceholder, encodeURIComponent(String(parentValue)));
+        console.log(`[AmigoSelectOptionsService] Raw URL:`, rawUrl);
+        if (field.dependentSelect?.type === "api" && parentValuesMap) {
+            const parents = [];
+            if (field.dependentSelect.parentFieldId)
+                parents.push(field.dependentSelect);
+            for (const ap of field.dependentSelect.additionalParents || []) {
+                parents.push(ap);
+            }
+            for (const p of parents) {
+                let val = parentValuesMap[p.parentFieldId];
+                if (val === undefined || val === null)
+                    continue;
+                val = this.capitalize(val);
+                if (p.urlPlaceholder) {
+                    console.log(`[AmigoSelectOptionsService] Replacing placeholder ${p.urlPlaceholder} with ${val}`);
+                    rawUrl = rawUrl.replace(p.urlPlaceholder, encodeURIComponent(String(val)));
+                }
+            }
         }
         let url = this.resolveUrl(rawUrl);
-        // Apply query param if type is 'api' and queryParamName is configured
-        if (field.dependentSelect?.type === "api" &&
-            field.dependentSelect.queryParamName &&
-            parentValue !== undefined &&
-            parentValue !== null) {
-            const paramName = field.dependentSelect.queryParamName;
-            const separator = url.includes("?") ? "&" : "?";
-            url = `${url}${separator}${paramName}=${encodeURIComponent(String(parentValue))}`;
+        console.log(`[AmigoSelectOptionsService] Resolved URL before query params:`, url);
+        if (field.dependentSelect?.type === "api" && parentValuesMap) {
+            const parents = [];
+            if (field.dependentSelect.parentFieldId)
+                parents.push(field.dependentSelect);
+            for (const ap of field.dependentSelect.additionalParents || []) {
+                parents.push(ap);
+            }
+            for (const p of parents) {
+                let val = parentValuesMap[p.parentFieldId];
+                if (val === undefined || val === null)
+                    continue;
+                val = this.capitalize(val);
+                if (p.queryParamName) {
+                    const separator = url.includes("?") ? "&" : "?";
+                    url = `${url}${separator}${p.queryParamName}=${encodeURIComponent(String(val))}`;
+                    console.log(`[AmigoSelectOptionsService] Appended query parameter:`, url);
+                }
+            }
         }
         const cacheKey = `${field.id}::${api.method || "GET"}::${url}`;
         const cached = this.cache.get(cacheKey);
@@ -1440,8 +1143,21 @@ class AmigoSelectOptionsService {
     getRawResponse(fieldId) {
         return this.rawCache.get(fieldId) ?? null;
     }
+    capitalize(val) {
+        console.log(`[AmigoSelectOptionsService] capitalize input:`, val, typeof val);
+        if (Array.isArray(val) && val.length > 0) {
+            val = val[0];
+        }
+        if (typeof val !== "string")
+            val = String(val);
+        if (!val)
+            return val;
+        const result = val.charAt(0).toUpperCase() + val.slice(1);
+        console.log(`[AmigoSelectOptionsService] capitalize output:`, result);
+        return result;
+    }
     resolveUrl(url) {
-        const u = (url || "").trim();
+        const u = (url || "").trim().replace(/^['"]+|['"]+$/g, "");
         if (!u)
             return u;
         if (/^https?:\/\//i.test(u))
@@ -1493,13 +1209,13 @@ class AmigoSelectOptionsService {
             .split(".")
             .reduce((acc, k) => (acc == null ? undefined : acc[k]), obj);
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoSelectOptionsService, deps: [{ token: i1$1.HttpClient }, { token: AMIGO_FORM_CONFIG, optional: true }, { token: AMIGO_AUTH_TOKEN_PROVIDER, optional: true }], target: i0.ɵɵFactoryTarget.Injectable });
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoSelectOptionsService, deps: [{ token: i1.HttpClient }, { token: AMIGO_FORM_CONFIG, optional: true }, { token: AMIGO_AUTH_TOKEN_PROVIDER, optional: true }], target: i0.ɵɵFactoryTarget.Injectable });
     static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoSelectOptionsService, providedIn: "root" });
 }
 i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoSelectOptionsService, decorators: [{
             type: Injectable,
             args: [{ providedIn: "root" }]
-        }], ctorParameters: () => [{ type: i1$1.HttpClient }, { type: undefined, decorators: [{
+        }], ctorParameters: () => [{ type: i1.HttpClient }, { type: undefined, decorators: [{
                     type: Optional
                 }, {
                     type: Inject,
@@ -1550,43 +1266,70 @@ class FormSelectOptionsManagerService {
         const childFields = fields.filter((f) => f.type === "select" && f.dependentSelect);
         for (const child of childFields) {
             const dep = child.dependentSelect;
-            const parentField = fields.find((f) => f.id === dep.parentFieldId);
-            if (!parentField)
-                continue;
-            const parentKey = this.controlKey(parentField);
-            const parentCtrl = form?.get(parentKey);
-            if (!parentCtrl)
+            const parentKeys = [];
+            const primaryParent = fields.find((f) => f.id === dep.parentFieldId);
+            if (primaryParent)
+                parentKeys.push(this.controlKey(primaryParent));
+            for (const p of dep.additionalParents || []) {
+                const pf = fields.find((f) => f.id === p.parentFieldId);
+                if (pf)
+                    parentKeys.push(this.controlKey(pf));
+            }
+            if (parentKeys.length === 0)
                 continue;
             this.updateSelectState(child.id, { loading: false, options: [] });
-            const sub = parentCtrl.valueChanges.subscribe((parentValue) => {
-                this.updateChildOptions(child, dep, parentValue, form);
-            });
-            this.cascadingSubs.push(sub);
-            const currentParentValue = parentCtrl.value;
-            if (currentParentValue) {
-                this.updateChildOptions(child, dep, currentParentValue, form);
+            for (const pk of parentKeys) {
+                const ctrl = form?.get(pk);
+                if (!ctrl)
+                    continue;
+                const sub = ctrl.valueChanges.subscribe(() => {
+                    this.updateChildOptions(child, dep, form);
+                });
+                this.cascadingSubs.push(sub);
             }
+            this.updateChildOptions(child, dep, form);
         }
     }
-    updateChildOptions(child, dep, parentValue, form) {
+    updateChildOptions(child, dep, form) {
+        const s = this.schemaManager.resolvedSchema();
+        const fields = s?.fields ?? [];
+        const parentValuesMap = {};
+        let primaryValue = null;
+        const primaryParent = fields.find((f) => f.id === dep.parentFieldId);
+        if (primaryParent) {
+            const pk = this.controlKey(primaryParent);
+            primaryValue = form?.get(pk)?.value;
+            parentValuesMap[dep.parentFieldId] = primaryValue;
+        }
+        for (const p of dep.additionalParents || []) {
+            const pf = fields.find((f) => f.id === p.parentFieldId);
+            if (pf) {
+                const pk = this.controlKey(pf);
+                parentValuesMap[p.parentFieldId] = form?.get(pk)?.value;
+            }
+        }
+        console.log(`[FormSelectOptionsManager] updateChildOptions for child: ${child.id}, parentValues:`, parentValuesMap);
         const childKey = this.controlKey(child);
         const childCtrl = form?.get(childKey);
-        if (!parentValue || parentValue === "") {
+        if (!primaryValue || primaryValue === "") {
+            console.log(`[FormSelectOptionsManager] Primary parent value is empty, clearing child options.`);
             this.updateSelectState(child.id, { loading: false, options: [] });
             if (childCtrl)
                 childCtrl.setValue("", { emitEvent: false });
             return;
         }
         if (dep.type === "api") {
-            const s = this.schemaManager.resolvedSchema();
+            console.log(`[FormSelectOptionsManager] Triggering API request for child: ${child.id}`);
             const formValue = this.valueManager.normalizeFormValue(form, s);
             this.updateSelectState(child.id, { loading: true, options: [] });
             this.selectOptions.clear(child.id);
-            this.selectOptions.load(child, formValue, parentValue).subscribe({
+            this.selectOptions.load(child, formValue, parentValuesMap).subscribe({
                 next: (opts) => {
+                    console.log(`[FormSelectOptionsManager] API request successful, received options:`, opts);
                     this.updateSelectState(child.id, { loading: false, options: opts });
                 },
-                error: () => {
+                error: (err) => {
+                    console.error(`[FormSelectOptionsManager] API request failed:`, err);
                     this.updateSelectState(child.id, {
                         loading: false,
                         error: "Failed to load options.",
@@ -1598,13 +1341,12 @@ class FormSelectOptionsManagerService {
                 childCtrl.setValue("", { emitEvent: false });
             return;
         }
+        console.log(`[FormSelectOptionsManager] Fallback to local filtering for child: ${child.id}`);
         const rawResponse = this.selectOptions.getRawResponse(dep.parentFieldId);
         if (!rawResponse) {
             this.updateSelectState(child.id, { loading: false, options: [] });
             return;
         }
-        const s = this.schemaManager.resolvedSchema();
-        const fields = s?.fields ?? [];
         const parentField = fields.find((f) => f.id === dep.parentFieldId);
         const parentApi = parentField?.optionsSource?.api;
         const parentDataPath = parentApi?.responseMapping?.dataPath;
@@ -1620,7 +1362,7 @@ class FormSelectOptionsManagerService {
             this.updateSelectState(child.id, { loading: false, options: [] });
             return;
         }
-        const selectedParent = parentItems.find((item) => String(item?.[parentValueKey]) === String(parentValue));
+        const selectedParent = parentItems.find((item) => String(item?.[parentValueKey]) === String(primaryValue));
         if (!selectedParent) {
             this.updateSelectState(child.id, { loading: false, options: [] });
             if (childCtrl)
@@ -1665,6 +1407,427 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImpor
                 }]
         }] });
 
+class FormCalculationManagerService {
+    subs = [];
+    setupCalculations(form, fields) {
+        this.cleanup();
+        for (const field of fields) {
+            if (field.calculation && field.type === 'number') {
+                const calc = field.calculation;
+                const targetKey = field.name || field.id;
+                const targetCtrl = form.get(targetKey);
+                if (!targetCtrl)
+                    continue;
+                if (calc.type !== 'custom' && calc.sourceFieldId) {
+                    const sourceField = fields.find(f => f.id === calc.sourceFieldId);
+                    if (sourceField) {
+                        const sourceKey = sourceField.name || sourceField.id;
+                        const sourceCtrl = form.get(sourceKey);
+                        if (sourceCtrl) {
+                            const sub = sourceCtrl.valueChanges.subscribe(val => {
+                                const numVal = parseFloat(val);
+                                if (isNaN(numVal)) {
+                                    targetCtrl.setValue(null, { emitEvent: false });
+                                    return;
+                                }
+                                let result = 0;
+                                switch (calc.type) {
+                                    case 'hourlyToDaily':
+                                        result = numVal * 24;
+                                        break;
+                                    case 'dailyToMonthly':
+                                        result = numVal * 30;
+                                        break;
+                                    case 'dailyToYearly':
+                                        result = numVal * 365;
+                                        break;
+                                    case 'weeklyToMonthly':
+                                        result = numVal * 4;
+                                        break;
+                                    case 'quarterlyToYearly':
+                                        result = numVal * 4;
+                                        break;
+                                    case 'halfYearlyToYearly':
+                                        result = numVal * 2;
+                                        break;
+                                }
+                                if (targetCtrl.value !== result) {
+                                    targetCtrl.setValue(result, { emitEvent: false });
+                                }
+                            });
+                            this.subs.push(sub);
+                        }
+                    }
+                }
+                else if (calc.type === 'custom' && calc.customExpression) {
+                    const sub = form.valueChanges.subscribe(formValue => {
+                        try {
+                            // Create a function that uses 'with' to expose form values as variables
+                            const fn = new Function('form', `
+                with (form) {
+                   return ${calc.customExpression};
+                }
+              `);
+                            const result = fn(formValue);
+                            if (typeof result === 'number' && !isNaN(result)) {
+                                if (targetCtrl.value !== result) {
+                                    targetCtrl.setValue(result, { emitEvent: false });
+                                }
+                            }
+                        }
+                        catch (e) {
+                            // Ignore evaluation errors, as fields might be empty or invalid during typing
+                        }
+                    });
+                    this.subs.push(sub);
+                }
+            }
+        }
+    }
+    cleanup() {
+        this.subs.forEach(s => s.unsubscribe());
+        this.subs = [];
+    }
+    ngOnDestroy() {
+        this.cleanup();
+    }
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: FormCalculationManagerService, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
+    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: FormCalculationManagerService, providedIn: 'root' });
+}
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: FormCalculationManagerService, decorators: [{
+            type: Injectable,
+            args: [{
+                    providedIn: 'root'
+                }]
+        }] });
+
+class AmigoStepperComponent {
+    orderedSteps = [];
+    activeStepIndex = 0;
+    totalSteps = 0;
+    visibleFieldsCount = 0;
+    stepChanged = new EventEmitter();
+    onStepClick(index) {
+        this.stepChanged.emit(index);
+    }
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoStepperComponent, deps: [], target: i0.ɵɵFactoryTarget.Component });
+    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoStepperComponent, isStandalone: true, selector: "amigo-stepper", inputs: { orderedSteps: "orderedSteps", activeStepIndex: "activeStepIndex", totalSteps: "totalSteps", visibleFieldsCount: "visibleFieldsCount" }, outputs: { stepChanged: "stepChanged" }, ngImport: i0, template: "<div class=\"w-full mb-6 flex flex-col items-center my-3\">\n  <div class=\"w-full h-1 bg-gray-200 rounded-full relative mb-6\">\n    <div\n      class=\"h-1 rounded-full transition-all duration-300 bg-blue-600\"\n      [ngStyle]=\"{\n        width: ((activeStepIndex + 1) / totalSteps) * 100 + '%'\n      }\"\n    ></div>\n  </div>\n\n  <div class=\"flex items-center justify-between w-full\">\n    <div\n      *ngFor=\"let step of orderedSteps; let i = index\"\n      class=\"flex flex-col items-center cursor-pointer\"\n      (click)=\"onStepClick(i)\"\n    >\n      <div\n        class=\"w-10 h-10 flex items-center justify-center rounded-full border-2 transition-all duration-300\"\n        [ngStyle]=\"\n          i === activeStepIndex\n            ? {\n                backgroundColor: '#2563eb',\n                borderColor: '#2563eb',\n                color: '#ffffff'\n              }\n            : {\n                backgroundColor: '#FFFFFF',\n                borderColor: '#9CA3AF',\n                color: '#374151'\n              }\n        \"\n      >\n        <ng-container *ngIf=\"!step.icon\">\n          {{ i + 1 }}\n        </ng-container>\n\n        <ng-container *ngIf=\"step.icon\">\n          <i\n            [class]=\"step.icon\"\n            class=\"text-lg\"\n            [ngStyle]=\"\n              i === activeStepIndex\n                ? { color: '#ffffff' }\n                : { color: '#6B7280' }\n            \"\n          >\n          </i>\n        </ng-container>\n      </div>\n\n      <div class=\"mt-2 text-xs text-gray-600 font-medium\">\n        {{ step.label }}\n      </div>\n    </div>\n  </div>\n\n  <div\n    *ngIf=\"visibleFieldsCount === 0\"\n    class=\"text-xs text-gray-500 my-5\"\n  >\n    No fields assigned to this step yet.\n  </div>\n</div>\n", dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1$1.NgForOf, selector: "[ngFor][ngForOf]", inputs: ["ngForOf", "ngForTrackBy", "ngForTemplate"] }, { kind: "directive", type: i1$1.NgIf, selector: "[ngIf]", inputs: ["ngIf", "ngIfThen", "ngIfElse"] }, { kind: "directive", type: i1$1.NgStyle, selector: "[ngStyle]", inputs: ["ngStyle"] }] });
+}
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoStepperComponent, decorators: [{
+            type: Component,
+            args: [{ selector: 'amigo-stepper', standalone: true, imports: [CommonModule], template: "<div class=\"w-full mb-6 flex flex-col items-center my-3\">\n  <div class=\"w-full h-1 bg-gray-200 rounded-full relative mb-6\">\n    <div\n      class=\"h-1 rounded-full transition-all duration-300 bg-blue-600\"\n      [ngStyle]=\"{\n        width: ((activeStepIndex + 1) / totalSteps) * 100 + '%'\n      }\"\n    ></div>\n  </div>\n\n  <div class=\"flex items-center justify-between w-full\">\n    <div\n      *ngFor=\"let step of orderedSteps; let i = index\"\n      class=\"flex flex-col items-center cursor-pointer\"\n      (click)=\"onStepClick(i)\"\n    >\n      <div\n        class=\"w-10 h-10 flex items-center justify-center rounded-full border-2 transition-all duration-300\"\n        [ngStyle]=\"\n          i === activeStepIndex\n            ? {\n                backgroundColor: '#2563eb',\n                borderColor: '#2563eb',\n                color: '#ffffff'\n              }\n            : {\n                backgroundColor: '#FFFFFF',\n                borderColor: '#9CA3AF',\n                color: '#374151'\n              }\n        \"\n      >\n        <ng-container *ngIf=\"!step.icon\">\n          {{ i + 1 }}\n        </ng-container>\n\n        <ng-container *ngIf=\"step.icon\">\n          <i\n            [class]=\"step.icon\"\n            class=\"text-lg\"\n            [ngStyle]=\"\n              i === activeStepIndex\n                ? { color: '#ffffff' }\n                : { color: '#6B7280' }\n            \"\n          >\n          </i>\n        </ng-container>\n      </div>\n\n      <div class=\"mt-2 text-xs text-gray-600 font-medium\">\n        {{ step.label }}\n      </div>\n    </div>\n  </div>\n\n  <div\n    *ngIf=\"visibleFieldsCount === 0\"\n    class=\"text-xs text-gray-500 my-5\"\n  >\n    No fields assigned to this step yet.\n  </div>\n</div>\n" }]
+        }], propDecorators: { orderedSteps: [{
+                type: Input
+            }], activeStepIndex: [{
+                type: Input
+            }], totalSteps: [{
+                type: Input
+            }], visibleFieldsCount: [{
+                type: Input
+            }], stepChanged: [{
+                type: Output
+            }] } });
+
+class AmigoCardComponent {
+    field;
+    cardIcon() {
+        return this.field?.card?.icon || "";
+    }
+    cardTitle() {
+        return this.field?.card?.title || this.field?.label || "Info";
+    }
+    cardBody() {
+        return this.field?.card?.body || "";
+    }
+    cardStyle() {
+        const cs = this.field?.card?.style ?? {};
+        const borderWidth = cs.borderWidth ?? 1;
+        const borderRadius = cs.borderRadius ?? 12;
+        const borderColor = cs.borderColor ?? "#BBF7D0";
+        const backgroundColor = cs.backgroundColor ?? "#F0FDF4";
+        const textColor = cs.textColor ?? "#166534";
+        return {
+            borderStyle: "solid",
+            borderWidth: `${borderWidth}px`,
+            borderColor,
+            borderRadius: `${borderRadius}px`,
+            backgroundColor,
+            color: textColor,
+            padding: "12px",
+            display: "flex",
+            gap: "12px",
+            alignItems: "flex-start",
+        };
+    }
+    cardIconStyle() {
+        const cs = this.field?.card?.style ?? {};
+        const textColor = cs.textColor ?? "#166534";
+        return {
+            color: cs.iconColor ?? textColor,
+            fontSize: "18px",
+            lineHeight: "1",
+            marginTop: "2px",
+        };
+    }
+    isBootstrapIcon(icon) {
+        const v = (icon || "").trim();
+        return v.startsWith("bi ") || v.startsWith("bi-") || v.includes(" bi-");
+    }
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoCardComponent, deps: [], target: i0.ɵɵFactoryTarget.Component });
+    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoCardComponent, isStandalone: true, selector: "amigo-card", inputs: { field: "field" }, ngImport: i0, template: "<div [ngStyle]=\"cardStyle()\" class=\"w-full flex items-start gap-3\">\n  <div\n    class=\"shrink-0 mt-0.5 text-lg leading-none\"\n    [ngStyle]=\"cardIconStyle()\"\n  >\n    <i\n      *ngIf=\"isBootstrapIcon(cardIcon())\"\n      [class]=\"cardIcon()\"\n    ></i>\n    <span *ngIf=\"!isBootstrapIcon(cardIcon())\">{{ cardIcon() }}</span>\n  </div>\n\n  <div class=\"min-w-0\">\n    <div class=\"text-sm font-semibold leading-tight\">\n      {{ cardTitle() }}\n    </div>\n\n    <div *ngIf=\"cardBody()\" class=\"mt-1 text-xs opacity-90\">\n      {{ cardBody() }}\n    </div>\n  </div>\n</div>\n", dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1$1.NgIf, selector: "[ngIf]", inputs: ["ngIf", "ngIfThen", "ngIfElse"] }, { kind: "directive", type: i1$1.NgStyle, selector: "[ngStyle]", inputs: ["ngStyle"] }] });
+}
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoCardComponent, decorators: [{
+            type: Component,
+            args: [{ selector: 'amigo-card', standalone: true, imports: [CommonModule], template: "<div [ngStyle]=\"cardStyle()\" class=\"w-full flex items-start gap-3\">\n  <div\n    class=\"shrink-0 mt-0.5 text-lg leading-none\"\n    [ngStyle]=\"cardIconStyle()\"\n  >\n    <i\n      *ngIf=\"isBootstrapIcon(cardIcon())\"\n      [class]=\"cardIcon()\"\n    ></i>\n    <span *ngIf=\"!isBootstrapIcon(cardIcon())\">{{ cardIcon() }}</span>\n  </div>\n\n  <div class=\"min-w-0\">\n    <div class=\"text-sm font-semibold leading-tight\">\n      {{ cardTitle() }}\n    </div>\n\n    <div *ngIf=\"cardBody()\" class=\"mt-1 text-xs opacity-90\">\n      {{ cardBody() }}\n    </div>\n  </div>\n</div>\n" }]
+        }], propDecorators: { field: [{
+                type: Input
+            }] } });
+
+class AmigoButtonComponent {
+    field;
+    resolvedSchema;
+    isSubmitting = false;
+    buttonLoading = {};
+    buttonFeedback = {};
+    buttonClick = new EventEmitter();
+    isHovered = false;
+    onButtonClickHandler() {
+        if (!this.field.button?.isSubmit) {
+            this.buttonClick.emit(this.field);
+        }
+    }
+    get isLoading() {
+        return this.field.button?.isSubmit ? this.isSubmitting : (this.buttonLoading[this.field.id] ?? false);
+    }
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoButtonComponent, deps: [], target: i0.ɵɵFactoryTarget.Component });
+    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoButtonComponent, isStandalone: true, selector: "amigo-button", inputs: { field: "field", resolvedSchema: "resolvedSchema", isSubmitting: "isSubmitting", buttonLoading: "buttonLoading", buttonFeedback: "buttonFeedback" }, outputs: { buttonClick: "buttonClick" }, ngImport: i0, template: "<div class=\"w-full\">\n  <button\n    [type]=\"field.button?.isSubmit ? 'submit' : 'button'\"\n    (click)=\"onButtonClickHandler()\"\n    [disabled]=\"isLoading\"\n    class=\"w-full transition disabled:opacity-60 disabled:cursor-not-allowed\"\n    (mouseenter)=\"isHovered = true\"\n    (mouseleave)=\"isHovered = false\"\n    [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n    [ngStyle]=\"{\n      'background-color':\n        field.button?.styleVariant === 'link' ||\n        field.button?.styleVariant === 'outline'\n          ? isHovered\n            ? field.button?.hoverBackgroundColor ||\n              (field.button?.styleVariant === 'outline'\n                ? '#eff6ff'\n                : 'transparent')\n            : field.button?.backgroundColor || 'transparent'\n          : isHovered\n            ? field.button?.hoverBackgroundColor ||\n              field.button?.backgroundColor ||\n              ''\n            : field.button?.backgroundColor || '',\n      color: isHovered\n        ? field.button?.hoverTextColor ||\n          field.button?.textColor ||\n          ''\n        : field.button?.textColor || '',\n      'border-color':\n        field.button?.styleVariant === 'link'\n          ? 'transparent'\n          : isHovered\n            ? field.button?.hoverBackgroundColor ||\n              field.button?.backgroundColor ||\n              ''\n            : field.button?.backgroundColor || '',\n      'text-decoration':\n        field.button?.styleVariant === 'link' && isHovered\n          ? 'underline'\n          : 'none',\n    }\"\n    [ngClass]=\"[\n      resolvedSchema?.style?.inputClass\n        ? resolvedSchema.style.inputClass.replace('rounded', '')\n        : 'w-full px-2 py-1 text-sm',\n      field.button?.styleVariant === 'link' ? '' : 'border',\n      !field.button?.backgroundColor &&\n      (field.button?.styleVariant || 'primary') === 'primary'\n        ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'\n        : !field.button?.backgroundColor &&\n            field.button?.styleVariant === 'outline'\n          ? 'bg-transparent text-blue-600 border-blue-600 hover:bg-blue-50'\n          : !field.button?.backgroundColor &&\n              field.button?.styleVariant === 'link'\n            ? 'bg-transparent text-blue-600 border-transparent hover:underline'\n            : !field.button?.backgroundColor &&\n                (field.button?.styleVariant || 'primary') === 'danger'\n              ? 'bg-red-600 text-white border-red-600 hover:bg-red-700'\n              : !field.button?.backgroundColor\n                ? 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'\n                : '',\n    ]\"\n  >\n    <span class=\"inline-flex items-center justify-center gap-2\">\n      <span>\n        {{\n          field.button?.isSubmit && isSubmitting\n            ? \"Submitting...\"\n            : field.button?.label || field.label\n        }}\n      </span>\n      <span\n        *ngIf=\"!field.button?.isSubmit && buttonLoading[field.id]\"\n        class=\"text-xs opacity-80\"\n        >\u2026</span\n      >\n    </span>\n  </button>\n\n  <div\n    *ngIf=\"buttonFeedback[field.id]\"\n    class=\"mt-2 text-xs rounded-lg px-3 py-2 border\"\n    [ngClass]=\"\n      buttonFeedback[field.id].type === 'success'\n        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'\n        : 'bg-rose-50 border-rose-200 text-rose-800'\n    \"\n  >\n    {{ buttonFeedback[field.id].message }}\n  </div>\n</div>\n", dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1$1.NgClass, selector: "[ngClass]", inputs: ["class", "ngClass"] }, { kind: "directive", type: i1$1.NgIf, selector: "[ngIf]", inputs: ["ngIf", "ngIfThen", "ngIfElse"] }, { kind: "directive", type: i1$1.NgStyle, selector: "[ngStyle]", inputs: ["ngStyle"] }] });
+}
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoButtonComponent, decorators: [{
+            type: Component,
+            args: [{ selector: 'amigo-button', standalone: true, imports: [CommonModule], template: "<div class=\"w-full\">\n  <button\n    [type]=\"field.button?.isSubmit ? 'submit' : 'button'\"\n    (click)=\"onButtonClickHandler()\"\n    [disabled]=\"isLoading\"\n    class=\"w-full transition disabled:opacity-60 disabled:cursor-not-allowed\"\n    (mouseenter)=\"isHovered = true\"\n    (mouseleave)=\"isHovered = false\"\n    [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n    [ngStyle]=\"{\n      'background-color':\n        field.button?.styleVariant === 'link' ||\n        field.button?.styleVariant === 'outline'\n          ? isHovered\n            ? field.button?.hoverBackgroundColor ||\n              (field.button?.styleVariant === 'outline'\n                ? '#eff6ff'\n                : 'transparent')\n            : field.button?.backgroundColor || 'transparent'\n          : isHovered\n            ? field.button?.hoverBackgroundColor ||\n              field.button?.backgroundColor ||\n              ''\n            : field.button?.backgroundColor || '',\n      color: isHovered\n        ? field.button?.hoverTextColor ||\n          field.button?.textColor ||\n          ''\n        : field.button?.textColor || '',\n      'border-color':\n        field.button?.styleVariant === 'link'\n          ? 'transparent'\n          : isHovered\n            ? field.button?.hoverBackgroundColor ||\n              field.button?.backgroundColor ||\n              ''\n            : field.button?.backgroundColor || '',\n      'text-decoration':\n        field.button?.styleVariant === 'link' && isHovered\n          ? 'underline'\n          : 'none',\n    }\"\n    [ngClass]=\"[\n      resolvedSchema?.style?.inputClass\n        ? resolvedSchema.style.inputClass.replace('rounded', '')\n        : 'w-full px-2 py-1 text-sm',\n      field.button?.styleVariant === 'link' ? '' : 'border',\n      !field.button?.backgroundColor &&\n      (field.button?.styleVariant || 'primary') === 'primary'\n        ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'\n        : !field.button?.backgroundColor &&\n            field.button?.styleVariant === 'outline'\n          ? 'bg-transparent text-blue-600 border-blue-600 hover:bg-blue-50'\n          : !field.button?.backgroundColor &&\n              field.button?.styleVariant === 'link'\n            ? 'bg-transparent text-blue-600 border-transparent hover:underline'\n            : !field.button?.backgroundColor &&\n                (field.button?.styleVariant || 'primary') === 'danger'\n              ? 'bg-red-600 text-white border-red-600 hover:bg-red-700'\n              : !field.button?.backgroundColor\n                ? 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'\n                : '',\n    ]\"\n  >\n    <span class=\"inline-flex items-center justify-center gap-2\">\n      <span>\n        {{\n          field.button?.isSubmit && isSubmitting\n            ? \"Submitting...\"\n            : field.button?.label || field.label\n        }}\n      </span>\n      <span\n        *ngIf=\"!field.button?.isSubmit && buttonLoading[field.id]\"\n        class=\"text-xs opacity-80\"\n        >\u2026</span\n      >\n    </span>\n  </button>\n\n  <div\n    *ngIf=\"buttonFeedback[field.id]\"\n    class=\"mt-2 text-xs rounded-lg px-3 py-2 border\"\n    [ngClass]=\"\n      buttonFeedback[field.id].type === 'success'\n        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'\n        : 'bg-rose-50 border-rose-200 text-rose-800'\n    \"\n  >\n    {{ buttonFeedback[field.id].message }}\n  </div>\n</div>\n" }]
+        }], propDecorators: { field: [{
+                type: Input
+            }], resolvedSchema: [{
+                type: Input
+            }], isSubmitting: [{
+                type: Input
+            }], buttonLoading: [{
+                type: Input
+            }], buttonFeedback: [{
+                type: Input
+            }], buttonClick: [{
+                type: Output
+            }] } });
+
+class AmigoInputComponent {
+    field;
+    form;
+    resolvedSchema;
+    showPassword = false;
+    controlKey() {
+        return this.field?.name ?? this.field?.id;
+    }
+    ctrl() {
+        return this.form?.get(this.controlKey()) ?? null;
+    }
+    showError() {
+        const c = this.ctrl();
+        return !!(c && c.invalid && (c.touched || c.dirty));
+    }
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoInputComponent, deps: [], target: i0.ɵɵFactoryTarget.Component });
+    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoInputComponent, isStandalone: true, selector: "amigo-input", inputs: { field: "field", form: "form", resolvedSchema: "resolvedSchema" }, ngImport: i0, template: "<ng-container [formGroup]=\"form\">\n  <ng-container [ngSwitch]=\"field.type\">\n    <ng-container *ngSwitchCase=\"'text'\">\n      <input\n        type=\"text\"\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['minlength']\">\n          Minimum {{ field.validations?.minLength }} characters\n          required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['maxlength']\">\n          Maximum {{ field.validations?.maxLength }} characters allowed.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['pattern']\">\n          Value does not match the required pattern.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'password'\">\n      <div class=\"relative\">\n        <input\n          [type]=\"showPassword ? 'text' : 'password'\"\n          [placeholder]=\"field.placeholder\"\n          [formControlName]=\"controlKey()\"\n          [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n          [ngClass]=\"\n            resolvedSchema?.style?.inputClass ||\n            'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n          \"\n          class=\"pr-10\"\n        />\n        <button\n          type=\"button\"\n          (click)=\"showPassword = !showPassword\"\n          class=\"absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 flex items-center justify-center\"\n        >\n          <mat-icon class=\"text-[18px] w-[18px] h-[18px]\">\n            {{ showPassword ? 'visibility_off' : 'visibility' }}\n          </mat-icon>\n        </button>\n      </div>\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['minlength']\">\n          Minimum {{ field.validations?.minLength }} characters\n          required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['maxlength']\">\n          Maximum {{ field.validations?.maxLength }} characters allowed.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['pattern']\">\n          Value does not match the required pattern.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'number'\">\n      <input\n        type=\"number\"\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['min']\">\n          Value should be \u2265 {{ field.validations?.min }}.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['max']\">\n          Value should be \u2264 {{ field.validations?.max }}.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'email'\">\n      <input\n        type=\"email\"\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['email']\">\n          Please enter a valid email address.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['minlength']\">\n          Minimum {{ field.validations?.minLength }} characters\n          required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['maxlength']\">\n          Maximum {{ field.validations?.maxLength }} characters allowed.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['pattern']\">\n          Value does not match the required pattern.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'textarea'\">\n      <textarea\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        rows=\"4\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      ></textarea>\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['minlength']\">\n          Minimum {{ field.validations?.minLength }} characters\n          required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['maxlength']\">\n          Maximum {{ field.validations?.maxLength }} characters allowed.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['pattern']\">\n          Value does not match the required pattern.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'date'\">\n      <input\n        type=\"date\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['min']\">\n          Date should be on or after {{ field.validations?.min }}.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['max']\">\n          Date should be on or before {{ field.validations?.max }}.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchDefault>\n      <input\n        type=\"text\"\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n    </ng-container>\n  </ng-container>\n</ng-container>\n", dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1$1.NgClass, selector: "[ngClass]", inputs: ["class", "ngClass"] }, { kind: "directive", type: i1$1.NgIf, selector: "[ngIf]", inputs: ["ngIf", "ngIfThen", "ngIfElse"] }, { kind: "directive", type: i1$1.NgSwitch, selector: "[ngSwitch]", inputs: ["ngSwitch"] }, { kind: "directive", type: i1$1.NgSwitchCase, selector: "[ngSwitchCase]", inputs: ["ngSwitchCase"] }, { kind: "directive", type: i1$1.NgSwitchDefault, selector: "[ngSwitchDefault]" }, { kind: "ngmodule", type: ReactiveFormsModule }, { kind: "directive", type: i2.DefaultValueAccessor, selector: "input:not([type=checkbox])[formControlName],textarea[formControlName],input:not([type=checkbox])[formControl],textarea[formControl],input:not([type=checkbox])[ngModel],textarea[ngModel],[ngDefaultControl]" }, { kind: "directive", type: i2.NumberValueAccessor, selector: "input[type=number][formControlName],input[type=number][formControl],input[type=number][ngModel]" }, { kind: "directive", type: i2.NgControlStatus, selector: "[formControlName],[ngModel],[formControl]" }, { kind: "directive", type: i2.NgControlStatusGroup, selector: "[formGroupName],[formArrayName],[ngModelGroup],[formGroup],[formArray],form:not([ngNoForm]),[ngForm]" }, { kind: "directive", type: i2.FormGroupDirective, selector: "[formGroup]", inputs: ["formGroup"], outputs: ["ngSubmit"], exportAs: ["ngForm"] }, { kind: "directive", type: i2.FormControlName, selector: "[formControlName]", inputs: ["formControlName", "disabled", "ngModel"], outputs: ["ngModelChange"] }, { kind: "ngmodule", type: MatIconModule }, { kind: "component", type: i3.MatIcon, selector: "mat-icon", inputs: ["color", "inline", "svgIcon", "fontSet", "fontIcon"], exportAs: ["matIcon"] }, { kind: "ngmodule", type: MatButtonModule }] });
+}
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoInputComponent, decorators: [{
+            type: Component,
+            args: [{ selector: 'amigo-input', standalone: true, imports: [CommonModule, ReactiveFormsModule, MatIconModule, MatButtonModule], template: "<ng-container [formGroup]=\"form\">\n  <ng-container [ngSwitch]=\"field.type\">\n    <ng-container *ngSwitchCase=\"'text'\">\n      <input\n        type=\"text\"\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['minlength']\">\n          Minimum {{ field.validations?.minLength }} characters\n          required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['maxlength']\">\n          Maximum {{ field.validations?.maxLength }} characters allowed.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['pattern']\">\n          Value does not match the required pattern.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'password'\">\n      <div class=\"relative\">\n        <input\n          [type]=\"showPassword ? 'text' : 'password'\"\n          [placeholder]=\"field.placeholder\"\n          [formControlName]=\"controlKey()\"\n          [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n          [ngClass]=\"\n            resolvedSchema?.style?.inputClass ||\n            'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n          \"\n          class=\"pr-10\"\n        />\n        <button\n          type=\"button\"\n          (click)=\"showPassword = !showPassword\"\n          class=\"absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 flex items-center justify-center\"\n        >\n          <mat-icon class=\"text-[18px] w-[18px] h-[18px]\">\n            {{ showPassword ? 'visibility_off' : 'visibility' }}\n          </mat-icon>\n        </button>\n      </div>\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['minlength']\">\n          Minimum {{ field.validations?.minLength }} characters\n          required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['maxlength']\">\n          Maximum {{ field.validations?.maxLength }} characters allowed.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['pattern']\">\n          Value does not match the required pattern.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'number'\">\n      <input\n        type=\"number\"\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['min']\">\n          Value should be \u2265 {{ field.validations?.min }}.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['max']\">\n          Value should be \u2264 {{ field.validations?.max }}.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'email'\">\n      <input\n        type=\"email\"\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['email']\">\n          Please enter a valid email address.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['minlength']\">\n          Minimum {{ field.validations?.minLength }} characters\n          required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['maxlength']\">\n          Maximum {{ field.validations?.maxLength }} characters allowed.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['pattern']\">\n          Value does not match the required pattern.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'textarea'\">\n      <textarea\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        rows=\"4\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      ></textarea>\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['minlength']\">\n          Minimum {{ field.validations?.minLength }} characters\n          required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['maxlength']\">\n          Maximum {{ field.validations?.maxLength }} characters allowed.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['pattern']\">\n          Value does not match the required pattern.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'date'\">\n      <input\n        type=\"date\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          This field is required.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['min']\">\n          Date should be on or after {{ field.validations?.min }}.\n        </div>\n        <div *ngIf=\"ctrl()?.errors?.['max']\">\n          Date should be on or before {{ field.validations?.max }}.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchDefault>\n      <input\n        type=\"text\"\n        [placeholder]=\"field.placeholder\"\n        [formControlName]=\"controlKey()\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n    </ng-container>\n  </ng-container>\n</ng-container>\n" }]
+        }], propDecorators: { field: [{
+                type: Input
+            }], form: [{
+                type: Input
+            }], resolvedSchema: [{
+                type: Input
+            }] } });
+
+class AmigoSelectComponent {
+    field;
+    form;
+    resolvedSchema;
+    selectState = {};
+    controlKey() {
+        return this.field?.name ?? this.field?.id;
+    }
+    ctrl() {
+        return this.form?.get(this.controlKey()) ?? null;
+    }
+    showError() {
+        const c = this.ctrl();
+        return !!(c && c.invalid && (c.touched || c.dirty));
+    }
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoSelectComponent, deps: [], target: i0.ɵɵFactoryTarget.Component });
+    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoSelectComponent, isStandalone: true, selector: "amigo-select", inputs: { field: "field", form: "form", resolvedSchema: "resolvedSchema", selectState: "selectState" }, ngImport: i0, template: "<ng-container [formGroup]=\"form\">\n  <ng-container [ngSwitch]=\"field.type\">\n    <ng-container *ngSwitchCase=\"'select'\">\n      <select\n        [formControlName]=\"controlKey()\"\n        [disabled]=\"selectState[field.id]?.loading ?? false\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      >\n        <option value=\"\">Select an option</option>\n\n        <ng-container\n          *ngFor=\"\n            let opt of field.optionsSource?.mode === 'API'\n              ? selectState[field.id]?.options || []\n              : field.options || []\n          \"\n        >\n          <option [value]=\"opt.value\">{{ opt.label }}</option>\n        </ng-container>\n      </select>\n\n      <div\n        *ngIf=\"\n          field.optionsSource?.mode === 'API' &&\n          selectState[field.id]?.loading\n        \"\n        class=\"mt-1 text-[11px] text-slate-500\"\n      >\n        Loading options\u2026\n      </div>\n\n      <div\n        *ngIf=\"\n          field.optionsSource?.mode === 'API' &&\n          selectState[field.id]?.error\n        \"\n        class=\"mt-1 text-[11px] text-rose-600\"\n      >\n        {{ selectState[field.id]?.error }}\n      </div>\n\n      <div\n        *ngIf=\"\n          field.optionsSource?.mode === 'API' &&\n          !selectState[field.id]?.loading &&\n          !selectState[field.id]?.error &&\n          (selectState[field.id]?.options?.length || 0) === 0\n        \"\n        class=\"mt-1 text-[11px] text-slate-500\"\n      >\n        No options available.\n      </div>\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          Please select an option.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'checkbox'\">\n      <div class=\"flex items-center gap-2\">\n        <input type=\"checkbox\" [formControlName]=\"controlKey()\" />\n        <span class=\"text-xs text-gray-700\">Check</span>\n      </div>\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['requiredTrue']\">\n          Please check this box.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'radio'\">\n      <div\n        [ngClass]=\"\n          field.optionDirection === 'horizontal'\n            ? 'flex flex-row gap-4 items-center'\n            : 'flex flex-col gap-1'\n        \"\n      >\n        <label\n          *ngFor=\"let opt of field.options || []\"\n          class=\"inline-flex items-center gap-2 text-xs text-gray-700\"\n        >\n          <input\n            type=\"radio\"\n            [value]=\"opt.value\"\n            [formControlName]=\"controlKey()\"\n          />\n          <span>{{ opt.label }}</span>\n        </label>\n      </div>\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          Please choose an option.\n        </div>\n      </div>\n    </ng-container>\n  </ng-container>\n</ng-container>\n", dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1$1.NgClass, selector: "[ngClass]", inputs: ["class", "ngClass"] }, { kind: "directive", type: i1$1.NgForOf, selector: "[ngFor][ngForOf]", inputs: ["ngForOf", "ngForTrackBy", "ngForTemplate"] }, { kind: "directive", type: i1$1.NgIf, selector: "[ngIf]", inputs: ["ngIf", "ngIfThen", "ngIfElse"] }, { kind: "directive", type: i1$1.NgSwitch, selector: "[ngSwitch]", inputs: ["ngSwitch"] }, { kind: "directive", type: i1$1.NgSwitchCase, selector: "[ngSwitchCase]", inputs: ["ngSwitchCase"] }, { kind: "ngmodule", type: ReactiveFormsModule }, { kind: "directive", type: i2.NgSelectOption, selector: "option", inputs: ["ngValue", "value"] }, { kind: "directive", type: i2.ɵNgSelectMultipleOption, selector: "option", inputs: ["ngValue", "value"] }, { kind: "directive", type: i2.DefaultValueAccessor, selector: "input:not([type=checkbox])[formControlName],textarea[formControlName],input:not([type=checkbox])[formControl],textarea[formControl],input:not([type=checkbox])[ngModel],textarea[ngModel],[ngDefaultControl]" }, { kind: "directive", type: i2.CheckboxControlValueAccessor, selector: "input[type=checkbox][formControlName],input[type=checkbox][formControl],input[type=checkbox][ngModel]" }, { kind: "directive", type: i2.SelectControlValueAccessor, selector: "select:not([multiple])[formControlName],select:not([multiple])[formControl],select:not([multiple])[ngModel]", inputs: ["compareWith"] }, { kind: "directive", type: i2.RadioControlValueAccessor, selector: "input[type=radio][formControlName],input[type=radio][formControl],input[type=radio][ngModel]", inputs: ["name", "formControlName", "value"] }, { kind: "directive", type: i2.NgControlStatus, selector: "[formControlName],[ngModel],[formControl]" }, { kind: "directive", type: i2.NgControlStatusGroup, selector: "[formGroupName],[formArrayName],[ngModelGroup],[formGroup],[formArray],form:not([ngNoForm]),[ngForm]" }, { kind: "directive", type: i2.FormGroupDirective, selector: "[formGroup]", inputs: ["formGroup"], outputs: ["ngSubmit"], exportAs: ["ngForm"] }, { kind: "directive", type: i2.FormControlName, selector: "[formControlName]", inputs: ["formControlName", "disabled", "ngModel"], outputs: ["ngModelChange"] }] });
+}
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoSelectComponent, decorators: [{
+            type: Component,
+            args: [{ selector: 'amigo-select', standalone: true, imports: [CommonModule, ReactiveFormsModule], template: "<ng-container [formGroup]=\"form\">\n  <ng-container [ngSwitch]=\"field.type\">\n    <ng-container *ngSwitchCase=\"'select'\">\n      <select\n        [formControlName]=\"controlKey()\"\n        [disabled]=\"selectState[field.id]?.loading ?? false\"\n        [style.borderRadius.px]=\"resolvedSchema?.style?.borderRadius\"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      >\n        <option value=\"\">Select an option</option>\n\n        <ng-container\n          *ngFor=\"\n            let opt of field.optionsSource?.mode === 'API'\n              ? selectState[field.id]?.options || []\n              : field.options || []\n          \"\n        >\n          <option [value]=\"opt.value\">{{ opt.label }}</option>\n        </ng-container>\n      </select>\n\n      <div\n        *ngIf=\"\n          field.optionsSource?.mode === 'API' &&\n          selectState[field.id]?.loading\n        \"\n        class=\"mt-1 text-[11px] text-slate-500\"\n      >\n        Loading options\u2026\n      </div>\n\n      <div\n        *ngIf=\"\n          field.optionsSource?.mode === 'API' &&\n          selectState[field.id]?.error\n        \"\n        class=\"mt-1 text-[11px] text-rose-600\"\n      >\n        {{ selectState[field.id]?.error }}\n      </div>\n\n      <div\n        *ngIf=\"\n          field.optionsSource?.mode === 'API' &&\n          !selectState[field.id]?.loading &&\n          !selectState[field.id]?.error &&\n          (selectState[field.id]?.options?.length || 0) === 0\n        \"\n        class=\"mt-1 text-[11px] text-slate-500\"\n      >\n        No options available.\n      </div>\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          Please select an option.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'checkbox'\">\n      <div class=\"flex items-center gap-2\">\n        <input type=\"checkbox\" [formControlName]=\"controlKey()\" />\n        <span class=\"text-xs text-gray-700\">Check</span>\n      </div>\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['requiredTrue']\">\n          Please check this box.\n        </div>\n      </div>\n    </ng-container>\n\n    <ng-container *ngSwitchCase=\"'radio'\">\n      <div\n        [ngClass]=\"\n          field.optionDirection === 'horizontal'\n            ? 'flex flex-row gap-4 items-center'\n            : 'flex flex-col gap-1'\n        \"\n      >\n        <label\n          *ngFor=\"let opt of field.options || []\"\n          class=\"inline-flex items-center gap-2 text-xs text-gray-700\"\n        >\n          <input\n            type=\"radio\"\n            [value]=\"opt.value\"\n            [formControlName]=\"controlKey()\"\n          />\n          <span>{{ opt.label }}</span>\n        </label>\n      </div>\n\n      <div\n        *ngIf=\"showError()\"\n        class=\"mt-1 text-[11px] text-red-600\"\n      >\n        <div *ngIf=\"ctrl()?.errors?.['required']\">\n          Please choose an option.\n        </div>\n      </div>\n    </ng-container>\n  </ng-container>\n</ng-container>\n" }]
+        }], propDecorators: { field: [{
+                type: Input
+            }], form: [{
+                type: Input
+            }], resolvedSchema: [{
+                type: Input
+            }], selectState: [{
+                type: Input
+            }] } });
+
+class AmigoFileComponent {
+    field;
+    form;
+    resolvedSchema;
+    fileChange = new EventEmitter();
+    clearFile = new EventEmitter();
+    controlKey() {
+        return this.field?.name ?? this.field?.id;
+    }
+    ctrl() {
+        return this.form?.get(this.controlKey()) ?? null;
+    }
+    showError() {
+        const c = this.ctrl();
+        return !!(c && c.invalid && (c.touched || c.dirty));
+    }
+    onFileChangeHandler(evt) {
+        this.fileChange.emit({ evt, field: this.field });
+    }
+    clearFileHandler(inputEl) {
+        this.clearFile.emit({ field: this.field, inputEl });
+    }
+    fileNames() {
+        const v = this.ctrl()?.value;
+        if (!v)
+            return [];
+        if (Array.isArray(v))
+            return v.map((f) => f?.name).filter(Boolean);
+        if (v instanceof File)
+            return [v.name];
+        if (typeof FileList !== "undefined" && v instanceof FileList) {
+            return Array.from(v)
+                .map((f) => f?.name)
+                .filter(Boolean);
+        }
+        return [];
+    }
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoFileComponent, deps: [], target: i0.ɵɵFactoryTarget.Component });
+    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoFileComponent, isStandalone: true, selector: "amigo-file", inputs: { field: "field", form: "form", resolvedSchema: "resolvedSchema" }, outputs: { fileChange: "fileChange", clearFile: "clearFile" }, ngImport: i0, template: "<ng-container [formGroup]=\"form\">\n  <div class=\"flex flex-col gap-2\">\n    <div class=\"flex items-center gap-2\">\n      <input\n        #fileInput\n        type=\"file\"\n        [attr.accept]=\"field.accept || null\"\n        [attr.multiple]=\"field.multiple ? '' : null\"\n        (change)=\"onFileChangeHandler($event)\"\n        (blur)=\"ctrl()?.markAsTouched()\"\n        [style.borderRadius.px]=\"\n          resolvedSchema?.style?.borderRadius\n        \"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <button\n        *ngIf=\"fileNames().length\"\n        type=\"button\"\n        class=\"px-2 py-1 text-[11px] border border-gray-300 rounded hover:bg-gray-100\"\n        (click)=\"clearFileHandler(fileInput)\"\n      >\n        Clear\n      </button>\n    </div>\n\n    <div class=\"text-[11px] text-gray-500\">\n      <span *ngIf=\"field.accept\">Allowed: {{ field.accept }}</span>\n      <span *ngIf=\"field.maxSizeMB\">\n        \u2022 Max {{ field.maxSizeMB }}MB per file</span\n      >\n      <span *ngIf=\"field.maxFiles\">\n        \u2022 Max {{ field.maxFiles }} file(s)</span\n      >\n    </div>\n\n    <div\n      *ngIf=\"fileNames().length\"\n      class=\"text-[11px] text-gray-600\"\n    >\n      Selected: {{ fileNames().join(\", \") }}\n    </div>\n  </div>\n\n  <div\n    *ngIf=\"showError()\"\n    class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n  >\n    <div *ngIf=\"ctrl()?.errors?.['required']\">\n      This field is required.\n    </div>\n\n    <div *ngIf=\"ctrl()?.errors?.['maxFiles']\">\n      You can upload up to\n      {{ ctrl()?.errors?.[\"maxFiles\"]?.max }} file(s).\n    </div>\n\n    <div *ngIf=\"ctrl()?.errors?.['maxSizeMB']\">\n      {{ ctrl()?.errors?.[\"maxSizeMB\"]?.file }} is too large.\n      Max {{ ctrl()?.errors?.[\"maxSizeMB\"]?.max }}MB.\n    </div>\n\n    <div *ngIf=\"ctrl()?.errors?.['accept']\">\n      {{ ctrl()?.errors?.[\"accept\"]?.file }} is not an allowed\n      file type.\n    </div>\n  </div>\n</ng-container>\n", dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1$1.NgClass, selector: "[ngClass]", inputs: ["class", "ngClass"] }, { kind: "directive", type: i1$1.NgIf, selector: "[ngIf]", inputs: ["ngIf", "ngIfThen", "ngIfElse"] }, { kind: "ngmodule", type: ReactiveFormsModule }, { kind: "directive", type: i2.NgControlStatusGroup, selector: "[formGroupName],[formArrayName],[ngModelGroup],[formGroup],[formArray],form:not([ngNoForm]),[ngForm]" }, { kind: "directive", type: i2.FormGroupDirective, selector: "[formGroup]", inputs: ["formGroup"], outputs: ["ngSubmit"], exportAs: ["ngForm"] }] });
+}
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoFileComponent, decorators: [{
+            type: Component,
+            args: [{ selector: 'amigo-file', standalone: true, imports: [CommonModule, ReactiveFormsModule], template: "<ng-container [formGroup]=\"form\">\n  <div class=\"flex flex-col gap-2\">\n    <div class=\"flex items-center gap-2\">\n      <input\n        #fileInput\n        type=\"file\"\n        [attr.accept]=\"field.accept || null\"\n        [attr.multiple]=\"field.multiple ? '' : null\"\n        (change)=\"onFileChangeHandler($event)\"\n        (blur)=\"ctrl()?.markAsTouched()\"\n        [style.borderRadius.px]=\"\n          resolvedSchema?.style?.borderRadius\n        \"\n        [ngClass]=\"\n          resolvedSchema?.style?.inputClass ||\n          'w-full border border-gray-300 rounded px-2 py-1 text-sm'\n        \"\n      />\n\n      <button\n        *ngIf=\"fileNames().length\"\n        type=\"button\"\n        class=\"px-2 py-1 text-[11px] border border-gray-300 rounded hover:bg-gray-100\"\n        (click)=\"clearFileHandler(fileInput)\"\n      >\n        Clear\n      </button>\n    </div>\n\n    <div class=\"text-[11px] text-gray-500\">\n      <span *ngIf=\"field.accept\">Allowed: {{ field.accept }}</span>\n      <span *ngIf=\"field.maxSizeMB\">\n        \u2022 Max {{ field.maxSizeMB }}MB per file</span\n      >\n      <span *ngIf=\"field.maxFiles\">\n        \u2022 Max {{ field.maxFiles }} file(s)</span\n      >\n    </div>\n\n    <div\n      *ngIf=\"fileNames().length\"\n      class=\"text-[11px] text-gray-600\"\n    >\n      Selected: {{ fileNames().join(\", \") }}\n    </div>\n  </div>\n\n  <div\n    *ngIf=\"showError()\"\n    class=\"mt-1 text-[11px] text-red-600 space-y-0.5\"\n  >\n    <div *ngIf=\"ctrl()?.errors?.['required']\">\n      This field is required.\n    </div>\n\n    <div *ngIf=\"ctrl()?.errors?.['maxFiles']\">\n      You can upload up to\n      {{ ctrl()?.errors?.[\"maxFiles\"]?.max }} file(s).\n    </div>\n\n    <div *ngIf=\"ctrl()?.errors?.['maxSizeMB']\">\n      {{ ctrl()?.errors?.[\"maxSizeMB\"]?.file }} is too large.\n      Max {{ ctrl()?.errors?.[\"maxSizeMB\"]?.max }}MB.\n    </div>\n\n    <div *ngIf=\"ctrl()?.errors?.['accept']\">\n      {{ ctrl()?.errors?.[\"accept\"]?.file }} is not an allowed\n      file type.\n    </div>\n  </div>\n</ng-container>\n" }]
+        }], propDecorators: { field: [{
+                type: Input
+            }], form: [{
+                type: Input
+            }], resolvedSchema: [{
+                type: Input
+            }], fileChange: [{
+                type: Output
+            }], clearFile: [{
+                type: Output
+            }] } });
+
+class AmigoFieldRendererComponent {
+    field;
+    form;
+    resolvedSchema;
+    isSubmitting = false;
+    buttonLoading = {};
+    buttonFeedback = {};
+    selectState = {};
+    buttonClick = new EventEmitter();
+    fileChange = new EventEmitter();
+    clearFile = new EventEmitter();
+    isCard() {
+        const t = this.field?.type;
+        return t === "card" || t === "info-card";
+    }
+    isButton() {
+        return (this.field?.type ?? "") === "button";
+    }
+    isSelectOrRadioOrCheckbox() {
+        const t = this.field?.type;
+        return t === "select" || t === "radio" || t === "checkbox";
+    }
+    isFile() {
+        return this.field?.type === "file";
+    }
+    onButtonClickHandler(field) {
+        this.buttonClick.emit(field);
+    }
+    onFileChangeHandler(eventData) {
+        this.fileChange.emit(eventData);
+    }
+    onClearFileHandler(eventData) {
+        this.clearFile.emit(eventData);
+    }
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoFieldRendererComponent, deps: [], target: i0.ɵɵFactoryTarget.Component });
+    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoFieldRendererComponent, isStandalone: true, selector: "amigo-field-renderer", inputs: { field: "field", form: "form", resolvedSchema: "resolvedSchema", isSubmitting: "isSubmitting", buttonLoading: "buttonLoading", buttonFeedback: "buttonFeedback", selectState: "selectState" }, outputs: { buttonClick: "buttonClick", fileChange: "fileChange", clearFile: "clearFile" }, ngImport: i0, template: "<ng-container *ngIf=\"isCard(); else notCard\">\n  <amigo-card [field]=\"field\"></amigo-card>\n</ng-container>\n\n<ng-template #notCard>\n  <ng-container *ngIf=\"isButton(); else inputGroup\">\n    <amigo-button\n      [field]=\"field\"\n      [resolvedSchema]=\"resolvedSchema\"\n      [isSubmitting]=\"isSubmitting\"\n      [buttonLoading]=\"buttonLoading\"\n      [buttonFeedback]=\"buttonFeedback\"\n      (buttonClick)=\"onButtonClickHandler($event)\"\n    ></amigo-button>\n  </ng-container>\n\n  <ng-template #inputGroup>\n    <label\n      [ngClass]=\"\n        resolvedSchema?.style?.labelClass ||\n        'block text-sm font-medium mb-1'\n      \"\n    >\n      {{ field.label }}\n      <span\n        *ngIf=\"\n          field.required === true ||\n          field.required === 'true' ||\n          field.validations?.required\n        \"\n        class=\"text-red-500\"\n        >*</span\n      >\n    </label>\n\n    <ng-container *ngIf=\"isSelectOrRadioOrCheckbox(); else fileOrInput\">\n      <amigo-select\n        [field]=\"field\"\n        [form]=\"form\"\n        [resolvedSchema]=\"resolvedSchema\"\n        [selectState]=\"selectState\"\n      ></amigo-select>\n    </ng-container>\n    \n    <ng-template #fileOrInput>\n      <ng-container *ngIf=\"isFile(); else standardInput\">\n        <amigo-file\n          [field]=\"field\"\n          [form]=\"form\"\n          [resolvedSchema]=\"resolvedSchema\"\n          (fileChange)=\"onFileChangeHandler($event)\"\n          (clearFile)=\"onClearFileHandler($event)\"\n        ></amigo-file>\n      </ng-container>\n      \n      <ng-template #standardInput>\n        <amigo-input\n          [field]=\"field\"\n          [form]=\"form\"\n          [resolvedSchema]=\"resolvedSchema\"\n        ></amigo-input>\n      </ng-template>\n    </ng-template>\n  </ng-template>\n</ng-template>\n", dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1$1.NgClass, selector: "[ngClass]", inputs: ["class", "ngClass"] }, { kind: "directive", type: i1$1.NgIf, selector: "[ngIf]", inputs: ["ngIf", "ngIfThen", "ngIfElse"] }, { kind: "ngmodule", type: ReactiveFormsModule }, { kind: "component", type: AmigoCardComponent, selector: "amigo-card", inputs: ["field"] }, { kind: "component", type: AmigoButtonComponent, selector: "amigo-button", inputs: ["field", "resolvedSchema", "isSubmitting", "buttonLoading", "buttonFeedback"], outputs: ["buttonClick"] }, { kind: "component", type: AmigoInputComponent, selector: "amigo-input", inputs: ["field", "form", "resolvedSchema"] }, { kind: "component", type: AmigoSelectComponent, selector: "amigo-select", inputs: ["field", "form", "resolvedSchema", "selectState"] }, { kind: "component", type: AmigoFileComponent, selector: "amigo-file", inputs: ["field", "form", "resolvedSchema"], outputs: ["fileChange", "clearFile"] }] });
+}
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoFieldRendererComponent, decorators: [{
+            type: Component,
+            args: [{ selector: 'amigo-field-renderer', standalone: true, imports: [
+                        CommonModule,
+                        ReactiveFormsModule,
+                        AmigoCardComponent,
+                        AmigoButtonComponent,
+                        AmigoInputComponent,
+                        AmigoSelectComponent,
+                        AmigoFileComponent
+                    ], template: "<ng-container *ngIf=\"isCard(); else notCard\">\n  <amigo-card [field]=\"field\"></amigo-card>\n</ng-container>\n\n<ng-template #notCard>\n  <ng-container *ngIf=\"isButton(); else inputGroup\">\n    <amigo-button\n      [field]=\"field\"\n      [resolvedSchema]=\"resolvedSchema\"\n      [isSubmitting]=\"isSubmitting\"\n      [buttonLoading]=\"buttonLoading\"\n      [buttonFeedback]=\"buttonFeedback\"\n      (buttonClick)=\"onButtonClickHandler($event)\"\n    ></amigo-button>\n  </ng-container>\n\n  <ng-template #inputGroup>\n    <label\n      [ngClass]=\"\n        resolvedSchema?.style?.labelClass ||\n        'block text-sm font-medium mb-1'\n      \"\n    >\n      {{ field.label }}\n      <span\n        *ngIf=\"\n          field.required === true ||\n          field.required === 'true' ||\n          field.validations?.required\n        \"\n        class=\"text-red-500\"\n        >*</span\n      >\n    </label>\n\n    <ng-container *ngIf=\"isSelectOrRadioOrCheckbox(); else fileOrInput\">\n      <amigo-select\n        [field]=\"field\"\n        [form]=\"form\"\n        [resolvedSchema]=\"resolvedSchema\"\n        [selectState]=\"selectState\"\n      ></amigo-select>\n    </ng-container>\n    \n    <ng-template #fileOrInput>\n      <ng-container *ngIf=\"isFile(); else standardInput\">\n        <amigo-file\n          [field]=\"field\"\n          [form]=\"form\"\n          [resolvedSchema]=\"resolvedSchema\"\n          (fileChange)=\"onFileChangeHandler($event)\"\n          (clearFile)=\"onClearFileHandler($event)\"\n        ></amigo-file>\n      </ng-container>\n      \n      <ng-template #standardInput>\n        <amigo-input\n          [field]=\"field\"\n          [form]=\"form\"\n          [resolvedSchema]=\"resolvedSchema\"\n        ></amigo-input>\n      </ng-template>\n    </ng-template>\n  </ng-template>\n</ng-template>\n" }]
+        }], propDecorators: { field: [{
+                type: Input
+            }], form: [{
+                type: Input
+            }], resolvedSchema: [{
+                type: Input
+            }], isSubmitting: [{
+                type: Input
+            }], buttonLoading: [{
+                type: Input
+            }], buttonFeedback: [{
+                type: Input
+            }], selectState: [{
+                type: Input
+            }], buttonClick: [{
+                type: Output
+            }], fileChange: [{
+                type: Output
+            }], clearFile: [{
+                type: Output
+            }] } });
+
+class AmigoReviewDialogComponent {
+    reviewData = [];
+    close = new EventEmitter();
+    confirm = new EventEmitter();
+    onClose() {
+        this.close.emit();
+    }
+    onConfirm() {
+        this.confirm.emit();
+    }
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoReviewDialogComponent, deps: [], target: i0.ɵɵFactoryTarget.Component });
+    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoReviewDialogComponent, isStandalone: true, selector: "amigo-review-dialog", inputs: { reviewData: "reviewData" }, outputs: { close: "close", confirm: "confirm" }, ngImport: i0, template: "<div class=\"bg-white flex flex-col max-h-[90vh]\">\n  <div class=\"px-6 py-4 border-b border-gray-200 flex justify-between items-center shrink-0\">\n    <h3 class=\"text-lg font-semibold text-gray-800 m-0\">Review Form Details</h3>\n    <button type=\"button\" (click)=\"onClose()\" class=\"text-gray-400 hover:text-gray-600 focus:outline-none bg-transparent border-none cursor-pointer p-0\">\n      <svg class=\"w-6 h-6\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M6 18L18 6M6 6l12 12\"></path></svg>\n    </button>\n  </div>\n  \n  <div class=\"p-6 overflow-y-auto flex-1\">\n    <div *ngFor=\"let stepData of reviewData\" class=\"mb-6 last:mb-0\">\n      <h4 class=\"font-medium text-blue-700 border-b border-gray-100 pb-2 mb-4 mt-0\">{{ stepData.step }}</h4>\n      <div class=\"grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4\">\n        <div *ngFor=\"let fData of stepData.fields\" class=\"flex flex-col\">\n          <span class=\"text-xs text-gray-500 mb-1\">{{ fData.label }}</span>\n          <span class=\"text-sm font-medium text-gray-800 break-words whitespace-pre-wrap\">{{ fData.value }}</span>\n        </div>\n      </div>\n    </div>\n  </div>\n  \n  <div class=\"px-6 py-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50 shrink-0\">\n    <button type=\"button\" class=\"px-4 py-2 text-sm border border-gray-300 rounded bg-white hover:bg-gray-100 text-gray-700 cursor-pointer transition-colors\" (click)=\"onClose()\">Edit Form</button>\n    <button type=\"button\" class=\"px-4 py-2 text-sm bg-blue-600 border border-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer transition-colors shadow-sm\" (click)=\"onConfirm()\">Confirm & Close</button>\n  </div>\n</div>\n", dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1$1.NgForOf, selector: "[ngFor][ngForOf]", inputs: ["ngForOf", "ngForTrackBy", "ngForTemplate"] }] });
+}
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoReviewDialogComponent, decorators: [{
+            type: Component,
+            args: [{ selector: 'amigo-review-dialog', standalone: true, imports: [CommonModule], template: "<div class=\"bg-white flex flex-col max-h-[90vh]\">\n  <div class=\"px-6 py-4 border-b border-gray-200 flex justify-between items-center shrink-0\">\n    <h3 class=\"text-lg font-semibold text-gray-800 m-0\">Review Form Details</h3>\n    <button type=\"button\" (click)=\"onClose()\" class=\"text-gray-400 hover:text-gray-600 focus:outline-none bg-transparent border-none cursor-pointer p-0\">\n      <svg class=\"w-6 h-6\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M6 18L18 6M6 6l12 12\"></path></svg>\n    </button>\n  </div>\n  \n  <div class=\"p-6 overflow-y-auto flex-1\">\n    <div *ngFor=\"let stepData of reviewData\" class=\"mb-6 last:mb-0\">\n      <h4 class=\"font-medium text-blue-700 border-b border-gray-100 pb-2 mb-4 mt-0\">{{ stepData.step }}</h4>\n      <div class=\"grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4\">\n        <div *ngFor=\"let fData of stepData.fields\" class=\"flex flex-col\">\n          <span class=\"text-xs text-gray-500 mb-1\">{{ fData.label }}</span>\n          <span class=\"text-sm font-medium text-gray-800 break-words whitespace-pre-wrap\">{{ fData.value }}</span>\n        </div>\n      </div>\n    </div>\n  </div>\n  \n  <div class=\"px-6 py-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50 shrink-0\">\n    <button type=\"button\" class=\"px-4 py-2 text-sm border border-gray-300 rounded bg-white hover:bg-gray-100 text-gray-700 cursor-pointer transition-colors\" (click)=\"onClose()\">Edit Form</button>\n    <button type=\"button\" class=\"px-4 py-2 text-sm bg-blue-600 border border-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer transition-colors shadow-sm\" (click)=\"onConfirm()\">Confirm & Close</button>\n  </div>\n</div>\n" }]
+        }], propDecorators: { reviewData: [{
+                type: Input
+            }], close: [{
+                type: Output
+            }], confirm: [{
+                type: Output
+            }] } });
+
 class AmigoFormComponent {
     cdr;
     dialog;
@@ -1676,6 +1839,7 @@ class AmigoFormComponent {
     valueManager;
     stepSectionManager;
     selectOptionsManager;
+    calculationManager;
     formId;
     schema;
     initialValue;
@@ -1689,7 +1853,7 @@ class AmigoFormComponent {
     buttonLoading = {};
     buttonFeedback = {};
     reviewDialogTemplate;
-    constructor(cdr, dialog, apiExec, visibility, submission, reviewService, schemaManager, valueManager, stepSectionManager, selectOptionsManager) {
+    constructor(cdr, dialog, apiExec, visibility, submission, reviewService, schemaManager, valueManager, stepSectionManager, selectOptionsManager, calculationManager) {
         this.cdr = cdr;
         this.dialog = dialog;
         this.apiExec = apiExec;
@@ -1700,6 +1864,7 @@ class AmigoFormComponent {
         this.valueManager = valueManager;
         this.stepSectionManager = stepSectionManager;
         this.selectOptionsManager = selectOptionsManager;
+        this.calculationManager = calculationManager;
         // Re-initialize form when schema resolves
         effect(() => {
             const s = this.schemaManager.resolvedSchema();
@@ -1716,6 +1881,7 @@ class AmigoFormComponent {
                 });
                 this.selectOptionsManager.preloadApiSelectOptions(this.form);
                 this.selectOptionsManager.setupCascadingSelects(this.form);
+                this.calculationManager.setupCalculations(this.form, s.fields || []);
             }
             else {
                 this.form = null;
@@ -1734,6 +1900,7 @@ class AmigoFormComponent {
     ngOnDestroy() {
         this.visibility.cleanup();
         this.selectOptionsManager.cleanup();
+        this.calculationManager.cleanup();
     }
     // View Helpers Delegations
     get isLoading() { return this.schemaManager.isLoading(); }
@@ -1752,6 +1919,36 @@ class AmigoFormComponent {
     }
     fieldsForStep(index) {
         return this.stepSectionManager.fieldsForStep(index);
+    }
+    sectionsForStep(index) {
+        if (index < 0 || index >= this.totalSteps)
+            return [];
+        const stepId = this.orderedSteps[index].id;
+        return this.orderedSections.filter(s => s.stepId === stepId);
+    }
+    get sectionsForActiveStep() {
+        return this.sectionsForStep(this.activeStepIndex);
+    }
+    fieldsForSectionInActiveStep(sectionId) {
+        const stepFields = this.visibleFields;
+        const s = this.resolvedSchema;
+        if (!s)
+            return [];
+        const section = (s.sections ?? []).find((x) => x.id === sectionId);
+        const ids = new Set(section?.fieldIds ?? []);
+        return stepFields.filter(f => ids.has(f.id));
+    }
+    get unsectionedFieldsForActiveStep() {
+        const stepFields = this.visibleFields;
+        const s = this.resolvedSchema;
+        if (!s)
+            return stepFields;
+        const sections = this.sectionsForActiveStep;
+        const sectionedIds = new Set();
+        for (const sec of sections) {
+            (sec.fieldIds ?? []).forEach(id => sectionedIds.add(id));
+        }
+        return stepFields.filter(f => !sectionedIds.has(f.id));
     }
     fieldsForSection(sectionId) {
         return this.stepSectionManager.fieldsForSection(sectionId);
@@ -1908,8 +2105,17 @@ class AmigoFormComponent {
         const t = field?.type;
         return t === "card" || t === "info-card" || t === "button";
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoFormComponent, deps: [{ token: i0.ChangeDetectorRef }, { token: i1$2.MatDialog }, { token: AmigoApiExecutionService }, { token: FormVisibilityService }, { token: FormSubmissionService }, { token: FormReviewService }, { token: FormSchemaManagerService }, { token: FormValueManagerService }, { token: FormStepSectionManagerService }, { token: FormSelectOptionsManagerService }], target: i0.ɵɵFactoryTarget.Component });
-    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoFormComponent, isStandalone: true, selector: "amigo-form", inputs: { formId: "formId", schema: "schema", initialValue: "initialValue", submitPathParams: "submitPathParams", submitQueryParams: "submitQueryParams", isSubmitting: "isSubmitting" }, outputs: { submitted: "submitted", submitFailed: "submitFailed" }, viewQueries: [{ propertyName: "reviewDialogTemplate", first: true, predicate: ["reviewDialogTemplate"], descendants: true }], usesOnChanges: true, ngImport: i0, template: "<div class=\"w-full h-full flex flex-col mb-6 overflow-auto\">\n  <div\n    *ngIf=\"isLoading\"\n    class=\"flex items-center justify-center p-6 text-sm text-gray-600\"\n  >\n    Loading form\u2026\n  </div>\n\n  <div\n    *ngIf=\"loadError\"\n    class=\"p-3 rounded border border-red-200 bg-red-50 text-red-700 text-sm\"\n  >\n    {{ loadError }}\n  </div>\n\n  <div\n    *ngIf=\"\n      !isLoading &&\n      !loadError &&\n      (!resolvedSchema?.fields || resolvedSchema.fields.length === 0)\n    \"\n    class=\"flex justify-center items-center h-100 border border-dotted border-gray-300 rounded-xl bg-white\"\n  >\n    <h2 class=\"text-sm text-gray-600\">No fields found for this form schema.</h2>\n  </div>\n\n  <form\n    *ngIf=\"!isLoading && !loadError && resolvedSchema?.fields?.length && form\"\n    [formGroup]=\"form\"\n    class=\"text-sm\"\n    [ngStyle]=\"getFormStyle()\"\n    [ngClass]=\"resolvedSchema?.style?.formClass || ''\"\n    (ngSubmit)=\"submit()\"\n  >\n    <h2 class=\"text-2xl my-2\">{{ resolvedSchema.name }}</h2>\n\n    <p\n      *ngIf=\"resolvedSchema.description\"\n      class=\"text-[13px] text-gray-500 mb-4\"\n    >\n      {{ resolvedSchema.description }}\n    </p>\n\n    <amigo-stepper\n      *ngIf=\"isMultiStep\"\n      [orderedSteps]=\"orderedSteps\"\n      [activeStepIndex]=\"activeStepIndex\"\n      [totalSteps]=\"totalSteps\"\n      [visibleFieldsCount]=\"visibleFields.length\"\n      (stepChanged)=\"setActiveStep($event)\"\n    ></amigo-stepper>\n\n    <div *ngIf=\"isSectional; else normalOrMulti\">\n      <div *ngFor=\"let sec of orderedSections\" class=\"mb-6 bg-white border border-gray-200 rounded-lg p-5 shadow-sm\">\n        <div\n          class=\"flex items-center justify-between mb-4 border-b border-gray-100 pb-3\"\n        >\n          <h3 class=\"text-sm font-semibold text-gray-800\">\n            {{ sec.label }}\n          </h3>\n          <span\n            class=\"text-[11px] text-gray-500 bg-gray-100 px-2 py-1 rounded\"\n            *ngIf=\"fieldsForSection(sec.id) as fields\"\n          >\n            {{ fields.length }} {{ fields.length === 1 ? \"field\" : \"fields\" }}\n          </span>\n        </div>\n\n        <div\n          class=\"grid\"\n          [ngStyle]=\"{\n            'grid-template-columns':\n              'repeat(' +\n              (resolvedSchema.layout?.columns || 1) +\n              ', minmax(0, 1fr))',\n            'column-gap': (resolvedSchema.spacing?.gapX ?? 12) + 'px',\n            'row-gap': (resolvedSchema.spacing?.gapY ?? 12) + 'px',\n          }\"\n        >\n          <div\n            *ngFor=\"\n              let field of fieldsForSection(sec.id);\n              trackBy: trackByFieldId\n            \"\n            [ngStyle]=\"{ 'grid-column': 'span ' + (field.colSpan || 1) }\"\n            [ngClass]=\"resolvedSchema.style?.fieldWrapperClass || 'mb-3'\"\n          >\n            <ng-container\n              *ngTemplateOutlet=\"fieldRenderer; context: { $implicit: field }\"\n            ></ng-container>\n          </div>\n        </div>\n\n        <div\n          *ngIf=\"fieldsForSection(sec.id).length === 0\"\n          class=\"text-xs text-gray-400 mt-2 italic\"\n        >\n          No fields in this section yet.\n        </div>\n      </div>\n    </div>\n\n    <ng-template #normalOrMulti>\n      <div\n        class=\"grid\"\n        [ngStyle]=\"{\n          'grid-template-columns':\n            'repeat(' +\n            (resolvedSchema.layout?.columns || 1) +\n            ', minmax(0, 1fr))',\n          'column-gap': (resolvedSchema.spacing?.gapX ?? 12) + 'px',\n          'row-gap': (resolvedSchema.spacing?.gapY ?? 12) + 'px',\n        }\"\n      >\n        <div\n          *ngFor=\"let field of visibleFields; trackBy: trackByFieldId\"\n          [ngStyle]=\"{ 'grid-column': 'span ' + (field.colSpan || 1) }\"\n          [ngClass]=\"resolvedSchema.style?.fieldWrapperClass || 'mb-3'\"\n        >\n          <ng-container\n            *ngTemplateOutlet=\"fieldRenderer; context: { $implicit: field }\"\n          ></ng-container>\n        </div>\n      </div>\n    </ng-template>\n\n    <div\n      *ngIf=\"isMultiStep\"\n      class=\"mt-4 flex items-center justify-between text-xs w-full\"\n    >\n      <!-- Previous Step Button / Placeholder -->\n      <button\n        *ngIf=\"activeStepIndex > 0\"\n        type=\"button\"\n        class=\"px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50\"\n        (click)=\"prevStep()\"\n      >\n        \u2190 Previous step\n      </button>\n      <div *ngIf=\"activeStepIndex === 0\"></div>\n\n      <!-- Next Step Button -->\n      <button\n        *ngIf=\"activeStepIndex < totalSteps - 1\"\n        type=\"button\"\n        class=\"px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50\"\n        (click)=\"nextStep()\"\n      >\n        Next step \u2192\n      </button>\n\n      <!-- Review Button -->\n      <button\n        *ngIf=\"activeStepIndex === totalSteps - 1 && !isReviewed\"\n        type=\"button\"\n        class=\"px-3 py-1 border border-blue-600 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50\"\n        (click)=\"openReviewDialog()\"\n      >\n        Review Details\n      </button>\n    </div>\n\n    <div\n      *ngIf=\"submitFeedback\"\n      class=\"mt-3 p-3 rounded border text-sm\"\n      [ngClass]=\"\n        submitFeedback.type === 'success'\n          ? 'border-green-200 bg-green-50 text-green-700'\n          : 'border-red-200 bg-red-50 text-red-700'\n      \"\n    >\n      {{ submitFeedback.message }}\n    </div>\n\n    <ng-template #fieldRenderer let-field>\n      <amigo-field-renderer\n        [field]=\"field\"\n        [form]=\"form\"\n        [resolvedSchema]=\"resolvedSchema\"\n        [isSubmitting]=\"isSubmitting\"\n        [buttonLoading]=\"buttonLoading\"\n        [buttonFeedback]=\"buttonFeedback\"\n        [selectState]=\"selectState\"\n        (buttonClick)=\"onSchemaButtonClick($event)\"\n        (fileChange)=\"onFileChange($event.evt, $event.field)\"\n        (clearFile)=\"clearFiles($event.field, $event.inputEl)\"\n      ></amigo-field-renderer>\n    </ng-template>\n  </form>\n</div>\n\n<ng-template #reviewDialogTemplate>\n  <amigo-review-dialog\n    [reviewData]=\"reviewData\"\n    (close)=\"closeReviewDialog()\"\n    (confirm)=\"confirmReview()\"\n  ></amigo-review-dialog>\n</ng-template>\n", styles: [".amigo-loading{padding:12px;opacity:.85}.amigo-error{padding:12px;border:1px solid #ef4444;border-radius:8px;color:#ef4444}.amigo-form-root{width:100%;box-sizing:border-box}.amigo-header{margin-bottom:12px}.amigo-title{font-size:18px;font-weight:700}.amigo-desc{margin-top:4px;opacity:.8}.amigo-grid{width:100%}.amigo-field{display:block}.amigo-label{display:block;font-size:13px;margin-bottom:6px;font-weight:600}.amigo-required{color:#ef4444;margin-left:4px}.amigo-input{width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-size:14px}.amigo-hint{margin-top:6px;font-size:12px;opacity:.75}.amigo-field-error{margin-top:6px;font-size:12px;color:#ef4444}.amigo-checkbox{display:flex;align-items:center;gap:8px}.amigo-radio{display:flex;flex-direction:column;gap:6px}.amigo-radio-item{display:inline-flex;align-items:center;gap:8px}.amigo-section{margin-bottom:18px}.amigo-section-title{font-weight:700;margin-bottom:10px}.amigo-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}.amigo-btn{padding:8px 12px;border-radius:10px;border:1px solid #d1d5db;background:#fff;cursor:pointer}.amigo-primary{border-color:#111827;background:#111827;color:#fff}\n"], dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1.NgClass, selector: "[ngClass]", inputs: ["class", "ngClass"] }, { kind: "directive", type: i1.NgForOf, selector: "[ngFor][ngForOf]", inputs: ["ngForOf", "ngForTrackBy", "ngForTemplate"] }, { kind: "directive", type: i1.NgIf, selector: "[ngIf]", inputs: ["ngIf", "ngIfThen", "ngIfElse"] }, { kind: "directive", type: i1.NgTemplateOutlet, selector: "[ngTemplateOutlet]", inputs: ["ngTemplateOutletContext", "ngTemplateOutlet", "ngTemplateOutletInjector"] }, { kind: "directive", type: i1.NgStyle, selector: "[ngStyle]", inputs: ["ngStyle"] }, { kind: "ngmodule", type: ReactiveFormsModule }, { kind: "directive", type: i2.ɵNgNoValidate, selector: "form:not([ngNoForm]):not([ngNativeValidate])" }, { kind: "directive", type: i2.NgControlStatusGroup, selector: "[formGroupName],[formArrayName],[ngModelGroup],[formGroup],[formArray],form:not([ngNoForm]),[ngForm]" }, { kind: "directive", type: i2.FormGroupDirective, selector: "[formGroup]", inputs: ["formGroup"], outputs: ["ngSubmit"], exportAs: ["ngForm"] }, { kind: "ngmodule", type: MatDialogModule }, { kind: "component", type: AmigoStepperComponent, selector: "amigo-stepper", inputs: ["orderedSteps", "activeStepIndex", "totalSteps", "visibleFieldsCount"], outputs: ["stepChanged"] }, { kind: "component", type: AmigoFieldRendererComponent, selector: "amigo-field-renderer", inputs: ["field", "form", "resolvedSchema", "isSubmitting", "buttonLoading", "buttonFeedback", "selectState"], outputs: ["buttonClick", "fileChange", "clearFile"] }, { kind: "component", type: AmigoReviewDialogComponent, selector: "amigo-review-dialog", inputs: ["reviewData"], outputs: ["close", "confirm"] }] });
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoFormComponent, deps: [{ token: i0.ChangeDetectorRef }, { token: i1$2.MatDialog }, { token: AmigoApiExecutionService }, { token: FormVisibilityService }, { token: FormSubmissionService }, { token: FormReviewService }, { token: FormSchemaManagerService }, { token: FormValueManagerService }, { token: FormStepSectionManagerService }, { token: FormSelectOptionsManagerService }, { token: FormCalculationManagerService }], target: i0.ɵɵFactoryTarget.Component });
+    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoFormComponent, isStandalone: true, selector: "amigo-form", inputs: { formId: "formId", schema: "schema", initialValue: "initialValue", submitPathParams: "submitPathParams", submitQueryParams: "submitQueryParams", isSubmitting: "isSubmitting" }, outputs: { submitted: "submitted", submitFailed: "submitFailed" }, providers: [
+            FormSchemaManagerService,
+            FormStepSectionManagerService,
+            FormValueManagerService,
+            FormVisibilityService,
+            FormSelectOptionsManagerService,
+            FormReviewService,
+            FormSubmissionService,
+            FormCalculationManagerService
+        ], viewQueries: [{ propertyName: "reviewDialogTemplate", first: true, predicate: ["reviewDialogTemplate"], descendants: true }], usesOnChanges: true, ngImport: i0, template: "<div class=\"w-full h-full flex flex-col mb-6 overflow-auto\">\n  <div\n    *ngIf=\"isLoading\"\n    class=\"flex items-center justify-center p-6 text-sm text-gray-600\"\n  >\n    Loading form\u2026\n  </div>\n\n  <div\n    *ngIf=\"loadError\"\n    class=\"p-3 rounded border border-red-200 bg-red-50 text-red-700 text-sm\"\n  >\n    {{ loadError }}\n  </div>\n\n  <div\n    *ngIf=\"\n      !isLoading &&\n      !loadError &&\n      (!resolvedSchema?.fields || resolvedSchema.fields.length === 0)\n    \"\n    class=\"flex justify-center items-center h-100 border border-dotted border-gray-300 rounded-xl bg-white\"\n  >\n    <h2 class=\"text-sm text-gray-600\">No fields found for this form schema.</h2>\n  </div>\n\n  <form\n    *ngIf=\"!isLoading && !loadError && resolvedSchema?.fields?.length && form\"\n    [formGroup]=\"form\"\n    class=\"text-sm\"\n    [ngStyle]=\"getFormStyle()\"\n    [ngClass]=\"resolvedSchema?.style?.formClass || ''\"\n    (ngSubmit)=\"submit()\"\n  >\n    <h2 class=\"text-2xl my-2\">{{ resolvedSchema.name }}</h2>\n\n    <p\n      *ngIf=\"resolvedSchema.description\"\n      class=\"text-[13px] text-gray-500 mb-4\"\n    >\n      {{ resolvedSchema.description }}\n    </p>\n\n    <amigo-stepper\n      *ngIf=\"isMultiStep\"\n      [orderedSteps]=\"orderedSteps\"\n      [activeStepIndex]=\"activeStepIndex\"\n      [totalSteps]=\"totalSteps\"\n      [visibleFieldsCount]=\"visibleFields.length\"\n      (stepChanged)=\"setActiveStep($event)\"\n    ></amigo-stepper>\n\n    <div *ngIf=\"isSectional; else normalOrMulti\">\n      <div *ngFor=\"let sec of orderedSections\" class=\"mb-6 bg-white border border-gray-200 rounded-lg p-5 shadow-sm\">\n        <div\n          class=\"flex items-center justify-between mb-4 border-b border-gray-100 pb-3\"\n        >\n          <h3 class=\"text-sm font-semibold text-gray-800\">\n            {{ sec.label }}\n          </h3>\n          <span\n            class=\"text-[11px] text-gray-500 bg-gray-100 px-2 py-1 rounded\"\n            *ngIf=\"fieldsForSection(sec.id) as fields\"\n          >\n            {{ fields.length }} {{ fields.length === 1 ? \"field\" : \"fields\" }}\n          </span>\n        </div>\n\n        <div\n          class=\"grid\"\n          [ngStyle]=\"{\n            'grid-template-columns':\n              'repeat(' +\n              (resolvedSchema.layout?.columns || 1) +\n              ', minmax(0, 1fr))',\n            'column-gap': (resolvedSchema.spacing?.gapX ?? 12) + 'px',\n            'row-gap': (resolvedSchema.spacing?.gapY ?? 12) + 'px',\n          }\"\n        >\n          <div\n            *ngFor=\"\n              let field of fieldsForSection(sec.id);\n              trackBy: trackByFieldId\n            \"\n            [ngStyle]=\"{ 'grid-column': 'span ' + (field.colSpan || 1) }\"\n            [ngClass]=\"resolvedSchema.style?.fieldWrapperClass || 'mb-3'\"\n          >\n            <ng-container\n              *ngTemplateOutlet=\"fieldRenderer; context: { $implicit: field }\"\n            ></ng-container>\n          </div>\n        </div>\n\n        <div\n          *ngIf=\"fieldsForSection(sec.id).length === 0\"\n          class=\"text-xs text-gray-400 mt-2 italic\"\n        >\n          No fields in this section yet.\n        </div>\n      </div>\n    </div>\n\n    <ng-template #normalOrMulti>\n      <ng-container *ngIf=\"isMultiStep && sectionsForActiveStep.length > 0; else flatGrid\">\n        <div *ngFor=\"let sec of sectionsForActiveStep\" class=\"mb-6 bg-white border border-gray-200 rounded-lg p-5 shadow-sm\">\n          <div class=\"flex items-center justify-between mb-4 border-b border-gray-100 pb-3\">\n            <h3 class=\"text-sm font-semibold text-gray-800\">{{ sec.label }}</h3>\n            <span class=\"text-[11px] text-gray-500 bg-gray-100 px-2 py-1 rounded\" *ngIf=\"fieldsForSectionInActiveStep(sec.id) as fields\">\n              {{ fields.length }} {{ fields.length === 1 ? \"field\" : \"fields\" }}\n            </span>\n          </div>\n\n          <div class=\"grid\" [ngStyle]=\"{ 'grid-template-columns': 'repeat(' + (resolvedSchema.layout?.columns || 1) + ', minmax(0, 1fr))', 'column-gap': (resolvedSchema.spacing?.gapX ?? 12) + 'px', 'row-gap': (resolvedSchema.spacing?.gapY ?? 12) + 'px' }\">\n            <div *ngFor=\"let field of fieldsForSectionInActiveStep(sec.id); trackBy: trackByFieldId\" [ngStyle]=\"{ 'grid-column': 'span ' + (field.colSpan || 1) }\" [ngClass]=\"resolvedSchema.style?.fieldWrapperClass || 'mb-3'\">\n              <ng-container *ngTemplateOutlet=\"fieldRenderer; context: { $implicit: field }\"></ng-container>\n            </div>\n          </div>\n        </div>\n\n        <!-- Render unsectioned fields at the bottom -->\n        <div *ngIf=\"unsectionedFieldsForActiveStep.length > 0\" class=\"mt-4 border-t border-gray-200 pt-4 grid\" [ngStyle]=\"{ 'grid-template-columns': 'repeat(' + (resolvedSchema.layout?.columns || 1) + ', minmax(0, 1fr))', 'column-gap': (resolvedSchema.spacing?.gapX ?? 12) + 'px', 'row-gap': (resolvedSchema.spacing?.gapY ?? 12) + 'px' }\">\n          <div *ngFor=\"let field of unsectionedFieldsForActiveStep; trackBy: trackByFieldId\" [ngStyle]=\"{ 'grid-column': 'span ' + (field.colSpan || 1) }\" [ngClass]=\"resolvedSchema.style?.fieldWrapperClass || 'mb-3'\">\n            <ng-container *ngTemplateOutlet=\"fieldRenderer; context: { $implicit: field }\"></ng-container>\n          </div>\n        </div>\n      </ng-container>\n\n      <ng-template #flatGrid>\n        <div class=\"grid\" [ngStyle]=\"{ 'grid-template-columns': 'repeat(' + (resolvedSchema.layout?.columns || 1) + ', minmax(0, 1fr))', 'column-gap': (resolvedSchema.spacing?.gapX ?? 12) + 'px', 'row-gap': (resolvedSchema.spacing?.gapY ?? 12) + 'px' }\">\n          <div *ngFor=\"let field of visibleFields; trackBy: trackByFieldId\" [ngStyle]=\"{ 'grid-column': 'span ' + (field.colSpan || 1) }\" [ngClass]=\"resolvedSchema.style?.fieldWrapperClass || 'mb-3'\">\n            <ng-container *ngTemplateOutlet=\"fieldRenderer; context: { $implicit: field }\"></ng-container>\n          </div>\n        </div>\n      </ng-template>\n    </ng-template>\n\n    <div\n      *ngIf=\"isMultiStep\"\n      class=\"mt-4 flex items-center justify-between text-xs w-full\"\n    >\n      <!-- Previous Step Button / Placeholder -->\n      <button\n        *ngIf=\"activeStepIndex > 0\"\n        type=\"button\"\n        class=\"px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50\"\n        (click)=\"prevStep()\"\n      >\n        \u2190 Previous step\n      </button>\n      <div *ngIf=\"activeStepIndex === 0\"></div>\n\n      <!-- Next Step Button -->\n      <button\n        *ngIf=\"activeStepIndex < totalSteps - 1\"\n        type=\"button\"\n        class=\"px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50\"\n        (click)=\"nextStep()\"\n      >\n        Next step \u2192\n      </button>\n\n      <!-- Review Button -->\n      <button\n        *ngIf=\"activeStepIndex === totalSteps - 1 && !isReviewed\"\n        type=\"button\"\n        class=\"px-3 py-1 border border-blue-600 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50\"\n        (click)=\"openReviewDialog()\"\n      >\n        Review Details\n      </button>\n    </div>\n\n    <div\n      *ngIf=\"submitFeedback\"\n      class=\"mt-3 p-3 rounded border text-sm\"\n      [ngClass]=\"\n        submitFeedback.type === 'success'\n          ? 'border-green-200 bg-green-50 text-green-700'\n          : 'border-red-200 bg-red-50 text-red-700'\n      \"\n    >\n      {{ submitFeedback.message }}\n    </div>\n\n    <ng-template #fieldRenderer let-field>\n      <amigo-field-renderer\n        [field]=\"field\"\n        [form]=\"form\"\n        [resolvedSchema]=\"resolvedSchema\"\n        [isSubmitting]=\"isSubmitting\"\n        [buttonLoading]=\"buttonLoading\"\n        [buttonFeedback]=\"buttonFeedback\"\n        [selectState]=\"selectState\"\n        (buttonClick)=\"onSchemaButtonClick($event)\"\n        (fileChange)=\"onFileChange($event.evt, $event.field)\"\n        (clearFile)=\"clearFiles($event.field, $event.inputEl)\"\n      ></amigo-field-renderer>\n    </ng-template>\n  </form>\n</div>\n\n<ng-template #reviewDialogTemplate>\n  <amigo-review-dialog\n    [reviewData]=\"reviewData\"\n    (close)=\"closeReviewDialog()\"\n    (confirm)=\"confirmReview()\"\n  ></amigo-review-dialog>\n</ng-template>\n", styles: [".amigo-loading{padding:12px;opacity:.85}.amigo-error{padding:12px;border:1px solid #ef4444;border-radius:8px;color:#ef4444}.amigo-form-root{width:100%;box-sizing:border-box}.amigo-header{margin-bottom:12px}.amigo-title{font-size:18px;font-weight:700}.amigo-desc{margin-top:4px;opacity:.8}.amigo-grid{width:100%}.amigo-field{display:block}.amigo-label{display:block;font-size:13px;margin-bottom:6px;font-weight:600}.amigo-required{color:#ef4444;margin-left:4px}.amigo-input{width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-size:14px}.amigo-hint{margin-top:6px;font-size:12px;opacity:.75}.amigo-field-error{margin-top:6px;font-size:12px;color:#ef4444}.amigo-checkbox{display:flex;align-items:center;gap:8px}.amigo-radio{display:flex;flex-direction:column;gap:6px}.amigo-radio-item{display:inline-flex;align-items:center;gap:8px}.amigo-section{margin-bottom:18px}.amigo-section-title{font-weight:700;margin-bottom:10px}.amigo-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}.amigo-btn{padding:8px 12px;border-radius:10px;border:1px solid #d1d5db;background:#fff;cursor:pointer}.amigo-primary{border-color:#111827;background:#111827;color:#fff}\n"], dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1$1.NgClass, selector: "[ngClass]", inputs: ["class", "ngClass"] }, { kind: "directive", type: i1$1.NgForOf, selector: "[ngFor][ngForOf]", inputs: ["ngForOf", "ngForTrackBy", "ngForTemplate"] }, { kind: "directive", type: i1$1.NgIf, selector: "[ngIf]", inputs: ["ngIf", "ngIfThen", "ngIfElse"] }, { kind: "directive", type: i1$1.NgTemplateOutlet, selector: "[ngTemplateOutlet]", inputs: ["ngTemplateOutletContext", "ngTemplateOutlet", "ngTemplateOutletInjector"] }, { kind: "directive", type: i1$1.NgStyle, selector: "[ngStyle]", inputs: ["ngStyle"] }, { kind: "ngmodule", type: ReactiveFormsModule }, { kind: "directive", type: i2.ɵNgNoValidate, selector: "form:not([ngNoForm]):not([ngNativeValidate])" }, { kind: "directive", type: i2.NgControlStatusGroup, selector: "[formGroupName],[formArrayName],[ngModelGroup],[formGroup],[formArray],form:not([ngNoForm]),[ngForm]" }, { kind: "directive", type: i2.FormGroupDirective, selector: "[formGroup]", inputs: ["formGroup"], outputs: ["ngSubmit"], exportAs: ["ngForm"] }, { kind: "ngmodule", type: MatDialogModule }, { kind: "component", type: AmigoStepperComponent, selector: "amigo-stepper", inputs: ["orderedSteps", "activeStepIndex", "totalSteps", "visibleFieldsCount"], outputs: ["stepChanged"] }, { kind: "component", type: AmigoFieldRendererComponent, selector: "amigo-field-renderer", inputs: ["field", "form", "resolvedSchema", "isSubmitting", "buttonLoading", "buttonFeedback", "selectState"], outputs: ["buttonClick", "fileChange", "clearFile"] }, { kind: "component", type: AmigoReviewDialogComponent, selector: "amigo-review-dialog", inputs: ["reviewData"], outputs: ["close", "confirm"] }] });
 }
 i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoFormComponent, decorators: [{
             type: Component,
@@ -1920,8 +2126,17 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImpor
                         AmigoStepperComponent,
                         AmigoFieldRendererComponent,
                         AmigoReviewDialogComponent
-                    ], template: "<div class=\"w-full h-full flex flex-col mb-6 overflow-auto\">\n  <div\n    *ngIf=\"isLoading\"\n    class=\"flex items-center justify-center p-6 text-sm text-gray-600\"\n  >\n    Loading form\u2026\n  </div>\n\n  <div\n    *ngIf=\"loadError\"\n    class=\"p-3 rounded border border-red-200 bg-red-50 text-red-700 text-sm\"\n  >\n    {{ loadError }}\n  </div>\n\n  <div\n    *ngIf=\"\n      !isLoading &&\n      !loadError &&\n      (!resolvedSchema?.fields || resolvedSchema.fields.length === 0)\n    \"\n    class=\"flex justify-center items-center h-100 border border-dotted border-gray-300 rounded-xl bg-white\"\n  >\n    <h2 class=\"text-sm text-gray-600\">No fields found for this form schema.</h2>\n  </div>\n\n  <form\n    *ngIf=\"!isLoading && !loadError && resolvedSchema?.fields?.length && form\"\n    [formGroup]=\"form\"\n    class=\"text-sm\"\n    [ngStyle]=\"getFormStyle()\"\n    [ngClass]=\"resolvedSchema?.style?.formClass || ''\"\n    (ngSubmit)=\"submit()\"\n  >\n    <h2 class=\"text-2xl my-2\">{{ resolvedSchema.name }}</h2>\n\n    <p\n      *ngIf=\"resolvedSchema.description\"\n      class=\"text-[13px] text-gray-500 mb-4\"\n    >\n      {{ resolvedSchema.description }}\n    </p>\n\n    <amigo-stepper\n      *ngIf=\"isMultiStep\"\n      [orderedSteps]=\"orderedSteps\"\n      [activeStepIndex]=\"activeStepIndex\"\n      [totalSteps]=\"totalSteps\"\n      [visibleFieldsCount]=\"visibleFields.length\"\n      (stepChanged)=\"setActiveStep($event)\"\n    ></amigo-stepper>\n\n    <div *ngIf=\"isSectional; else normalOrMulti\">\n      <div *ngFor=\"let sec of orderedSections\" class=\"mb-6 bg-white border border-gray-200 rounded-lg p-5 shadow-sm\">\n        <div\n          class=\"flex items-center justify-between mb-4 border-b border-gray-100 pb-3\"\n        >\n          <h3 class=\"text-sm font-semibold text-gray-800\">\n            {{ sec.label }}\n          </h3>\n          <span\n            class=\"text-[11px] text-gray-500 bg-gray-100 px-2 py-1 rounded\"\n            *ngIf=\"fieldsForSection(sec.id) as fields\"\n          >\n            {{ fields.length }} {{ fields.length === 1 ? \"field\" : \"fields\" }}\n          </span>\n        </div>\n\n        <div\n          class=\"grid\"\n          [ngStyle]=\"{\n            'grid-template-columns':\n              'repeat(' +\n              (resolvedSchema.layout?.columns || 1) +\n              ', minmax(0, 1fr))',\n            'column-gap': (resolvedSchema.spacing?.gapX ?? 12) + 'px',\n            'row-gap': (resolvedSchema.spacing?.gapY ?? 12) + 'px',\n          }\"\n        >\n          <div\n            *ngFor=\"\n              let field of fieldsForSection(sec.id);\n              trackBy: trackByFieldId\n            \"\n            [ngStyle]=\"{ 'grid-column': 'span ' + (field.colSpan || 1) }\"\n            [ngClass]=\"resolvedSchema.style?.fieldWrapperClass || 'mb-3'\"\n          >\n            <ng-container\n              *ngTemplateOutlet=\"fieldRenderer; context: { $implicit: field }\"\n            ></ng-container>\n          </div>\n        </div>\n\n        <div\n          *ngIf=\"fieldsForSection(sec.id).length === 0\"\n          class=\"text-xs text-gray-400 mt-2 italic\"\n        >\n          No fields in this section yet.\n        </div>\n      </div>\n    </div>\n\n    <ng-template #normalOrMulti>\n      <div\n        class=\"grid\"\n        [ngStyle]=\"{\n          'grid-template-columns':\n            'repeat(' +\n            (resolvedSchema.layout?.columns || 1) +\n            ', minmax(0, 1fr))',\n          'column-gap': (resolvedSchema.spacing?.gapX ?? 12) + 'px',\n          'row-gap': (resolvedSchema.spacing?.gapY ?? 12) + 'px',\n        }\"\n      >\n        <div\n          *ngFor=\"let field of visibleFields; trackBy: trackByFieldId\"\n          [ngStyle]=\"{ 'grid-column': 'span ' + (field.colSpan || 1) }\"\n          [ngClass]=\"resolvedSchema.style?.fieldWrapperClass || 'mb-3'\"\n        >\n          <ng-container\n            *ngTemplateOutlet=\"fieldRenderer; context: { $implicit: field }\"\n          ></ng-container>\n        </div>\n      </div>\n    </ng-template>\n\n    <div\n      *ngIf=\"isMultiStep\"\n      class=\"mt-4 flex items-center justify-between text-xs w-full\"\n    >\n      <!-- Previous Step Button / Placeholder -->\n      <button\n        *ngIf=\"activeStepIndex > 0\"\n        type=\"button\"\n        class=\"px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50\"\n        (click)=\"prevStep()\"\n      >\n        \u2190 Previous step\n      </button>\n      <div *ngIf=\"activeStepIndex === 0\"></div>\n\n      <!-- Next Step Button -->\n      <button\n        *ngIf=\"activeStepIndex < totalSteps - 1\"\n        type=\"button\"\n        class=\"px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50\"\n        (click)=\"nextStep()\"\n      >\n        Next step \u2192\n      </button>\n\n      <!-- Review Button -->\n      <button\n        *ngIf=\"activeStepIndex === totalSteps - 1 && !isReviewed\"\n        type=\"button\"\n        class=\"px-3 py-1 border border-blue-600 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50\"\n        (click)=\"openReviewDialog()\"\n      >\n        Review Details\n      </button>\n    </div>\n\n    <div\n      *ngIf=\"submitFeedback\"\n      class=\"mt-3 p-3 rounded border text-sm\"\n      [ngClass]=\"\n        submitFeedback.type === 'success'\n          ? 'border-green-200 bg-green-50 text-green-700'\n          : 'border-red-200 bg-red-50 text-red-700'\n      \"\n    >\n      {{ submitFeedback.message }}\n    </div>\n\n    <ng-template #fieldRenderer let-field>\n      <amigo-field-renderer\n        [field]=\"field\"\n        [form]=\"form\"\n        [resolvedSchema]=\"resolvedSchema\"\n        [isSubmitting]=\"isSubmitting\"\n        [buttonLoading]=\"buttonLoading\"\n        [buttonFeedback]=\"buttonFeedback\"\n        [selectState]=\"selectState\"\n        (buttonClick)=\"onSchemaButtonClick($event)\"\n        (fileChange)=\"onFileChange($event.evt, $event.field)\"\n        (clearFile)=\"clearFiles($event.field, $event.inputEl)\"\n      ></amigo-field-renderer>\n    </ng-template>\n  </form>\n</div>\n\n<ng-template #reviewDialogTemplate>\n  <amigo-review-dialog\n    [reviewData]=\"reviewData\"\n    (close)=\"closeReviewDialog()\"\n    (confirm)=\"confirmReview()\"\n  ></amigo-review-dialog>\n</ng-template>\n", styles: [".amigo-loading{padding:12px;opacity:.85}.amigo-error{padding:12px;border:1px solid #ef4444;border-radius:8px;color:#ef4444}.amigo-form-root{width:100%;box-sizing:border-box}.amigo-header{margin-bottom:12px}.amigo-title{font-size:18px;font-weight:700}.amigo-desc{margin-top:4px;opacity:.8}.amigo-grid{width:100%}.amigo-field{display:block}.amigo-label{display:block;font-size:13px;margin-bottom:6px;font-weight:600}.amigo-required{color:#ef4444;margin-left:4px}.amigo-input{width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-size:14px}.amigo-hint{margin-top:6px;font-size:12px;opacity:.75}.amigo-field-error{margin-top:6px;font-size:12px;color:#ef4444}.amigo-checkbox{display:flex;align-items:center;gap:8px}.amigo-radio{display:flex;flex-direction:column;gap:6px}.amigo-radio-item{display:inline-flex;align-items:center;gap:8px}.amigo-section{margin-bottom:18px}.amigo-section-title{font-weight:700;margin-bottom:10px}.amigo-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}.amigo-btn{padding:8px 12px;border-radius:10px;border:1px solid #d1d5db;background:#fff;cursor:pointer}.amigo-primary{border-color:#111827;background:#111827;color:#fff}\n"] }]
-        }], ctorParameters: () => [{ type: i0.ChangeDetectorRef }, { type: i1$2.MatDialog }, { type: AmigoApiExecutionService }, { type: FormVisibilityService }, { type: FormSubmissionService }, { type: FormReviewService }, { type: FormSchemaManagerService }, { type: FormValueManagerService }, { type: FormStepSectionManagerService }, { type: FormSelectOptionsManagerService }], propDecorators: { formId: [{
+                    ], providers: [
+                        FormSchemaManagerService,
+                        FormStepSectionManagerService,
+                        FormValueManagerService,
+                        FormVisibilityService,
+                        FormSelectOptionsManagerService,
+                        FormReviewService,
+                        FormSubmissionService,
+                        FormCalculationManagerService
+                    ], template: "<div class=\"w-full h-full flex flex-col mb-6 overflow-auto\">\n  <div\n    *ngIf=\"isLoading\"\n    class=\"flex items-center justify-center p-6 text-sm text-gray-600\"\n  >\n    Loading form\u2026\n  </div>\n\n  <div\n    *ngIf=\"loadError\"\n    class=\"p-3 rounded border border-red-200 bg-red-50 text-red-700 text-sm\"\n  >\n    {{ loadError }}\n  </div>\n\n  <div\n    *ngIf=\"\n      !isLoading &&\n      !loadError &&\n      (!resolvedSchema?.fields || resolvedSchema.fields.length === 0)\n    \"\n    class=\"flex justify-center items-center h-100 border border-dotted border-gray-300 rounded-xl bg-white\"\n  >\n    <h2 class=\"text-sm text-gray-600\">No fields found for this form schema.</h2>\n  </div>\n\n  <form\n    *ngIf=\"!isLoading && !loadError && resolvedSchema?.fields?.length && form\"\n    [formGroup]=\"form\"\n    class=\"text-sm\"\n    [ngStyle]=\"getFormStyle()\"\n    [ngClass]=\"resolvedSchema?.style?.formClass || ''\"\n    (ngSubmit)=\"submit()\"\n  >\n    <h2 class=\"text-2xl my-2\">{{ resolvedSchema.name }}</h2>\n\n    <p\n      *ngIf=\"resolvedSchema.description\"\n      class=\"text-[13px] text-gray-500 mb-4\"\n    >\n      {{ resolvedSchema.description }}\n    </p>\n\n    <amigo-stepper\n      *ngIf=\"isMultiStep\"\n      [orderedSteps]=\"orderedSteps\"\n      [activeStepIndex]=\"activeStepIndex\"\n      [totalSteps]=\"totalSteps\"\n      [visibleFieldsCount]=\"visibleFields.length\"\n      (stepChanged)=\"setActiveStep($event)\"\n    ></amigo-stepper>\n\n    <div *ngIf=\"isSectional; else normalOrMulti\">\n      <div *ngFor=\"let sec of orderedSections\" class=\"mb-6 bg-white border border-gray-200 rounded-lg p-5 shadow-sm\">\n        <div\n          class=\"flex items-center justify-between mb-4 border-b border-gray-100 pb-3\"\n        >\n          <h3 class=\"text-sm font-semibold text-gray-800\">\n            {{ sec.label }}\n          </h3>\n          <span\n            class=\"text-[11px] text-gray-500 bg-gray-100 px-2 py-1 rounded\"\n            *ngIf=\"fieldsForSection(sec.id) as fields\"\n          >\n            {{ fields.length }} {{ fields.length === 1 ? \"field\" : \"fields\" }}\n          </span>\n        </div>\n\n        <div\n          class=\"grid\"\n          [ngStyle]=\"{\n            'grid-template-columns':\n              'repeat(' +\n              (resolvedSchema.layout?.columns || 1) +\n              ', minmax(0, 1fr))',\n            'column-gap': (resolvedSchema.spacing?.gapX ?? 12) + 'px',\n            'row-gap': (resolvedSchema.spacing?.gapY ?? 12) + 'px',\n          }\"\n        >\n          <div\n            *ngFor=\"\n              let field of fieldsForSection(sec.id);\n              trackBy: trackByFieldId\n            \"\n            [ngStyle]=\"{ 'grid-column': 'span ' + (field.colSpan || 1) }\"\n            [ngClass]=\"resolvedSchema.style?.fieldWrapperClass || 'mb-3'\"\n          >\n            <ng-container\n              *ngTemplateOutlet=\"fieldRenderer; context: { $implicit: field }\"\n            ></ng-container>\n          </div>\n        </div>\n\n        <div\n          *ngIf=\"fieldsForSection(sec.id).length === 0\"\n          class=\"text-xs text-gray-400 mt-2 italic\"\n        >\n          No fields in this section yet.\n        </div>\n      </div>\n    </div>\n\n    <ng-template #normalOrMulti>\n      <ng-container *ngIf=\"isMultiStep && sectionsForActiveStep.length > 0; else flatGrid\">\n        <div *ngFor=\"let sec of sectionsForActiveStep\" class=\"mb-6 bg-white border border-gray-200 rounded-lg p-5 shadow-sm\">\n          <div class=\"flex items-center justify-between mb-4 border-b border-gray-100 pb-3\">\n            <h3 class=\"text-sm font-semibold text-gray-800\">{{ sec.label }}</h3>\n            <span class=\"text-[11px] text-gray-500 bg-gray-100 px-2 py-1 rounded\" *ngIf=\"fieldsForSectionInActiveStep(sec.id) as fields\">\n              {{ fields.length }} {{ fields.length === 1 ? \"field\" : \"fields\" }}\n            </span>\n          </div>\n\n          <div class=\"grid\" [ngStyle]=\"{ 'grid-template-columns': 'repeat(' + (resolvedSchema.layout?.columns || 1) + ', minmax(0, 1fr))', 'column-gap': (resolvedSchema.spacing?.gapX ?? 12) + 'px', 'row-gap': (resolvedSchema.spacing?.gapY ?? 12) + 'px' }\">\n            <div *ngFor=\"let field of fieldsForSectionInActiveStep(sec.id); trackBy: trackByFieldId\" [ngStyle]=\"{ 'grid-column': 'span ' + (field.colSpan || 1) }\" [ngClass]=\"resolvedSchema.style?.fieldWrapperClass || 'mb-3'\">\n              <ng-container *ngTemplateOutlet=\"fieldRenderer; context: { $implicit: field }\"></ng-container>\n            </div>\n          </div>\n        </div>\n\n        <!-- Render unsectioned fields at the bottom -->\n        <div *ngIf=\"unsectionedFieldsForActiveStep.length > 0\" class=\"mt-4 border-t border-gray-200 pt-4 grid\" [ngStyle]=\"{ 'grid-template-columns': 'repeat(' + (resolvedSchema.layout?.columns || 1) + ', minmax(0, 1fr))', 'column-gap': (resolvedSchema.spacing?.gapX ?? 12) + 'px', 'row-gap': (resolvedSchema.spacing?.gapY ?? 12) + 'px' }\">\n          <div *ngFor=\"let field of unsectionedFieldsForActiveStep; trackBy: trackByFieldId\" [ngStyle]=\"{ 'grid-column': 'span ' + (field.colSpan || 1) }\" [ngClass]=\"resolvedSchema.style?.fieldWrapperClass || 'mb-3'\">\n            <ng-container *ngTemplateOutlet=\"fieldRenderer; context: { $implicit: field }\"></ng-container>\n          </div>\n        </div>\n      </ng-container>\n\n      <ng-template #flatGrid>\n        <div class=\"grid\" [ngStyle]=\"{ 'grid-template-columns': 'repeat(' + (resolvedSchema.layout?.columns || 1) + ', minmax(0, 1fr))', 'column-gap': (resolvedSchema.spacing?.gapX ?? 12) + 'px', 'row-gap': (resolvedSchema.spacing?.gapY ?? 12) + 'px' }\">\n          <div *ngFor=\"let field of visibleFields; trackBy: trackByFieldId\" [ngStyle]=\"{ 'grid-column': 'span ' + (field.colSpan || 1) }\" [ngClass]=\"resolvedSchema.style?.fieldWrapperClass || 'mb-3'\">\n            <ng-container *ngTemplateOutlet=\"fieldRenderer; context: { $implicit: field }\"></ng-container>\n          </div>\n        </div>\n      </ng-template>\n    </ng-template>\n\n    <div\n      *ngIf=\"isMultiStep\"\n      class=\"mt-4 flex items-center justify-between text-xs w-full\"\n    >\n      <!-- Previous Step Button / Placeholder -->\n      <button\n        *ngIf=\"activeStepIndex > 0\"\n        type=\"button\"\n        class=\"px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50\"\n        (click)=\"prevStep()\"\n      >\n        \u2190 Previous step\n      </button>\n      <div *ngIf=\"activeStepIndex === 0\"></div>\n\n      <!-- Next Step Button -->\n      <button\n        *ngIf=\"activeStepIndex < totalSteps - 1\"\n        type=\"button\"\n        class=\"px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50\"\n        (click)=\"nextStep()\"\n      >\n        Next step \u2192\n      </button>\n\n      <!-- Review Button -->\n      <button\n        *ngIf=\"activeStepIndex === totalSteps - 1 && !isReviewed\"\n        type=\"button\"\n        class=\"px-3 py-1 border border-blue-600 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50\"\n        (click)=\"openReviewDialog()\"\n      >\n        Review Details\n      </button>\n    </div>\n\n    <div\n      *ngIf=\"submitFeedback\"\n      class=\"mt-3 p-3 rounded border text-sm\"\n      [ngClass]=\"\n        submitFeedback.type === 'success'\n          ? 'border-green-200 bg-green-50 text-green-700'\n          : 'border-red-200 bg-red-50 text-red-700'\n      \"\n    >\n      {{ submitFeedback.message }}\n    </div>\n\n    <ng-template #fieldRenderer let-field>\n      <amigo-field-renderer\n        [field]=\"field\"\n        [form]=\"form\"\n        [resolvedSchema]=\"resolvedSchema\"\n        [isSubmitting]=\"isSubmitting\"\n        [buttonLoading]=\"buttonLoading\"\n        [buttonFeedback]=\"buttonFeedback\"\n        [selectState]=\"selectState\"\n        (buttonClick)=\"onSchemaButtonClick($event)\"\n        (fileChange)=\"onFileChange($event.evt, $event.field)\"\n        (clearFile)=\"clearFiles($event.field, $event.inputEl)\"\n      ></amigo-field-renderer>\n    </ng-template>\n  </form>\n</div>\n\n<ng-template #reviewDialogTemplate>\n  <amigo-review-dialog\n    [reviewData]=\"reviewData\"\n    (close)=\"closeReviewDialog()\"\n    (confirm)=\"confirmReview()\"\n  ></amigo-review-dialog>\n</ng-template>\n", styles: [".amigo-loading{padding:12px;opacity:.85}.amigo-error{padding:12px;border:1px solid #ef4444;border-radius:8px;color:#ef4444}.amigo-form-root{width:100%;box-sizing:border-box}.amigo-header{margin-bottom:12px}.amigo-title{font-size:18px;font-weight:700}.amigo-desc{margin-top:4px;opacity:.8}.amigo-grid{width:100%}.amigo-field{display:block}.amigo-label{display:block;font-size:13px;margin-bottom:6px;font-weight:600}.amigo-required{color:#ef4444;margin-left:4px}.amigo-input{width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-size:14px}.amigo-hint{margin-top:6px;font-size:12px;opacity:.75}.amigo-field-error{margin-top:6px;font-size:12px;color:#ef4444}.amigo-checkbox{display:flex;align-items:center;gap:8px}.amigo-radio{display:flex;flex-direction:column;gap:6px}.amigo-radio-item{display:inline-flex;align-items:center;gap:8px}.amigo-section{margin-bottom:18px}.amigo-section-title{font-weight:700;margin-bottom:10px}.amigo-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}.amigo-btn{padding:8px 12px;border-radius:10px;border:1px solid #d1d5db;background:#fff;cursor:pointer}.amigo-primary{border-color:#111827;background:#111827;color:#fff}\n"] }]
+        }], ctorParameters: () => [{ type: i0.ChangeDetectorRef }, { type: i1$2.MatDialog }, { type: AmigoApiExecutionService }, { type: FormVisibilityService }, { type: FormSubmissionService }, { type: FormReviewService }, { type: FormSchemaManagerService }, { type: FormValueManagerService }, { type: FormStepSectionManagerService }, { type: FormSelectOptionsManagerService }, { type: FormCalculationManagerService }], propDecorators: { formId: [{
                 type: Input
             }], schema: [{
                 type: Input
