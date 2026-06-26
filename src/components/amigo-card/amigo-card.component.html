@@ -1,0 +1,22 @@
+<div [ngStyle]="cardStyle()" class="w-full flex items-start gap-3">
+  <div
+    class="shrink-0 mt-0.5 text-lg leading-none"
+    [ngStyle]="cardIconStyle()"
+  >
+    <i
+      *ngIf="isBootstrapIcon(cardIcon())"
+      [class]="cardIcon()"
+    ></i>
+    <span *ngIf="!isBootstrapIcon(cardIcon())">{{ cardIcon() }}</span>
+  </div>
+
+  <div class="min-w-0">
+    <div class="text-sm font-semibold leading-tight">
+      {{ cardTitle() }}
+    </div>
+
+    <div *ngIf="cardBody()" class="mt-1 text-xs opacity-90">
+      {{ cardBody() }}
+    </div>
+  </div>
+</div>

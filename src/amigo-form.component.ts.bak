@@ -1,0 +1,1009 @@
+import {
+  ChangeDetectorRef,
+  Component,
+  EventEmitter,
+  Input,
+  NgZone,
+  OnChanges,
+  Output,
+  SimpleChanges,
+  ViewChild,
+  TemplateRef,
+} from "@angular/core";
+import { CommonModule } from "@angular/common";
+import {
+  ReactiveFormsModule,
+  FormGroup,
+  AbstractControl,
+} from "@angular/forms";
+import { MatDialogModule, MatDialog } from "@angular/material/dialog";
+import { Subscription } from "rxjs";
+import { finalize } from "rxjs/operators";
+import {
+  FormSchema,
+  FormFieldSchema,
+  FormType,
+  FormActionSchema,
+  ActionApiConfig,
+  DependentSelectConfig,
+} from "./models";
+import { AmigoFormService } from "./amigo-form.service";
+import { buildFormGroup, normalizeAccept } from "./form-group.builder";
+import { AmigoApiExecutionService } from "./amigo-api-execution.service";
+import { AmigoSelectOptionsService } from "./amigo-select-options.service";
+@Component({
+  selector: "amigo-form",
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, MatDialogModule],
+  templateUrl: "./amigo-form.component.html",
+  styleUrl: "./amigo-form.component.css",
+})
+export class AmigoFormComponent implements OnChanges {
+  @Input() formId?: string;
+  @Input() schema?: FormSchema;
+  @Input() initialValue?: Record<string, any>;
+  @Input() submitPathParams?: Record<string, any>;
+  @Input() submitQueryParams?: Record<string, any>;
+
+  @Output() submitted = new EventEmitter<any>();
+
+  @Output() submitFailed = new EventEmitter<any>();
+
+  isLoading = false;
+  loadError: string | null = null;
+
+  @Input() isSubmitting = false;
+
+  resolvedSchema: any | null = null;
+  form: FormGroup | null = null;
+
+  activeStepIndex = 0;
+  submitLoading = false;
+  submitFeedback?: { type: "success" | "error"; message: string };
+  isSubmitHovered = false;
+  hoverState: Record<string, boolean> = {};
+  selectState: Record<
+    string,
+    { loading: boolean; error?: string; options: any[] }
+  > = {};
+  buttonLoading: Record<string, boolean> = {};
+  buttonFeedback: Record<
+    string,
+    { type: "success" | "error"; message: string }
+  > = {};
+
+  showReviewDialog = false;
+  isReviewed = false;
+  @ViewChild('reviewDialogTemplate') reviewDialogTemplate!: TemplateRef<any>;
+
+  private visibilitySub?: Subscription;
+  private visibilityState: Record<string, boolean> = {};
+  private visibilityUpdating = false;
+  private cascadingSubs: Subscription[] = [];
+
+  constructor(
+    private formService: AmigoFormService,
+    private cdr: ChangeDetectorRef,
+    private zone: NgZone,
+    private apiExec: AmigoApiExecutionService,
+    private selectOptions: AmigoSelectOptionsService,
+    private dialog: MatDialog,
+  ) {}
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes["schema"] || changes["formId"]) {
+      this.init();
+    }
+    if (changes["initialValue"] && this.resolvedSchema) {
+      this.form = buildFormGroup(
+        this.resolvedSchema!.fields,
+        this.initialValue,
+      );
+    }
+  }
+
+  private init(): void {
+    this.loadError = null;
+
+    if (this.schema) {
+      this.applySchema(this.schema as any);
+      return;
+    }
+
+    if (!this.formId) {
+      this.resolvedSchema = null;
+      this.form = null;
+      this.loadError = "No schema or formId provided.";
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.isLoading = true;
+    this.cdr.detectChanges(); //  ensure UI shows loading immediately
+
+    this.formService.getFormSchemaById(this.formId).subscribe({
+      next: (res: any) => {
+        this.zone.run(() => {
+          this.applySchema(res?.form_data ?? res);
+          this.isLoading = false;
+          this.cdr.detectChanges(); //  render immediately
+        });
+      },
+      error: (e) => {
+        this.zone.run(() => {
+          this.isLoading = false;
+          this.loadError = e?.message ?? "Failed to load form schema";
+          this.cdr.detectChanges();
+        });
+      },
+    });
+  }
+
+  private preloadApiSelectOptions(): void {
+    const fields = this.resolvedSchema?.fields ?? [];
+    const formValue = this.normalizeFormValue();
+
+    for (const f of fields) {
+      if (f.type !== "select") continue;
+      if (f.optionsSource?.mode !== "API") continue;
+      if (f.dependentSelect) continue; // skip child selects — they load via parent
+
+      this.selectState[f.id] = { loading: true, options: [] };
+
+      this.selectOptions.load(f, formValue).subscribe({
+        next: (opts) => {
+          this.selectState[f.id] = { loading: false, options: opts };
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.selectState[f.id] = {
+            loading: false,
+            error: "Failed to load options.",
+            options: [],
+          };
+          this.cdr.detectChanges();
+        },
+      });
+    }
+  }
+
+  private applySchema(raw: any): void {
+    const s: any = typeof raw === "string" ? JSON.parse(raw) : raw;
+    const formType: FormType = (s?.formType ?? "single") as FormType;
+
+    const fields = (s?.fields ?? []).map((f: any) => {
+      if (f?.type === "file")
+        return { ...f, accept: normalizeAccept(f.accept) };
+      return f;
+    });
+
+    this.resolvedSchema = {
+      ...s,
+      formType,
+      layout: s?.layout ?? { rows: 1, columns: 1 },
+      fields,
+      steps: s?.steps ?? [],
+      sections: s?.sections ?? [],
+      spacing: s?.spacing ?? {},
+      style: s?.style ?? {},
+      actions: s?.actions ?? {},
+    };
+
+    this.activeStepIndex = 0;
+    this.isReviewed = false;
+    this.form = buildFormGroup(this.resolvedSchema!.fields, this.initialValue);
+    this.patchInitialValue();
+    this.setupVisibility();
+    this.preloadApiSelectOptions();
+    this.setupCascadingSelects();
+  }
+
+  private setupCascadingSelects(): void {
+    // Clean up old subscriptions
+    this.cascadingSubs.forEach((s) => s.unsubscribe());
+    this.cascadingSubs = [];
+
+    const fields = this.resolvedSchema?.fields ?? [];
+    const childFields = fields.filter(
+      (f: any) => f.type === "select" && f.dependentSelect,
+    );
+
+    for (const child of childFields as any[]) {
+      const dep: DependentSelectConfig = child.dependentSelect;
+      const parentField = fields.find((f: any) => f.id === dep.parentFieldId);
+      if (!parentField) continue;
+
+      const parentKey = this.controlKey(parentField);
+      const parentCtrl = this.form?.get(parentKey);
+      if (!parentCtrl) continue;
+
+      // Initialize child as empty
+      this.selectState[child.id] = { loading: false, options: [] };
+
+      const sub = parentCtrl.valueChanges.subscribe((parentValue: any) => {
+        this.updateChildOptions(child, dep, parentValue);
+      });
+      this.cascadingSubs.push(sub);
+
+      // If parent already has a value, populate child immediately
+      const currentParentValue = parentCtrl.value;
+      if (currentParentValue) {
+        this.updateChildOptions(child, dep, currentParentValue);
+      }
+    }
+  }
+
+  private updateChildOptions(
+    child: any,
+    dep: DependentSelectConfig,
+    parentValue: any,
+  ): void {
+    const childKey = this.controlKey(child);
+    const childCtrl = this.form?.get(childKey);
+
+    if (!parentValue || parentValue === "") {
+      this.selectState[child.id] = { loading: false, options: [] };
+      if (childCtrl) {
+        childCtrl.setValue("", { emitEvent: false });
+      }
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Get the parent's raw response
+    const rawResponse = this.selectOptions.getRawResponse(dep.parentFieldId);
+    if (!rawResponse) {
+      this.selectState[child.id] = { loading: false, options: [] };
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Find the parent field to determine its response mapping
+    const fields = this.resolvedSchema?.fields ?? [];
+    const parentField = fields.find((f: any) => f.id === dep.parentFieldId);
+    const parentApi = parentField?.optionsSource?.api;
+    const parentDataPath = parentApi?.responseMapping?.dataPath;
+    const parentValueKey = parentApi?.responseMapping?.valueKey || "value";
+
+    // Get the array of parent items from the raw response
+    let parentItems: any[];
+    if (parentDataPath) {
+      parentItems = this.getByPath(rawResponse, parentDataPath);
+    } else {
+      parentItems = rawResponse;
+    }
+
+    if (!Array.isArray(parentItems)) {
+      this.selectState[child.id] = { loading: false, options: [] };
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Find the selected parent item
+    const selectedParent = parentItems.find(
+      (item: any) => String(item?.[parentValueKey]) === String(parentValue),
+    );
+
+    if (!selectedParent) {
+      this.selectState[child.id] = { loading: false, options: [] };
+      if (childCtrl) {
+        childCtrl.setValue("", { emitEvent: false });
+      }
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Extract child items from the parent item
+    const childItems = this.getByPath(selectedParent, dep.childDataPath);
+    const childOptions = Array.isArray(childItems)
+      ? childItems
+          .map((item: any) => ({
+            label: String(item?.[dep.labelKey] ?? ""),
+            value: item?.[dep.valueKey],
+          }))
+          .filter((o: any) => o.label !== "" && o.value !== undefined)
+      : [];
+
+    this.selectState[child.id] = { loading: false, options: childOptions };
+
+    // Reset child value since parent changed
+    if (childCtrl) {
+      childCtrl.setValue("", { emitEvent: false });
+    }
+    this.cdr.detectChanges();
+  }
+
+  private getByPath(obj: any, path: string): any {
+    if (!obj || !path) return obj;
+    return path
+      .split(".")
+      .reduce((acc, k) => (acc == null ? undefined : acc[k]), obj);
+  }
+
+  isCard(field: FormFieldSchema | any): boolean {
+    const t = (field as any)?.type;
+    return t === "card" || t === "info-card";
+  }
+
+  cardIcon(field: any): string {
+    return field?.card?.icon || "";
+  }
+
+  cardTitle(field: any): string {
+    return field?.card?.title || field?.label || "Info";
+  }
+
+  cardBody(field: any): string {
+    return field?.card?.body || "";
+  }
+
+  cardStyle(field: any): Record<string, any> {
+    const cs = field?.card?.style ?? {};
+    const borderWidth = cs.borderWidth ?? 1;
+    const borderRadius = cs.borderRadius ?? 12;
+    const borderColor = cs.borderColor ?? "#BBF7D0";
+    const backgroundColor = cs.backgroundColor ?? "#F0FDF4";
+    const textColor = cs.textColor ?? "#166534";
+
+    return {
+      borderStyle: "solid",
+      borderWidth: `${borderWidth}px`,
+      borderColor,
+      borderRadius: `${borderRadius}px`,
+      backgroundColor,
+      color: textColor,
+      padding: "12px",
+      display: "flex",
+      gap: "12px",
+      alignItems: "flex-start",
+    };
+  }
+
+  cardIconStyle(field: any): Record<string, any> {
+    const cs = field?.card?.style ?? {};
+    const textColor = cs.textColor ?? "#166534";
+    return {
+      color: cs.iconColor ?? textColor,
+      fontSize: "18px",
+      lineHeight: "1",
+      marginTop: "2px",
+    };
+  }
+
+  controlKey(field: any): string {
+    return field?.name ?? field?.id;
+  }
+
+  ctrl(field: any): AbstractControl | null {
+    return this.form?.get(this.controlKey(field)) ?? null;
+  }
+
+  showError(field: any): boolean {
+    const c = this.ctrl(field);
+    return !!(c && c.invalid && (c.touched || c.dirty));
+  }
+
+  onFileChange(evt: Event, field: FormFieldSchema): void {
+    const input = evt.target as HTMLInputElement;
+    const files = input?.files ? Array.from(input.files) : [];
+
+    const key = this.controlKey(field);
+    const c = this.form?.get(key);
+    if (!c) return;
+
+    let normalized = field.multiple ? files : files.slice(0, 1);
+
+    if (typeof field.maxFiles === "number" && field.maxFiles > 0) {
+      normalized = normalized.slice(0, field.maxFiles);
+    }
+
+    c.setValue(field.multiple ? normalized : (normalized[0] ?? null));
+    c.markAsTouched();
+    c.updateValueAndValidity();
+  }
+
+  fileNames(field: FormFieldSchema): string[] {
+    const v = this.ctrl(field)?.value;
+    if (!v) return [];
+    if (Array.isArray(v)) return v.map((f: File) => f?.name).filter(Boolean);
+    if (v instanceof File) return [v.name];
+    if (typeof FileList !== "undefined" && v instanceof FileList) {
+      return Array.from(v)
+        .map((f) => f?.name)
+        .filter(Boolean);
+    }
+    return [];
+  }
+
+  clearFiles(field: FormFieldSchema, inputEl: HTMLInputElement): void {
+    const c = this.ctrl(field);
+    if (!c) return;
+    c.setValue(null);
+    c.markAsTouched();
+    c.updateValueAndValidity();
+    if (inputEl) inputEl.value = "";
+  }
+
+  trackByFieldId = (_: number, field: any) => field?.id ?? field?.name ?? _;
+
+  get orderedSteps() {
+    const s = this.resolvedSchema;
+    return [...(s?.steps ?? [])].sort(
+      (a, b) => (a?.order ?? 0) - (b?.order ?? 0),
+    );
+  }
+
+  get totalSteps(): number {
+    return this.orderedSteps.length;
+  }
+
+  get isMultiStep(): boolean {
+    return this.resolvedSchema?.formType === "multi" && this.totalSteps > 0;
+  }
+
+  get visibleFields(): FormFieldSchema[] {
+    return this.fieldsForStep(this.activeStepIndex);
+  }
+
+  fieldsForStep(index: number): FormFieldSchema[] {
+    const s = this.resolvedSchema;
+    if (!s) return [];
+
+    if (s.formType === "multi" && this.totalSteps > 0) {
+      if (index < 0 || index >= this.totalSteps) return [];
+      const step = this.orderedSteps[index];
+      const ids = new Set(step?.fieldIds ?? []);
+      if (!ids.size) return [];
+      return (s.fields ?? [])
+        .filter((f: any) => ids.has(f.id))
+        .filter((f: any) => this.isFieldVisible(f));
+    }
+
+    return (s.fields ?? []).filter((f: any) => this.isFieldVisible(f));
+  }
+
+  get orderedSections() {
+    const s = this.resolvedSchema;
+    if (!s || s.formType !== "single-sectional") return [];
+    return [...(s.sections ?? [])].sort(
+      (a, b) => (a?.order ?? 0) - (b?.order ?? 0),
+    );
+  }
+
+  get isSectional(): boolean {
+    return (
+      this.resolvedSchema?.formType === "single-sectional" &&
+      this.orderedSections.length > 0
+    );
+  }
+
+  fieldsForSection(sectionId: string): FormFieldSchema[] {
+    const s = this.resolvedSchema;
+    if (!s) return [];
+    const section = (s.sections ?? []).find((x: any) => x.id === sectionId);
+    const ids = new Set(section?.fieldIds ?? []);
+    return (s.fields ?? [])
+      .filter((f: any) => ids.has(f.id))
+      .filter((f: any) => this.isFieldVisible(f));
+  }
+
+  setActiveStep(i: number) {
+    if (i < 0 || i >= this.totalSteps) return;
+    if (i === this.activeStepIndex) return;
+
+    if (i > this.activeStepIndex) {
+      // Validate all steps from 0 up to i-1
+      for (let stepIdx = 0; stepIdx < i; stepIdx++) {
+        const fields = this.fieldsForStep(stepIdx);
+        this.touchFields(fields);
+        if (this.hasErrors(fields)) {
+          this.activeStepIndex = stepIdx;
+          return;
+        }
+      }
+    }
+    this.activeStepIndex = i;
+  }
+
+  prevStep(): void {
+    this.setActiveStep(this.activeStepIndex - 1);
+  }
+
+  nextStep(): void {
+    this.setActiveStep(this.activeStepIndex + 1);
+  }
+
+  async submit(triggerField?: any): Promise<void> {
+    if (!this.resolvedSchema || !this.form) return;
+
+    this.submitFeedback = undefined;
+
+    let btnField = triggerField;
+    if (!btnField && this.resolvedSchema.fields) {
+      btnField = this.resolvedSchema.fields.find((f: any) => f.type === 'button' && f.button?.isSubmit);
+    }
+
+    const btn = btnField?.button;
+    const triggerValidation = btn?.triggerValidation !== false;
+
+    if (triggerValidation) {
+      this.form.markAllAsTouched();
+      if (this.form.invalid) return;
+    }
+
+    const formValue = this.normalizeFormValue();
+    const location = await this.getCaptureLocation();
+    (formValue as any).geo_location = location;
+    const endpoint = btn?.api;
+
+    if (!btnField || !endpoint || !endpoint.url) {
+      this.submitted.emit(formValue);
+      return;
+    }
+
+    this.isSubmitting = true;
+
+    // For isSubmit: true, we send the entire form data as body, bypassing bodyMapping
+    const apiConfig = { ...endpoint, bodyMapping: null };
+
+    this.apiExec
+      .execute(apiConfig, {
+        formValue,
+        pathParams: this.submitPathParams,
+        queryParams: this.submitQueryParams,
+      })
+      .pipe(finalize(() => (this.isSubmitting = false)))
+      .subscribe({
+        next: (res) => {
+          this.submitFeedback = {
+            type: "success",
+            message: btn.successMessage || "Submitted successfully.",
+          };
+
+          this.submitted.emit({
+            url: apiConfig.url,
+            method: apiConfig.method || 'POST',
+            payload: formValue,
+            headers: apiConfig.headers || [],
+            params: apiConfig.queryParams || [],
+            response: res,
+          });
+        },
+        error: (err) => {
+          this.submitFeedback = {
+            type: "error",
+            message:
+              btn.errorMessage ||
+              err?.error?.message ||
+              err?.message ||
+              "Failed to submit. Please try again.",
+          };
+          this.submitFailed.emit(err);
+        },
+      });
+  }
+
+  private touchFields(fields: FormFieldSchema[]): void {
+    if (!this.form) return;
+    for (const f of fields as any[]) {
+      if (this.isNonInput(f)) continue;
+      if (!this.isFieldVisible(f)) continue;
+      const c = this.form.get(this.controlKey(f));
+      if (!c || c.disabled) continue;
+      c.markAsTouched();
+      c.updateValueAndValidity({ emitEvent: false });
+    }
+  }
+
+  private hasErrors(fields: FormFieldSchema[]): boolean {
+    if (!this.form) return true;
+    return (fields as any[])
+      .filter((f) => !this.isNonInput(f))
+      .filter((f) => this.isFieldVisible(f))
+      .some((f) => {
+        const c = this.form!.get(this.controlKey(f));
+        return !!(c && c.enabled && c.invalid);
+      });
+  }
+
+  getFormStyle(): Record<string, any> {
+    const sp: any = this.resolvedSchema?.spacing ?? {};
+    const st: any = this.resolvedSchema?.style ?? {};
+
+    return {
+      marginTop: px(sp.marginTop),
+      marginRight: px(sp.marginRight),
+      marginBottom: px(sp.marginBottom),
+      marginLeft: px(sp.marginLeft),
+      paddingTop: px(sp.paddingTop),
+      paddingRight: px(sp.paddingRight),
+      paddingBottom: px(sp.paddingBottom),
+      paddingLeft: px(sp.paddingLeft),
+      backgroundColor: st.backgroundColor ?? null,
+      color: st.textColor ?? null,
+      borderStyle: st.borderWidth ? "solid" : null,
+      borderWidth: st.borderWidth ? px(st.borderWidth) : null,
+      borderColor: st.borderColor ?? null,
+      borderRadius: st.borderRadius ? px(st.borderRadius) : null,
+    };
+  }
+
+
+
+  isBootstrapIcon(icon: string | null | undefined): boolean {
+    const v = (icon || "").trim();
+    return v.startsWith("bi ") || v.startsWith("bi-") || v.includes(" bi-");
+  }
+
+
+
+  private isEmptyInput(v: any): boolean {
+    return v === "" || v === null || v === undefined;
+  }
+
+  private resolveEmptyValue(field: any): any {
+    const mode = field?.emptyValue;
+    if (mode === "null") return null;
+    if (mode === "undefined") return undefined;
+    if (mode === "empty_string") return "";
+    // default: null for numbers, empty string for everything else
+    return field?.type === "number" ? null : "";
+  }
+
+  private patchInitialValue(): void {
+    if (!this.form || !this.resolvedSchema || !this.initialValue) return;
+
+    const patch: Record<string, any> = {};
+    const inputFields = (this.resolvedSchema.fields ?? []).filter(
+      (f: any) => !this.isCard(f),
+    );
+
+    for (const field of inputFields) {
+      const key = this.controlKey(field);
+
+      const incoming =
+        this.initialValue[key] ??
+        (field?.name ? this.initialValue[field.name] : undefined) ??
+        (field?.id ? this.initialValue[field.id] : undefined);
+
+      if (incoming === undefined) continue;
+
+      if (field.type === "file") {
+        continue;
+      }
+
+      if (field.type === "number") {
+        patch[key] =
+          incoming === "" || incoming === null ? null : Number(incoming);
+        continue;
+      }
+
+      if (field.type === "checkbox") {
+        patch[key] =
+          incoming === true ||
+          incoming === "true" ||
+          incoming === 1 ||
+          incoming === "1";
+        continue;
+      }
+
+      if (field.type === "date" && incoming) {
+        patch[key] = String(incoming).slice(0, 10);
+        continue;
+      }
+
+      patch[key] = incoming;
+    }
+
+    this.form.patchValue(patch, { emitEvent: false });
+
+    this.form.markAsPristine();
+    this.form.markAsUntouched();
+  }
+
+  isButton(field: any): boolean {
+    return (field?.type ?? "") === "button";
+  }
+
+  private isNonInput(field: any): boolean {
+    const t = field?.type;
+    return t === "card" || t === "info-card" || t === "button";
+  }
+
+  private normalizeFormValue(): Record<string, any> {
+    if (!this.form) return {};
+    const raw = this.form.value;
+    const normalized: Record<string, any> = {};
+
+    for (const field of this.resolvedSchema?.fields ?? []) {
+      if (this.isNonInput(field)) continue;
+      const key = this.controlKey(field);
+      const value = raw[key];
+      if (field.type === "number") {
+        normalized[key] =
+          value === "" || value === undefined || value === null
+            ? this.resolveEmptyValue(field)
+            : Number(value);
+      } else if (this.isEmptyInput(value)) {
+        normalized[key] = this.resolveEmptyValue(field);
+      } else {
+        normalized[key] = value;
+      }
+    }
+    return normalized;
+  }
+
+  private getCaptureLocation(): Promise<{ lat: string; long: string }> {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve({ lat: "", long: "" });
+        return;
+      }
+
+      const timer = setTimeout(() => {
+        resolve({ lat: "", long: "" });
+      }, 2000);
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          clearTimeout(timer);
+          resolve({
+            lat: String(pos.coords.latitude),
+            long: String(pos.coords.longitude),
+          });
+        },
+        () => {
+          clearTimeout(timer);
+          resolve({ lat: "", long: "" });
+        },
+        { timeout: 2000, enableHighAccuracy: false },
+      );
+    });
+  }
+
+  private setupVisibility(): void {
+    this.visibilitySub?.unsubscribe();
+    if (!this.form || !this.resolvedSchema) return;
+    this.recomputeVisibility();
+    this.visibilitySub = this.form.valueChanges.subscribe(() => {
+      if (this.isReviewed) {
+        this.isReviewed = false;
+        this.cdr.detectChanges();
+      }
+      if (this.visibilityUpdating) return;
+      this.recomputeVisibility();
+    });
+  }
+
+  isFieldVisibleOriginal(field: any): boolean {
+    const rules = field?.visibility?.rules;
+    if (!rules || !rules.length) return true;
+    const key = field?.id || field?.name;
+    return this.visibilityState[key] !== false;
+  }
+
+  isFieldVisible(field: any): boolean {
+    const isSubmit = field?.type === 'button' && 
+      (field?.button?.isSubmit || field?.label?.toLowerCase().includes('submit'));
+    if (isSubmit) {
+      if (this.isMultiStep && !this.isReviewed) {
+        return false;
+      }
+    }
+    return this.isFieldVisibleOriginal(field);
+  }
+
+  private recomputeVisibility(): void {
+    if (!this.form || !this.resolvedSchema) return;
+    const raw = (this.form as any).getRawValue
+      ? (this.form as any).getRawValue()
+      : this.form.value;
+
+    this.visibilityUpdating = true;
+    try {
+      for (const f of this.resolvedSchema.fields as any[]) {
+        const visible = this.evaluateVisibility(f, raw);
+        const stateKey = f.id || f.name;
+        this.visibilityState[stateKey] = visible;
+
+        if (this.isNonInput(f)) continue;
+        const c = this.form.get(this.controlKey(f));
+        if (!c) continue;
+        if (!visible && c.enabled) c.disable({ emitEvent: false });
+        if (visible && c.disabled) c.enable({ emitEvent: false });
+      }
+    } finally {
+      this.visibilityUpdating = false;
+    }
+  }
+
+  private evaluateVisibility(field: any, raw: Record<string, any>): boolean {
+    const vis = field?.visibility;
+    const rules = vis?.rules ?? [];
+    if (!rules.length) return true;
+    const mode = String(vis?.mode || "ALL").toUpperCase();
+    const results = rules.map((r: any) => this.evaluateVisibilityRule(r, raw));
+    return mode === "ANY" ? results.some(Boolean) : results.every(Boolean);
+  }
+
+  private evaluateVisibilityRule(rule: any, raw: Record<string, any>): boolean {
+    const depKey = this.resolveDependsOnKey(rule?.dependsOn);
+    const v = raw?.[depKey];
+    const op = String(rule?.operator || "EQUALS").toUpperCase();
+    const cmp = rule?.value;
+
+    switch (op) {
+      case "CHECKED":
+        return v === true;
+      case "UNCHECKED":
+        return v !== true;
+      case "HAS_VALUE":
+        return !this.isEmptyValue(v);
+      case "NOT_HAS_VALUE":
+        return this.isEmptyValue(v);
+      case "IN":
+        return Array.isArray(cmp) ? cmp.includes(v) : false;
+      case "NOT_IN":
+        return Array.isArray(cmp) ? !cmp.includes(v) : true;
+      case "NOT_EQUALS":
+        return Array.isArray(v) ? !v.includes(cmp) : v !== cmp;
+      case "EQUALS":
+      default:
+        return Array.isArray(v) ? v.includes(cmp) : v === cmp;
+    }
+  }
+
+  private resolveDependsOnKey(dep: any): string {
+    const d = String(dep || "");
+    if (!d) return d;
+    if (this.form?.get(d)) return d;
+    const fields = (this.resolvedSchema?.fields ?? []) as any[];
+    const byId = fields.find((f) => f.id === d);
+    if (byId) return this.controlKey(byId);
+    const byName = fields.find((f) => f.name === d);
+    if (byName) return this.controlKey(byName);
+    return d;
+  }
+
+  private isEmptyValue(v: any): boolean {
+    if (v === null || v === undefined) return true;
+    if (typeof v === "string" && v.trim() === "") return true;
+    if (Array.isArray(v) && v.length === 0) return true;
+    return false;
+  }
+
+  onSchemaButtonClick(field: any): void {
+    const btn = field?.button;
+    if (btn?.styleVariant === 'link' && btn?.href) {
+      window.open(btn.href, '_blank');
+      return;
+    }
+    
+    const endpoint = btn?.api;
+    if (!btn || (btn.actionType === "API_CALL" && !endpoint?.url)) return;
+
+    const triggerValidation = btn.triggerValidation !== false;
+
+    if (triggerValidation) {
+      const scope = this.isMultiStep
+        ? this.visibleFields
+        : (this.resolvedSchema?.fields ?? []);
+      this.touchFields(scope.filter((f: any) => !this.isNonInput(f)));
+      if (this.hasErrors(scope.filter((f: any) => !this.isNonInput(f)))) return;
+    }
+
+    const formValue = this.normalizeFormValue();
+    this.buttonLoading[field.id] = true;
+    delete this.buttonFeedback[field.id];
+
+    this.apiExec
+      .execute(endpoint!, { formValue })
+      .pipe(finalize(() => (this.buttonLoading[field.id] = false)))
+      .subscribe({
+        next: (res) => {
+          this.buttonFeedback[field.id] = {
+            type: "success",
+            message: btn.successMessage || "Action completed successfully.",
+          };
+          
+          this.submitted.emit({
+            url: endpoint.url,
+            method: endpoint.method || 'POST',
+            payload: formValue,
+            headers: endpoint.headers || [],
+            params: endpoint.queryParams || [],
+            response: res,
+          });
+        },
+        error: (err) => {
+          this.buttonFeedback[field.id] = {
+            type: "error",
+            message:
+              btn.errorMessage ||
+              err?.error?.message ||
+              err?.message ||
+              "Action failed.",
+          };
+        },
+      });
+  }
+
+  openReviewDialog() {
+    const fields = this.fieldsForStep(this.activeStepIndex);
+    this.touchFields(fields);
+    if (this.hasErrors(fields)) return;
+    this.dialog.open(this.reviewDialogTemplate, {
+      width: '800px',
+      maxWidth: '90vw',
+      maxHeight: '90vh',
+      disableClose: true,
+      panelClass: 'amigo-review-dialog'
+    });
+  }
+
+  closeReviewDialog() {
+    this.dialog.closeAll();
+  }
+
+  confirmReview() {
+    this.isReviewed = true;
+    this.dialog.closeAll();
+  }
+
+  get reviewData() {
+    const data: { step: string, fields: { label: string, value: any }[] }[] = [];
+    if (this.isMultiStep) {
+      for (let i = 0; i < this.totalSteps; i++) {
+        const step = this.orderedSteps[i];
+        const stepFields = this.getFieldsForReview(step);
+        if (stepFields.length > 0) {
+          data.push({
+            step: step.label || `Step ${i + 1}`,
+            fields: stepFields
+          });
+        }
+      }
+    }
+    return data;
+  }
+
+  getFieldsForReview(step: any) {
+    const s = this.resolvedSchema;
+    if (!s) return [];
+    const ids = new Set(step?.fieldIds ?? []);
+    return (s.fields ?? [])
+      .filter((f: any) => ids.has(f.id) && !this.isNonInput(f) && this.isFieldVisibleOriginal(f))
+      .map((f: any) => {
+        return {
+          label: f.label,
+          value: this.getReviewValue(f)
+        };
+      });
+  }
+
+  getReviewValue(field: any): string {
+    const val = this.form?.get(this.controlKey(field))?.value;
+    if (val === null || val === undefined || val === '') return '-';
+    
+    if (field.type === 'select' || field.type === 'radio') {
+      const opts = field.optionsSource?.mode === 'API' ? this.selectState[field.id]?.options : field.options;
+      const selectedOpt = (opts || []).find((o: any) => String(o.value) === String(val));
+      return selectedOpt ? selectedOpt.label : val;
+    }
+    if (field.type === 'checkbox') {
+      return val ? 'Yes' : 'No';
+    }
+    if (field.type === 'file') {
+      const names = this.fileNames(field);
+      return names.length ? names.join(', ') : '-';
+    }
+    
+    return val;
+  }
+}
+
+function px(v: any): string | null {
+  if (v === undefined || v === null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? `${n}px` : null;
+}

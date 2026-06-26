@@ -1,0 +1,65 @@
+<ng-container *ngIf="isCard(); else notCard">
+  <amigo-card [field]="field"></amigo-card>
+</ng-container>
+
+<ng-template #notCard>
+  <ng-container *ngIf="isButton(); else inputGroup">
+    <amigo-button
+      [field]="field"
+      [resolvedSchema]="resolvedSchema"
+      [isSubmitting]="isSubmitting"
+      [buttonLoading]="buttonLoading"
+      [buttonFeedback]="buttonFeedback"
+      (buttonClick)="onButtonClickHandler($event)"
+    ></amigo-button>
+  </ng-container>
+
+  <ng-template #inputGroup>
+    <label
+      [ngClass]="
+        resolvedSchema?.style?.labelClass ||
+        'block text-sm font-medium mb-1'
+      "
+    >
+      {{ field.label }}
+      <span
+        *ngIf="
+          field.required === true ||
+          field.required === 'true' ||
+          field.validations?.required
+        "
+        class="text-red-500"
+        >*</span
+      >
+    </label>
+
+    <ng-container *ngIf="isSelectOrRadioOrCheckbox(); else fileOrInput">
+      <amigo-select
+        [field]="field"
+        [form]="form"
+        [resolvedSchema]="resolvedSchema"
+        [selectState]="selectState"
+      ></amigo-select>
+    </ng-container>
+    
+    <ng-template #fileOrInput>
+      <ng-container *ngIf="isFile(); else standardInput">
+        <amigo-file
+          [field]="field"
+          [form]="form"
+          [resolvedSchema]="resolvedSchema"
+          (fileChange)="onFileChangeHandler($event)"
+          (clearFile)="onClearFileHandler($event)"
+        ></amigo-file>
+      </ng-container>
+      
+      <ng-template #standardInput>
+        <amigo-input
+          [field]="field"
+          [form]="form"
+          [resolvedSchema]="resolvedSchema"
+        ></amigo-input>
+      </ng-template>
+    </ng-template>
+  </ng-template>
+</ng-template>

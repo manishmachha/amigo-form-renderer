@@ -1,0 +1,202 @@
+<ng-container [formGroup]="form">
+  <ng-container [ngSwitch]="field.type">
+    <ng-container *ngSwitchCase="'text'">
+      <input
+        type="text"
+        [placeholder]="field.placeholder"
+        [formControlName]="controlKey()"
+        [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
+        [ngClass]="
+          resolvedSchema?.style?.inputClass ||
+          'w-full border border-gray-300 rounded px-2 py-1 text-sm'
+        "
+      />
+
+      <div
+        *ngIf="showError()"
+        class="mt-1 text-[11px] text-red-600 space-y-0.5"
+      >
+        <div *ngIf="ctrl()?.errors?.['required']">
+          This field is required.
+        </div>
+        <div *ngIf="ctrl()?.errors?.['minlength']">
+          Minimum {{ field.validations?.minLength }} characters
+          required.
+        </div>
+        <div *ngIf="ctrl()?.errors?.['maxlength']">
+          Maximum {{ field.validations?.maxLength }} characters allowed.
+        </div>
+        <div *ngIf="ctrl()?.errors?.['pattern']">
+          Value does not match the required pattern.
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngSwitchCase="'password'">
+      <input
+        type="password"
+        [placeholder]="field.placeholder"
+        [formControlName]="controlKey()"
+        [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
+        [ngClass]="
+          resolvedSchema?.style?.inputClass ||
+          'w-full border border-gray-300 rounded px-2 py-1 text-sm'
+        "
+      />
+
+      <div
+        *ngIf="showError()"
+        class="mt-1 text-[11px] text-red-600 space-y-0.5"
+      >
+        <div *ngIf="ctrl()?.errors?.['required']">
+          This field is required.
+        </div>
+        <div *ngIf="ctrl()?.errors?.['minlength']">
+          Minimum {{ field.validations?.minLength }} characters
+          required.
+        </div>
+        <div *ngIf="ctrl()?.errors?.['maxlength']">
+          Maximum {{ field.validations?.maxLength }} characters allowed.
+        </div>
+        <div *ngIf="ctrl()?.errors?.['pattern']">
+          Value does not match the required pattern.
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngSwitchCase="'number'">
+      <input
+        type="number"
+        [placeholder]="field.placeholder"
+        [formControlName]="controlKey()"
+        [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
+        [ngClass]="
+          resolvedSchema?.style?.inputClass ||
+          'w-full border border-gray-300 rounded px-2 py-1 text-sm'
+        "
+      />
+
+      <div
+        *ngIf="showError()"
+        class="mt-1 text-[11px] text-red-600 space-y-0.5"
+      >
+        <div *ngIf="ctrl()?.errors?.['required']">
+          This field is required.
+        </div>
+        <div *ngIf="ctrl()?.errors?.['min']">
+          Value should be ≥ {{ field.validations?.min }}.
+        </div>
+        <div *ngIf="ctrl()?.errors?.['max']">
+          Value should be ≤ {{ field.validations?.max }}.
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngSwitchCase="'email'">
+      <input
+        type="email"
+        [placeholder]="field.placeholder"
+        [formControlName]="controlKey()"
+        [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
+        [ngClass]="
+          resolvedSchema?.style?.inputClass ||
+          'w-full border border-gray-300 rounded px-2 py-1 text-sm'
+        "
+      />
+
+      <div
+        *ngIf="showError()"
+        class="mt-1 text-[11px] text-red-600 space-y-0.5"
+      >
+        <div *ngIf="ctrl()?.errors?.['required']">
+          This field is required.
+        </div>
+        <div *ngIf="ctrl()?.errors?.['email']">
+          Please enter a valid email address.
+        </div>
+        <div *ngIf="ctrl()?.errors?.['minlength']">
+          Minimum {{ field.validations?.minLength }} characters
+          required.
+        </div>
+        <div *ngIf="ctrl()?.errors?.['maxlength']">
+          Maximum {{ field.validations?.maxLength }} characters allowed.
+        </div>
+        <div *ngIf="ctrl()?.errors?.['pattern']">
+          Value does not match the required pattern.
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngSwitchCase="'textarea'">
+      <textarea
+        [placeholder]="field.placeholder"
+        [formControlName]="controlKey()"
+        rows="4"
+        [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
+        [ngClass]="
+          resolvedSchema?.style?.inputClass ||
+          'w-full border border-gray-300 rounded px-2 py-1 text-sm'
+        "
+      ></textarea>
+
+      <div
+        *ngIf="showError()"
+        class="mt-1 text-[11px] text-red-600 space-y-0.5"
+      >
+        <div *ngIf="ctrl()?.errors?.['required']">
+          This field is required.
+        </div>
+        <div *ngIf="ctrl()?.errors?.['minlength']">
+          Minimum {{ field.validations?.minLength }} characters
+          required.
+        </div>
+        <div *ngIf="ctrl()?.errors?.['maxlength']">
+          Maximum {{ field.validations?.maxLength }} characters allowed.
+        </div>
+        <div *ngIf="ctrl()?.errors?.['pattern']">
+          Value does not match the required pattern.
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngSwitchCase="'date'">
+      <input
+        type="date"
+        [formControlName]="controlKey()"
+        [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
+        [ngClass]="
+          resolvedSchema?.style?.inputClass ||
+          'w-full border border-gray-300 rounded px-2 py-1 text-sm'
+        "
+      />
+
+      <div
+        *ngIf="showError()"
+        class="mt-1 text-[11px] text-red-600 space-y-0.5"
+      >
+        <div *ngIf="ctrl()?.errors?.['required']">
+          This field is required.
+        </div>
+        <div *ngIf="ctrl()?.errors?.['min']">
+          Date should be on or after {{ field.validations?.min }}.
+        </div>
+        <div *ngIf="ctrl()?.errors?.['max']">
+          Date should be on or before {{ field.validations?.max }}.
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngSwitchDefault>
+      <input
+        type="text"
+        [placeholder]="field.placeholder"
+        [formControlName]="controlKey()"
+        [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
+        [ngClass]="
+          resolvedSchema?.style?.inputClass ||
+          'w-full border border-gray-300 rounded px-2 py-1 text-sm'
+        "
+      />
+    </ng-container>
+  </ng-container>
+</ng-container>

@@ -1,0 +1,115 @@
+<ng-container [formGroup]="form">
+  <ng-container [ngSwitch]="field.type">
+    <ng-container *ngSwitchCase="'select'">
+      <select
+        [formControlName]="controlKey()"
+        [disabled]="selectState[field.id]?.loading ?? false"
+        [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
+        [ngClass]="
+          resolvedSchema?.style?.inputClass ||
+          'w-full border border-gray-300 rounded px-2 py-1 text-sm'
+        "
+      >
+        <option value="">Select an option</option>
+
+        <ng-container
+          *ngFor="
+            let opt of field.optionsSource?.mode === 'API'
+              ? selectState[field.id]?.options || []
+              : field.options || []
+          "
+        >
+          <option [value]="opt.value">{{ opt.label }}</option>
+        </ng-container>
+      </select>
+
+      <div
+        *ngIf="
+          field.optionsSource?.mode === 'API' &&
+          selectState[field.id]?.loading
+        "
+        class="mt-1 text-[11px] text-slate-500"
+      >
+        Loading options…
+      </div>
+
+      <div
+        *ngIf="
+          field.optionsSource?.mode === 'API' &&
+          selectState[field.id]?.error
+        "
+        class="mt-1 text-[11px] text-rose-600"
+      >
+        {{ selectState[field.id]?.error }}
+      </div>
+
+      <div
+        *ngIf="
+          field.optionsSource?.mode === 'API' &&
+          !selectState[field.id]?.loading &&
+          !selectState[field.id]?.error &&
+          (selectState[field.id]?.options?.length || 0) === 0
+        "
+        class="mt-1 text-[11px] text-slate-500"
+      >
+        No options available.
+      </div>
+
+      <div
+        *ngIf="showError()"
+        class="mt-1 text-[11px] text-red-600"
+      >
+        <div *ngIf="ctrl()?.errors?.['required']">
+          Please select an option.
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngSwitchCase="'checkbox'">
+      <div class="flex items-center gap-2">
+        <input type="checkbox" [formControlName]="controlKey()" />
+        <span class="text-xs text-gray-700">Check</span>
+      </div>
+
+      <div
+        *ngIf="showError()"
+        class="mt-1 text-[11px] text-red-600"
+      >
+        <div *ngIf="ctrl()?.errors?.['requiredTrue']">
+          Please check this box.
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngSwitchCase="'radio'">
+      <div
+        [ngClass]="
+          field.optionDirection === 'horizontal'
+            ? 'flex flex-row gap-4 items-center'
+            : 'flex flex-col gap-1'
+        "
+      >
+        <label
+          *ngFor="let opt of field.options || []"
+          class="inline-flex items-center gap-2 text-xs text-gray-700"
+        >
+          <input
+            type="radio"
+            [value]="opt.value"
+            [formControlName]="controlKey()"
+          />
+          <span>{{ opt.label }}</span>
+        </label>
+      </div>
+
+      <div
+        *ngIf="showError()"
+        class="mt-1 text-[11px] text-red-600"
+      >
+        <div *ngIf="ctrl()?.errors?.['required']">
+          Please choose an option.
+        </div>
+      </div>
+    </ng-container>
+  </ng-container>
+</ng-container>

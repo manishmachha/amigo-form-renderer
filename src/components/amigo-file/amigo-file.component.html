@@ -1,0 +1,71 @@
+<ng-container [formGroup]="form">
+  <div class="flex flex-col gap-2">
+    <div class="flex items-center gap-2">
+      <input
+        #fileInput
+        type="file"
+        [attr.accept]="field.accept || null"
+        [attr.multiple]="field.multiple ? '' : null"
+        (change)="onFileChangeHandler($event)"
+        (blur)="ctrl()?.markAsTouched()"
+        [style.borderRadius.px]="
+          resolvedSchema?.style?.borderRadius
+        "
+        [ngClass]="
+          resolvedSchema?.style?.inputClass ||
+          'w-full border border-gray-300 rounded px-2 py-1 text-sm'
+        "
+      />
+
+      <button
+        *ngIf="fileNames().length"
+        type="button"
+        class="px-2 py-1 text-[11px] border border-gray-300 rounded hover:bg-gray-100"
+        (click)="clearFileHandler(fileInput)"
+      >
+        Clear
+      </button>
+    </div>
+
+    <div class="text-[11px] text-gray-500">
+      <span *ngIf="field.accept">Allowed: {{ field.accept }}</span>
+      <span *ngIf="field.maxSizeMB">
+        • Max {{ field.maxSizeMB }}MB per file</span
+      >
+      <span *ngIf="field.maxFiles">
+        • Max {{ field.maxFiles }} file(s)</span
+      >
+    </div>
+
+    <div
+      *ngIf="fileNames().length"
+      class="text-[11px] text-gray-600"
+    >
+      Selected: {{ fileNames().join(", ") }}
+    </div>
+  </div>
+
+  <div
+    *ngIf="showError()"
+    class="mt-1 text-[11px] text-red-600 space-y-0.5"
+  >
+    <div *ngIf="ctrl()?.errors?.['required']">
+      This field is required.
+    </div>
+
+    <div *ngIf="ctrl()?.errors?.['maxFiles']">
+      You can upload up to
+      {{ ctrl()?.errors?.["maxFiles"]?.max }} file(s).
+    </div>
+
+    <div *ngIf="ctrl()?.errors?.['maxSizeMB']">
+      {{ ctrl()?.errors?.["maxSizeMB"]?.file }} is too large.
+      Max {{ ctrl()?.errors?.["maxSizeMB"]?.max }}MB.
+    </div>
+
+    <div *ngIf="ctrl()?.errors?.['accept']">
+      {{ ctrl()?.errors?.["accept"]?.file }} is not an allowed
+      file type.
+    </div>
+  </div>
+</ng-container>

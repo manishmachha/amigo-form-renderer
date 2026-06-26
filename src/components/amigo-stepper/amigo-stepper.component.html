@@ -1,0 +1,63 @@
+<div class="w-full mb-6 flex flex-col items-center my-3">
+  <div class="w-full h-1 bg-gray-200 rounded-full relative mb-6">
+    <div
+      class="h-1 rounded-full transition-all duration-300 bg-blue-600"
+      [ngStyle]="{
+        width: ((activeStepIndex + 1) / totalSteps) * 100 + '%'
+      }"
+    ></div>
+  </div>
+
+  <div class="flex items-center justify-between w-full">
+    <div
+      *ngFor="let step of orderedSteps; let i = index"
+      class="flex flex-col items-center cursor-pointer"
+      (click)="onStepClick(i)"
+    >
+      <div
+        class="w-10 h-10 flex items-center justify-center rounded-full border-2 transition-all duration-300"
+        [ngStyle]="
+          i === activeStepIndex
+            ? {
+                backgroundColor: '#2563eb',
+                borderColor: '#2563eb',
+                color: '#ffffff'
+              }
+            : {
+                backgroundColor: '#FFFFFF',
+                borderColor: '#9CA3AF',
+                color: '#374151'
+              }
+        "
+      >
+        <ng-container *ngIf="!step.icon">
+          {{ i + 1 }}
+        </ng-container>
+
+        <ng-container *ngIf="step.icon">
+          <i
+            [class]="step.icon"
+            class="text-lg"
+            [ngStyle]="
+              i === activeStepIndex
+                ? { color: '#ffffff' }
+                : { color: '#6B7280' }
+            "
+          >
+          </i>
+        </ng-container>
+      </div>
+
+      <div class="mt-2 text-xs text-gray-600 font-medium">
+        {{ step.label }}
+      </div>
+    </div>
+  </div>
+
+  <div
+    *ngIf="visibleFieldsCount === 0"
+    class="text-xs text-gray-500 my-5"
+  >
+    No fields assigned to this step yet.
+  </div>
+</div>
