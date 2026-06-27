@@ -60,6 +60,7 @@ export class FormSchemaManagerService {
       spacing: s?.spacing ?? {},
       style: s?.style ?? {},
       actions: s?.actions ?? {},
+      draftConfig: s?.draftConfig,
     };
 
     this.resolvedSchema.set(parsedSchema);
