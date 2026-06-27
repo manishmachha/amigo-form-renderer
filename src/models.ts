@@ -236,6 +236,13 @@ export interface FormActionSchema {
   contentType?: "auto" | "json" | "multipart";
 }
 
+export interface FormDraftConfig {
+  enabled: boolean;
+  apiUrl?: string;
+  method?: HttpMethod;
+  draftIdPath?: string; // Where in response to get draft ID, e.g. "data.id"
+}
+
 export type FormType = "single" | "multi" | "single-sectional";
 
 export interface FormStepConfig {
@@ -262,7 +269,11 @@ export interface FormSchema {
   layout: FormLayoutSchema;
   spacing: FormSpacingSchema;
   style: FormStyleSchema;
-  actions: FormActionSchema;
+  actions?: FormActionSchema;
+  
+  draftConfig?: FormDraftConfig;
+
+  // New features
   formType?: FormType;
   steps?: FormStepConfig[];
   sections?: FormSectionSchema[];

@@ -185,6 +185,12 @@ interface FormActionSchema {
     payloadKey?: string;
     contentType?: "auto" | "json" | "multipart";
 }
+interface FormDraftConfig {
+    enabled: boolean;
+    apiUrl?: string;
+    method?: HttpMethod;
+    draftIdPath?: string;
+}
 type FormType = "single" | "multi" | "single-sectional";
 interface FormStepConfig {
     id: string;
@@ -208,7 +214,8 @@ interface FormSchema {
     layout: FormLayoutSchema;
     spacing: FormSpacingSchema;
     style: FormStyleSchema;
-    actions: FormActionSchema;
+    actions?: FormActionSchema;
+    draftConfig?: FormDraftConfig;
     formType?: FormType;
     steps?: FormStepConfig[];
     sections?: FormSectionSchema[];
@@ -422,6 +429,7 @@ declare class AmigoFormComponent implements OnChanges, OnDestroy {
     stepSectionManager: FormStepSectionManagerService;
     selectOptionsManager: FormSelectOptionsManagerService;
     private calculationManager;
+    private http;
     formId?: string;
     schema?: FormSchema;
     initialValue?: Record<string, any>;
@@ -430,6 +438,9 @@ declare class AmigoFormComponent implements OnChanges, OnDestroy {
     submitted: EventEmitter<any>;
     submitFailed: EventEmitter<any>;
     isSubmitting: boolean;
+    draftId?: string;
+    draftIdChange: EventEmitter<string>;
+    isDrafting: boolean;
     form: FormGroup | null;
     submitFeedback?: {
         type: "success" | "error";
@@ -441,7 +452,7 @@ declare class AmigoFormComponent implements OnChanges, OnDestroy {
         message: string;
     }>;
     reviewDialogTemplate: TemplateRef<any>;
-    constructor(cdr: ChangeDetectorRef, dialog: MatDialog, apiExec: AmigoApiExecutionService, visibility: FormVisibilityService, submission: FormSubmissionService, reviewService: FormReviewService, schemaManager: FormSchemaManagerService, valueManager: FormValueManagerService, stepSectionManager: FormStepSectionManagerService, selectOptionsManager: FormSelectOptionsManagerService, calculationManager: FormCalculationManagerService);
+    constructor(cdr: ChangeDetectorRef, dialog: MatDialog, apiExec: AmigoApiExecutionService, visibility: FormVisibilityService, submission: FormSubmissionService, reviewService: FormReviewService, schemaManager: FormSchemaManagerService, valueManager: FormValueManagerService, stepSectionManager: FormStepSectionManagerService, selectOptionsManager: FormSelectOptionsManagerService, calculationManager: FormCalculationManagerService, http: HttpClient);
     ngOnChanges(changes: SimpleChanges): void;
     ngOnDestroy(): void;
     get isLoading(): boolean;
@@ -468,7 +479,9 @@ declare class AmigoFormComponent implements OnChanges, OnDestroy {
     fieldsForSection(sectionId: string): FormFieldSchema[];
     setActiveStep(i: number): void;
     prevStep(): void;
-    nextStep(): void;
+    nextStep(): Promise<void>;
+    private getValuesForFields;
+    private extractValueFromPath;
     trackByFieldId: (_: number, field: any) => any;
     getFormStyle(): Record<string, any>;
     private px;
@@ -488,7 +501,7 @@ declare class AmigoFormComponent implements OnChanges, OnDestroy {
     }[];
     private isNonInput;
     static ɵfac: i0.ɵɵFactoryDeclaration<AmigoFormComponent, never>;
-    static ɵcmp: i0.ɵɵComponentDeclaration<AmigoFormComponent, "amigo-form", never, { "formId": { "alias": "formId"; "required": false; }; "schema": { "alias": "schema"; "required": false; }; "initialValue": { "alias": "initialValue"; "required": false; }; "submitPathParams": { "alias": "submitPathParams"; "required": false; }; "submitQueryParams": { "alias": "submitQueryParams"; "required": false; }; "isSubmitting": { "alias": "isSubmitting"; "required": false; }; }, { "submitted": "submitted"; "submitFailed": "submitFailed"; }, never, never, true, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<AmigoFormComponent, "amigo-form", never, { "formId": { "alias": "formId"; "required": false; }; "schema": { "alias": "schema"; "required": false; }; "initialValue": { "alias": "initialValue"; "required": false; }; "submitPathParams": { "alias": "submitPathParams"; "required": false; }; "submitQueryParams": { "alias": "submitQueryParams"; "required": false; }; "isSubmitting": { "alias": "isSubmitting"; "required": false; }; "draftId": { "alias": "draftId"; "required": false; }; }, { "submitted": "submitted"; "submitFailed": "submitFailed"; "draftIdChange": "draftIdChange"; }, never, never, true, never>;
 }
 
 declare function buildFormGroup(fields: FormFieldSchema[], initialValue?: Record<string, any>): FormGroup;
@@ -504,4 +517,4 @@ declare class AmigoTokenInterceptor implements HttpInterceptor {
 }
 
 export { AMIGO_AUTH_TOKEN_PROVIDER, AMIGO_FORM_CONFIG, AmigoFormComponent, AmigoFormService, AmigoTokenInterceptor, buildFormGroup, normalizeAccept, provideAmigoForm };
-export type { ActionApiConfig, AmigoAuthTokenProvider, AmigoFormConfig, ApiEndpointConfig, ButtonActionType, ButtonElementSchema, ButtonStyleVariant, DependentSelectConfig, EmptyValueType, FieldCalculationConfig, FieldType, FieldValidationRules, FieldVisibilitySchema, FormActionSchema, FormFieldArrayConfig, FormFieldOption, FormFieldOptionGroup, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionSchema, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, HttpMethod, InfoCardSchema, InfoCardStyleSchema, KeyValuePair, OptionsSourceMode, SelectAuthType, SelectOptionsApiConfig, SelectOptionsApiResponseMapping, SelectOptionsSourceSchema, TokenFrom, VisibilityOperator, VisibilityRule };
+export type { ActionApiConfig, AmigoAuthTokenProvider, AmigoFormConfig, ApiEndpointConfig, ButtonActionType, ButtonElementSchema, ButtonStyleVariant, DependentSelectConfig, EmptyValueType, FieldCalculationConfig, FieldType, FieldValidationRules, FieldVisibilitySchema, FormActionSchema, FormDraftConfig, FormFieldArrayConfig, FormFieldOption, FormFieldOptionGroup, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionSchema, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, HttpMethod, InfoCardSchema, InfoCardStyleSchema, KeyValuePair, OptionsSourceMode, SelectAuthType, SelectOptionsApiConfig, SelectOptionsApiResponseMapping, SelectOptionsSourceSchema, TokenFrom, VisibilityOperator, VisibilityRule };

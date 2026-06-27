@@ -14,7 +14,8 @@ import {
 import { CommonModule } from "@angular/common";
 import { ReactiveFormsModule, FormGroup } from "@angular/forms";
 import { MatDialogModule, MatDialog } from "@angular/material/dialog";
-import { finalize } from "rxjs/operators";
+import { HttpClient } from "@angular/common/http";
+import { finalize, firstValueFrom } from "rxjs";
 
 import { FormSchema, FormFieldSchema } from "./models";
 import { buildFormGroup } from "./form-group.builder";
@@ -68,6 +69,11 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
   @Output() submitFailed = new EventEmitter<any>();
 
   @Input() isSubmitting = false;
+  
+  @Input() draftId?: string;
+  @Output() draftIdChange = new EventEmitter<string>();
+
+  isDrafting = false;
 
   form: FormGroup | null = null;
   submitFeedback?: { type: "success" | "error"; message: string };
@@ -87,7 +93,8 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
     public valueManager: FormValueManagerService,
     public stepSectionManager: FormStepSectionManagerService,
     public selectOptionsManager: FormSelectOptionsManagerService,
-    private calculationManager: FormCalculationManagerService
+    private calculationManager: FormCalculationManagerService,
+    private http: HttpClient
   ) {
     // Re-initialize form when schema resolves
     effect(() => {
@@ -198,8 +205,84 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
     this.stepSectionManager.prevStep(this.form);
   }
 
-  nextStep(): void {
+  async nextStep(): Promise<void> {
+    const fields = this.fieldsForStep(this.activeStepIndex);
+    this.stepSectionManager.touchFields(fields, this.form);
+    if (this.stepSectionManager.hasErrors(fields, this.form)) return;
+
+    const draftConfig = this.resolvedSchema?.draftConfig;
+    if (this.isMultiStep && draftConfig?.enabled && draftConfig.apiUrl) {
+      try {
+        this.isDrafting = true;
+        this.cdr.detectChanges();
+
+        const stepValue = this.getValuesForFields(fields);
+        const payload: any = {
+          step: this.activeStepIndex + 1,
+          ...stepValue
+        };
+
+        if (this.activeStepIndex > 0 && this.draftId) {
+          payload.id = this.draftId;
+        }
+
+        const method = (draftConfig.method || 'POST').toLowerCase();
+        
+        let req$: any;
+        if (method === 'put') {
+          req$ = this.http.put(draftConfig.apiUrl, payload);
+        } else {
+          req$ = this.http.post(draftConfig.apiUrl, payload);
+        }
+
+        const res: any = await firstValueFrom(req$);
+
+        // If it's the first step (or we don't have a draft ID yet), extract it from response
+        if (this.activeStepIndex === 0 || !this.draftId) {
+          const path = draftConfig.draftIdPath || 'data.id';
+          const newDraftId = this.extractValueFromPath(res, path);
+          if (newDraftId) {
+            this.draftId = newDraftId;
+            this.draftIdChange.emit(newDraftId);
+          }
+        }
+      } catch (err) {
+        console.error('Draft API Error:', err);
+        // Optionally show feedback. For now we prevent moving to next step on error.
+        this.submitFeedback = { type: 'error', message: 'Failed to save draft. Please try again.' };
+        this.isDrafting = false;
+        this.cdr.detectChanges();
+        return; 
+      } finally {
+        this.isDrafting = false;
+        this.cdr.detectChanges();
+      }
+    }
+
+    this.submitFeedback = undefined; // clear any previous draft error
     this.stepSectionManager.nextStep(this.form);
+  }
+
+  private getValuesForFields(fields: FormFieldSchema[]): Record<string, any> {
+    const values: Record<string, any> = {};
+    if (!this.form) return values;
+    for (const f of fields) {
+      if (this.isNonInput(f)) continue;
+      const key = f.name ?? f.id;
+      values[key] = this.form.get(key)?.value;
+    }
+    return values;
+  }
+
+  private extractValueFromPath(obj: any, path: string): any {
+    if (!obj || !path) return undefined;
+    const keys = path.split('.');
+    let curr = obj;
+    for (const k of keys) {
+      if (curr === null || curr === undefined) return undefined;
+      curr = curr[k];
+    }
+    return curr;
   }
 
   trackByFieldId = (_: number, field: any) => field?.id ?? field?.name ?? _;
