@@ -19,7 +19,7 @@ export class FormSelectOptionsManagerService {
 
   preloadApiSelectOptions(form: FormGroup): void {
     const s = this.schemaManager.resolvedSchema();
-    const fields = s?.fields ?? [];
+    const fields = this.getAllFields(s?.fields ?? []);
     const formValue = this.valueManager.normalizeFormValue(form, s);
 
     for (const f of fields) {
@@ -48,7 +48,7 @@ export class FormSelectOptionsManagerService {
     this.cleanup();
 
     const s = this.schemaManager.resolvedSchema();
-    const fields = s?.fields ?? [];
+    const fields = this.getAllFields(s?.fields ?? []);
     const childFields = fields.filter((f: any) => f.type === "select" && f.dependentSelect);
 
     for (const child of childFields as any[]) {
@@ -206,5 +206,16 @@ export class FormSelectOptionsManagerService {
   cleanup(): void {
     this.cascadingSubs.forEach((s) => s.unsubscribe());
     this.cascadingSubs = [];
+  }
+
+  private getAllFields(fields: any[]): any[] {
+    let all: any[] = [];
+    for (const f of fields) {
+      all.push(f);
+      if (f.type === 'array' && f.fieldArray?.fields) {
+        all = all.concat(this.getAllFields(f.fieldArray.fields));
+      }
+    }
+    return all;
   }
 }

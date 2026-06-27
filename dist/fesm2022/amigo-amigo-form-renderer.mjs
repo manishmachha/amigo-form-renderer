@@ -1352,7 +1352,7 @@ class FormSelectOptionsManagerService {
     cascadingSubs = [];
     preloadApiSelectOptions(form) {
         const s = this.schemaManager.resolvedSchema();
-        const fields = s?.fields ?? [];
+        const fields = this.getAllFields(s?.fields ?? []);
         const formValue = this.valueManager.normalizeFormValue(form, s);
         for (const f of fields) {
             if (f.type !== "select")
@@ -1379,7 +1379,7 @@ class FormSelectOptionsManagerService {
     setupCascadingSelects(form) {
         this.cleanup();
         const s = this.schemaManager.resolvedSchema();
-        const fields = s?.fields ?? [];
+        const fields = this.getAllFields(s?.fields ?? []);
         const childFields = fields.filter((f) => f.type === "select" && f.dependentSelect);
         for (const child of childFields) {
             const dep = child.dependentSelect;
@@ -1513,6 +1513,16 @@ class FormSelectOptionsManagerService {
     cleanup() {
         this.cascadingSubs.forEach((s) => s.unsubscribe());
         this.cascadingSubs = [];
+    }
+    getAllFields(fields) {
+        let all = [];
+        for (const f of fields) {
+            all.push(f);
+            if (f.type === 'array' && f.fieldArray?.fields) {
+                all = all.concat(this.getAllFields(f.fieldArray.fields));
+            }
+        }
+        return all;
     }
     static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: FormSelectOptionsManagerService, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
     static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: FormSelectOptionsManagerService, providedIn: 'root' });

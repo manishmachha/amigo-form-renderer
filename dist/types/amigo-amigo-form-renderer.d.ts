@@ -404,6 +404,7 @@ declare class FormSelectOptionsManagerService {
     private getByPath;
     private controlKey;
     cleanup(): void;
+    private getAllFields;
     static ɵfac: i0.ɵɵFactoryDeclaration<FormSelectOptionsManagerService, never>;
     static ɵprov: i0.ɵɵInjectableDeclaration<FormSelectOptionsManagerService>;
 }
