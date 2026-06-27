@@ -52,10 +52,10 @@ export class FormStepSectionManagerService {
       if (!ids.size) return [];
       return (s.fields ?? [])
         .filter((f: any) => ids.has(f.id))
-        .filter((f: any) => this.visibility.isFieldVisible(f, this.isMultiStep(), this.isReviewed()));
+        .filter((f: any) => this.visibility.isFieldVisible(f, this.isMultiStep(), this.isReviewed(), s.enableIsReview));
     }
 
-    return (s.fields ?? []).filter((f: any) => this.visibility.isFieldVisible(f, this.isMultiStep(), this.isReviewed()));
+    return (s.fields ?? []).filter((f: any) => this.visibility.isFieldVisible(f, this.isMultiStep(), this.isReviewed(), s.enableIsReview));
   }
 
   fieldsForSection(sectionId: string): FormFieldSchema[] {
@@ -65,7 +65,7 @@ export class FormStepSectionManagerService {
     const ids = new Set(section?.fieldIds ?? []);
     return (s.fields ?? [])
       .filter((f: any) => ids.has(f.id))
-      .filter((f: any) => this.visibility.isFieldVisible(f, this.isMultiStep(), this.isReviewed()));
+      .filter((f: any) => this.visibility.isFieldVisible(f, this.isMultiStep(), this.isReviewed(), s.enableIsReview));
   }
 
   setActiveStep(i: number, form: FormGroup | null) {
@@ -97,7 +97,8 @@ export class FormStepSectionManagerService {
     if (!form) return;
     for (const f of fields as any[]) {
       if (this.isNonInput(f)) continue;
-      if (!this.visibility.isFieldVisible(f, this.isMultiStep(), this.isReviewed())) continue;
+      const s = this.schemaManager.resolvedSchema();
+      if (!this.visibility.isFieldVisible(f, this.isMultiStep(), this.isReviewed(), s?.enableIsReview)) continue;
       const c = form.get(this.controlKey(f));
       if (!c || c.disabled) continue;
       c.markAsTouched();
@@ -109,7 +110,10 @@ export class FormStepSectionManagerService {
     if (!form) return true;
     return (fields as any[])
       .filter((f) => !this.isNonInput(f))
-      .filter((f) => this.visibility.isFieldVisible(f, this.isMultiStep(), this.isReviewed()))
+      .filter((f) => {
+        const s = this.schemaManager.resolvedSchema();
+        return this.visibility.isFieldVisible(f, this.isMultiStep(), this.isReviewed(), s?.enableIsReview);
+      })
       .some((f) => {
         const c = form!.get(this.controlKey(f));
         return !!(c && c.enabled && c.invalid);

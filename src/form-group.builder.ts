@@ -2,6 +2,7 @@ import {
   AbstractControl,
   FormControl,
   FormGroup,
+  FormArray,
   ValidationErrors,
   ValidatorFn,
   Validators,
@@ -13,6 +14,20 @@ export function buildFormGroup(fields: FormFieldSchema[], initialValue?: Record<
   for (const f of fields as any[]) {
     const t = String(f?.type ?? '');
     if (t === 'card' || t === 'info-card' || t === 'button') continue;
+    const key = f.name ?? f.id;
+
+    if (t === 'array') {
+      const minItems = f.fieldArray?.minItems ?? 1;
+      const initialGroups = [];
+      const initVals = Array.isArray(initialValue?.[key]) ? initialValue?.[key] : [];
+      
+      for (let i = 0; i < Math.max(minItems, initVals.length); i++) {
+        const groupVal = initVals[i] || {};
+        initialGroups.push(buildFormGroup(f.fieldArray?.fields || [], groupVal));
+      }
+      group[key] = new FormArray(initialGroups) as any;
+      continue;
+    }
 
     const v = f.validations ?? {};
     const required = f.required === true || f.required === 'true' || v.required === true;
@@ -41,7 +56,6 @@ export function buildFormGroup(fields: FormFieldSchema[], initialValue?: Record<
       if (accept) validators.push(fileAcceptValidator(accept));
     }
 
-    const key = f.name ?? f.id;
     const init =
       initialValue?.[key] ??
       (t === 'checkbox'

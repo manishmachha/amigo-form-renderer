@@ -10,7 +10,8 @@ export type FieldType =
   | "date"
   | "file"
   | "card"
-  | "button";
+  | "button"
+  | "array";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -30,6 +31,11 @@ export interface FieldValidationRules {
 export interface FormFieldOption {
   label: string;
   value: any;
+}
+
+export interface FormFieldOptionGroup {
+  groupLabel: string;
+  options: FormFieldOption[];
 }
 
 export type OptionsSourceMode = "STATIC" | "API";
@@ -154,6 +160,13 @@ export interface FieldCalculationConfig {
   customExpression?: string; // e.g. "fieldA * fieldB + 10"
 }
 
+export interface FormFieldArrayConfig {
+  label: string;           // e.g. "Well" — used for "Well 1", "Well 2" headers and "+ Add Well" button
+  minItems?: number;       // minimum number of groups (default 1)
+  maxItems?: number;       // maximum number of groups (optional)
+  fields: FormFieldSchema[]; // the template fields inside each group
+}
+
 export interface FormFieldSchema {
   id: string;
   label: string;
@@ -182,6 +195,7 @@ export interface FormFieldSchema {
   visibility?: FieldVisibilitySchema;
   emptyValue?: EmptyValueType;
   calculation?: FieldCalculationConfig;
+  fieldArray?: FormFieldArrayConfig;
 }
 
 export interface FormLayoutSchema {

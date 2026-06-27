@@ -38,12 +38,12 @@ export class FormVisibilityService {
     return this.visibilityState[key] !== false;
   }
 
-  isFieldVisible(field: any, isMultiStep: boolean, isReviewed: boolean): boolean {
+  isFieldVisible(field: any, isMultiStep: boolean, isReviewed: boolean, enableIsReview: boolean = false): boolean {
     const isSubmit = field?.type === 'button' && 
       (field?.button?.isSubmit || field?.label?.toLowerCase().includes('submit'));
     
     if (isSubmit) {
-      if (isMultiStep && !isReviewed) {
+      if (enableIsReview && !isReviewed) {
         return false;
       }
     }

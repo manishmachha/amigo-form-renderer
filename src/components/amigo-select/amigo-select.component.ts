@@ -22,6 +22,26 @@ export class AmigoSelectComponent {
     return this.form?.get(this.controlKey()) ?? null;
   }
 
+  get options(): any[] {
+    if (this.field?.optionsSource?.mode === 'API') {
+      return this.selectState[this.field.id]?.options || [];
+    }
+    return this.field?.options || [];
+  }
+
+  get isGrouped(): boolean {
+    const opts = this.options;
+    return opts.length > 0 && opts[0].hasOwnProperty('groupLabel') && opts[0].hasOwnProperty('options');
+  }
+
+  get groupedOptions(): any[] {
+    return this.isGrouped ? this.options : [];
+  }
+
+  get flatOptions(): any[] {
+    return this.isGrouped ? [] : this.options;
+  }
+
   showError(): boolean {
     const c = this.ctrl();
     return !!(c && c.invalid && (c.touched || c.dirty));

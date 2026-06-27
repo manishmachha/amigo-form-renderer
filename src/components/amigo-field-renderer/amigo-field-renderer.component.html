@@ -3,7 +3,23 @@
 </ng-container>
 
 <ng-template #notCard>
-  <ng-container *ngIf="isButton(); else inputGroup">
+  <ng-container *ngIf="isArray(); else notArray">
+    <amigo-array
+      [field]="field"
+      [form]="form"
+      [resolvedSchema]="resolvedSchema"
+      [isSubmitting]="isSubmitting"
+      [buttonLoading]="buttonLoading"
+      [buttonFeedback]="buttonFeedback"
+      [selectState]="selectState"
+      (buttonClick)="onButtonClickHandler($event)"
+      (fileChange)="onFileChangeHandler($event)"
+      (clearFile)="onClearFileHandler($event)"
+    ></amigo-array>
+  </ng-container>
+
+  <ng-template #notArray>
+    <ng-container *ngIf="isButton(); else inputGroup">
     <amigo-button
       [field]="field"
       [resolvedSchema]="resolvedSchema"

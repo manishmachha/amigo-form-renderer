@@ -28,6 +28,34 @@ export class FormReviewService {
           });
         }
       }
+    } else if (resolvedSchema?.formType === 'single-sectional' && resolvedSchema?.sections?.length > 0) {
+      for (let i = 0; i < resolvedSchema.sections.length; i++) {
+        const section = resolvedSchema.sections[i];
+        const sectionFields = this.getFieldsForReview(section, form, resolvedSchema, selectState);
+        if (sectionFields.length > 0) {
+          data.push({
+            step: section.label || `Section ${i + 1}`,
+            fields: sectionFields
+          });
+        }
+      }
+    } else {
+      // Single page form
+      const allFields = (resolvedSchema?.fields ?? [])
+        .filter((f: any) => !this.isNonInput(f) && this.visibility.isFieldVisibleOriginal(f))
+        .map((f: any) => {
+          return {
+            label: f.label,
+            value: this.getReviewValue(f, form, selectState)
+          };
+        });
+
+      if (allFields.length > 0) {
+        data.push({
+          step: 'Form Details',
+          fields: allFields
+        });
+      }
     }
     return data;
   }
@@ -70,6 +98,27 @@ export class FormReviewService {
     if (field.type === 'file') {
       const names = this.fileNames(field, form);
       return names.length ? names.join(', ') : '-';
+    }
+    if (field.type === 'array' && Array.isArray(val)) {
+      if (val.length === 0) return 'No items added';
+      const itemLabel = field.fieldArray?.label || 'Item';
+      return val.map((group, i) => {
+        const parts = Object.entries(group)
+          .map(([k, v]) => {
+            const childField = field.fieldArray?.fields?.find((f: any) => (f.name ?? f.id) === k);
+            const childLabel = childField ? childField.label : k;
+            
+            let formattedV = v;
+            if (v === null || v === undefined || v === '') formattedV = '-';
+            else if (typeof v === 'boolean') formattedV = v ? 'Yes' : 'No';
+            else if (Array.isArray(v)) formattedV = v.join(', ');
+            else if (v instanceof File) formattedV = v.name;
+            
+            return `  • ${childLabel}: ${formattedV}`;
+          })
+          .join('\n');
+        return `\n${itemLabel} ${i + 1}:\n${parts}`;
+      }).join('\n');
     }
     
     return val;

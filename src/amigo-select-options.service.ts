@@ -9,13 +9,15 @@ import {
 import { AMIGO_FORM_CONFIG, AmigoFormConfig } from "./config";
 import {
   FormFieldOption,
+  FormFieldOptionGroup,
   FormFieldSchema,
   SelectOptionsApiConfig,
+  SelectOptionsSourceSchema,
 } from "./models";
 
 @Injectable({ providedIn: "root" })
 export class AmigoSelectOptionsService {
-  private cache = new Map<string, FormFieldOption[]>();
+  private cache = new Map<string, FormFieldOption[] | FormFieldOptionGroup[]>();
   private rawCache = new Map<string, any>();
 
   constructor(
@@ -30,7 +32,7 @@ export class AmigoSelectOptionsService {
     field: FormFieldSchema,
     _formValue?: Record<string, any>,
     parentValuesMap?: Record<string, any>,
-  ): Observable<FormFieldOption[]> {
+  ): Observable<FormFieldOption[] | FormFieldOptionGroup[]> {
     console.log(`[AmigoSelectOptionsService] load called for field: ${field.id}, parentValuesMap:`, parentValuesMap);
     const api = field.optionsSource?.api;
     if (!api?.url) {
@@ -172,11 +174,30 @@ export class AmigoSelectOptionsService {
     return null;
   }
 
-  private mapOptions(res: any, api: SelectOptionsApiConfig): FormFieldOption[] {
+  private mapOptions(res: any, api: SelectOptionsApiConfig): FormFieldOption[] | FormFieldOptionGroup[] {
     const rm = api.responseMapping;
     const labelKey = rm?.labelKey || "label";
     const valueKey = rm?.valueKey || "value";
     const data = rm?.dataPath ? this.getByPath(res, rm.dataPath) : res;
+
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      // Data is an object, map it to option groups
+      const groups: FormFieldOptionGroup[] = [];
+      for (const [key, value] of Object.entries(data)) {
+        if (Array.isArray(value)) {
+          const groupLabel = this.formatGroupLabel(key);
+          const options = value.map((item: any) => ({
+            label: item?.[labelKey] ?? "",
+            value: item?.[valueKey],
+          })).filter((o: any) => o.label !== "" && o.value !== undefined);
+          
+          if (options.length > 0) {
+            groups.push({ groupLabel, options });
+          }
+        }
+      }
+      return groups;
+    }
 
     const arr = Array.isArray(data)
       ? data
@@ -190,6 +211,15 @@ export class AmigoSelectOptionsService {
         value: item?.[valueKey],
       }))
       .filter((o: any) => o.label !== "" && o.value !== undefined);
+  }
+
+  private formatGroupLabel(key: string): string {
+    // Convert camelCase or snake_case to Title Case
+    return key
+      .replace(/([A-Z])/g, ' $1') // insert space before capital letters
+      .replace(/_/g, ' ') // replace underscores with spaces
+      .replace(/^./, str => str.toUpperCase()) // capitalize first letter
+      .trim();
   }
 
   private getByPath(obj: any, path: string): any {

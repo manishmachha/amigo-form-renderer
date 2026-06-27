@@ -5,7 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { HttpClient, HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-type FieldType = "text" | "password" | "number" | "email" | "textarea" | "select" | "checkbox" | "radio" | "date" | "file" | "card" | "button";
+type FieldType = "text" | "password" | "number" | "email" | "textarea" | "select" | "checkbox" | "radio" | "date" | "file" | "card" | "button" | "array";
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 interface KeyValuePair {
     key: string;
@@ -21,6 +21,10 @@ interface FieldValidationRules {
 interface FormFieldOption {
     label: string;
     value: any;
+}
+interface FormFieldOptionGroup {
+    groupLabel: string;
+    options: FormFieldOption[];
 }
 type OptionsSourceMode = "STATIC" | "API";
 type SelectAuthType = "NONE" | "BEARER";
@@ -118,6 +122,12 @@ interface FieldCalculationConfig {
     type: 'dailyToMonthly' | 'dailyToYearly' | 'hourlyToDaily' | 'weeklyToMonthly' | 'quarterlyToYearly' | 'halfYearlyToYearly' | 'custom';
     customExpression?: string;
 }
+interface FormFieldArrayConfig {
+    label: string;
+    minItems?: number;
+    maxItems?: number;
+    fields: FormFieldSchema[];
+}
 interface FormFieldSchema {
     id: string;
     label: string;
@@ -140,6 +150,7 @@ interface FormFieldSchema {
     visibility?: FieldVisibilitySchema;
     emptyValue?: EmptyValueType;
     calculation?: FieldCalculationConfig;
+    fieldArray?: FormFieldArrayConfig;
 }
 interface FormLayoutSchema {
     columns: number;
@@ -256,7 +267,7 @@ declare class FormVisibilityService {
     private visibilityUpdating;
     setupVisibility(form: FormGroup | null, resolvedSchema: FormSchema | null | any, onVisibilityChange?: () => void): void;
     isFieldVisibleOriginal(field: any): boolean;
-    isFieldVisible(field: any, isMultiStep: boolean, isReviewed: boolean): boolean;
+    isFieldVisible(field: any, isMultiStep: boolean, isReviewed: boolean, enableIsReview?: boolean): boolean;
     private recomputeVisibility;
     private evaluateVisibility;
     private evaluateVisibilityRule;
@@ -493,4 +504,4 @@ declare class AmigoTokenInterceptor implements HttpInterceptor {
 }
 
 export { AMIGO_AUTH_TOKEN_PROVIDER, AMIGO_FORM_CONFIG, AmigoFormComponent, AmigoFormService, AmigoTokenInterceptor, buildFormGroup, normalizeAccept, provideAmigoForm };
-export type { ActionApiConfig, AmigoAuthTokenProvider, AmigoFormConfig, ApiEndpointConfig, ButtonActionType, ButtonElementSchema, ButtonStyleVariant, DependentSelectConfig, EmptyValueType, FieldCalculationConfig, FieldType, FieldValidationRules, FieldVisibilitySchema, FormActionSchema, FormFieldOption, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionSchema, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, HttpMethod, InfoCardSchema, InfoCardStyleSchema, KeyValuePair, OptionsSourceMode, SelectAuthType, SelectOptionsApiConfig, SelectOptionsApiResponseMapping, SelectOptionsSourceSchema, TokenFrom, VisibilityOperator, VisibilityRule };
+export type { ActionApiConfig, AmigoAuthTokenProvider, AmigoFormConfig, ApiEndpointConfig, ButtonActionType, ButtonElementSchema, ButtonStyleVariant, DependentSelectConfig, EmptyValueType, FieldCalculationConfig, FieldType, FieldValidationRules, FieldVisibilitySchema, FormActionSchema, FormFieldArrayConfig, FormFieldOption, FormFieldOptionGroup, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionSchema, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, HttpMethod, InfoCardSchema, InfoCardStyleSchema, KeyValuePair, OptionsSourceMode, SelectAuthType, SelectOptionsApiConfig, SelectOptionsApiResponseMapping, SelectOptionsSourceSchema, TokenFrom, VisibilityOperator, VisibilityRule };

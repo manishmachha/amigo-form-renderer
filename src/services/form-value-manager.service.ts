@@ -59,6 +59,26 @@ export class FormValueManagerService {
           value === "" || value === undefined || value === null
             ? this.resolveEmptyValue(field)
             : Number(value);
+      } else if (field.type === "array" && Array.isArray(value)) {
+        normalized[key] = value.map((groupVal: any) => {
+          const childNorm: Record<string, any> = {};
+          for (const childField of field.fieldArray?.fields ?? []) {
+            if (this.isNonInput(childField)) continue;
+            const childKey = this.controlKey(childField);
+            const childValue = groupVal[childKey];
+            if (childField.type === "number") {
+              childNorm[childKey] =
+                childValue === "" || childValue === undefined || childValue === null
+                  ? this.resolveEmptyValue(childField)
+                  : Number(childValue);
+            } else if (this.isEmptyInput(childValue)) {
+              childNorm[childKey] = this.resolveEmptyValue(childField);
+            } else {
+              childNorm[childKey] = childValue;
+            }
+          }
+          return childNorm;
+        });
       } else if (this.isEmptyInput(value)) {
         normalized[key] = this.resolveEmptyValue(field);
       } else {

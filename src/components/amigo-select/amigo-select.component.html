@@ -12,14 +12,16 @@
       >
         <option value="">Select an option</option>
 
-        <ng-container
-          *ngFor="
-            let opt of field.optionsSource?.mode === 'API'
-              ? selectState[field.id]?.options || []
-              : field.options || []
-          "
-        >
-          <option [value]="opt.value">{{ opt.label }}</option>
+        <!-- Flat options -->
+        <ng-container *ngIf="!isGrouped">
+          <option *ngFor="let opt of flatOptions" [value]="opt.value">{{ opt.label }}</option>
+        </ng-container>
+
+        <!-- Grouped options -->
+        <ng-container *ngIf="isGrouped">
+          <optgroup *ngFor="let group of groupedOptions" [label]="group.groupLabel">
+            <option *ngFor="let opt of group.options" [value]="opt.value">{{ opt.label }}</option>
+          </optgroup>
         </ng-container>
       </select>
 

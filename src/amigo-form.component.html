@@ -161,9 +161,23 @@
 
       <!-- Review Button -->
       <button
-        *ngIf="activeStepIndex === totalSteps - 1 && !isReviewed"
+        *ngIf="resolvedSchema?.enableIsReview && activeStepIndex === totalSteps - 1 && !isReviewed"
         type="button"
         class="px-3 py-1 border border-blue-600 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+        (click)="openReviewDialog()"
+      >
+        Review Details
+      </button>
+    </div>
+
+    <!-- Review Button for Single Step Forms -->
+    <div
+      *ngIf="!isMultiStep && resolvedSchema?.enableIsReview && !isReviewed"
+      class="mt-4 flex justify-end w-full"
+    >
+      <button
+        type="button"
+        class="px-4 py-2 border border-blue-600 rounded bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
         (click)="openReviewDialog()"
       >
         Review Details
