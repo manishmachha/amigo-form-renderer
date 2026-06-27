@@ -509,10 +509,15 @@ class AmigoApiExecutionService {
             return;
         }
         if (Array.isArray(value)) {
-            value.forEach((v, i) => {
-                const k = keyPrefix ? `${keyPrefix}[${i}]` : String(i);
-                this.appendFormData(fd, v, k);
-            });
+            if (this.hasFile(value)) {
+                value.forEach((v, i) => {
+                    const k = keyPrefix ? `${keyPrefix}[${i}]` : String(i);
+                    this.appendFormData(fd, v, k);
+                });
+            }
+            else {
+                fd.append(keyPrefix, JSON.stringify(value));
+            }
             return;
         }
         if (typeof value === 'object') {
