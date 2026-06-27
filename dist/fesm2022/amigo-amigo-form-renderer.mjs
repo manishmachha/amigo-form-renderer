@@ -2223,7 +2223,7 @@ class AmigoFormComponent {
                     step: this.activeStepIndex + 1,
                     ...stepValue
                 };
-                if (this.activeStepIndex > 0 && this.draftId) {
+                if (this.draftId) {
                     payload.id = this.draftId;
                 }
                 const method = (draftConfig.method || 'POST').toLowerCase();

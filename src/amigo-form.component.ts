@@ -225,7 +225,7 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
           ...stepValue
         };
 
-        if (this.activeStepIndex > 0 && this.draftId) {
+        if (this.draftId) {
           payload.id = this.draftId;
         }
 
