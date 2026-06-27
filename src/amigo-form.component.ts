@@ -64,6 +64,8 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
   @Input() initialValue?: Record<string, any>;
   @Input() submitPathParams?: Record<string, any>;
   @Input() submitQueryParams?: Record<string, any>;
+  @Input() submitHeaders?: Record<string, string>;
+  @Input() submitAdditionalBody?: Record<string, any>;
 
   @Output() submitted = new EventEmitter<any>();
   @Output() submitFailed = new EventEmitter<any>();
@@ -325,6 +327,8 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
       triggerField,
       submitPathParams: this.submitPathParams,
       submitQueryParams: this.submitQueryParams,
+      submitHeaders: this.submitHeaders,
+      submitAdditionalBody: this.submitAdditionalBody,
       onStateChange: (state) => {
         this.isSubmitting = state.isSubmitting;
         if (state.feedback) this.submitFeedback = state.feedback;

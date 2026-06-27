@@ -11,6 +11,8 @@ export interface AmigoApiExecutionContext {
   payloadKey?: string;
   contentType?: 'auto' | 'json' | 'multipart';
   skipAuth?: boolean;
+  additionalHeaders?: Record<string, string>;
+  additionalBody?: Record<string, any>;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -35,6 +37,14 @@ export class AmigoApiExecutionService {
         headers = headers.set(h.key, String(v));
     }
 
+    if (ctx.additionalHeaders) {
+      for (const [k, v] of Object.entries(ctx.additionalHeaders)) {
+        if (v !== undefined && v !== null) {
+          headers = headers.set(k, String(v));
+        }
+      }
+    }
+
     let params = new HttpParams();
     for (const q of endpoint?.queryParams || []) {
       if (!q?.key) continue;
@@ -46,7 +56,11 @@ export class AmigoApiExecutionService {
     params = this.mergeParamsOverride(params, ctx.queryParams);
 
     const mapped = this.buildMappedBody(endpoint?.bodyMapping, ctx.formValue);
-    const payload = ctx.payloadKey ? { [ctx.payloadKey]: mapped } : mapped;
+    let payload = ctx.payloadKey ? { [ctx.payloadKey]: mapped } : mapped;
+    
+    if (ctx.additionalBody && typeof ctx.additionalBody === 'object') {
+      payload = { ...payload, ...ctx.additionalBody };
+    }
 
     if (method === 'GET') {
       const merged = this.mergeParamsFromObject(params, payload);

@@ -8,6 +8,8 @@ export interface SubmitOptions {
   triggerField?: any;
   submitPathParams?: Record<string, any>;
   submitQueryParams?: Record<string, any>;
+  submitHeaders?: Record<string, string>;
+  submitAdditionalBody?: Record<string, any>;
   onStateChange: (state: { isSubmitting: boolean; feedback?: { type: 'success' | 'error', message: string } }) => void;
   onSuccess: (result: any) => void;
   onError: (error: any) => void;
@@ -61,6 +63,8 @@ export class FormSubmissionService {
         formValue,
         pathParams: options.submitPathParams,
         queryParams: options.submitQueryParams,
+        additionalHeaders: options.submitHeaders,
+        additionalBody: options.submitAdditionalBody,
       })
       .pipe(finalize(() => {
         // Just state update, wait for next/error to set feedback

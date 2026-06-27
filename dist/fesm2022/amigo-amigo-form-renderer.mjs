@@ -366,6 +366,13 @@ class AmigoApiExecutionService {
             if (v !== undefined && v !== null && String(v).length)
                 headers = headers.set(h.key, String(v));
         }
+        if (ctx.additionalHeaders) {
+            for (const [k, v] of Object.entries(ctx.additionalHeaders)) {
+                if (v !== undefined && v !== null) {
+                    headers = headers.set(k, String(v));
+                }
+            }
+        }
         let params = new HttpParams();
         for (const q of endpoint?.queryParams || []) {
             if (!q?.key)
@@ -377,7 +384,10 @@ class AmigoApiExecutionService {
         }
         params = this.mergeParamsOverride(params, ctx.queryParams);
         const mapped = this.buildMappedBody(endpoint?.bodyMapping, ctx.formValue);
-        const payload = ctx.payloadKey ? { [ctx.payloadKey]: mapped } : mapped;
+        let payload = ctx.payloadKey ? { [ctx.payloadKey]: mapped } : mapped;
+        if (ctx.additionalBody && typeof ctx.additionalBody === 'object') {
+            payload = { ...payload, ...ctx.additionalBody };
+        }
         if (method === 'GET') {
             const merged = this.mergeParamsFromObject(params, payload);
             return this.http.request(method, url, { headers, params: merged });
@@ -612,6 +622,8 @@ class FormSubmissionService {
             formValue,
             pathParams: options.submitPathParams,
             queryParams: options.submitQueryParams,
+            additionalHeaders: options.submitHeaders,
+            additionalBody: options.submitAdditionalBody,
         })
             .pipe(finalize(() => {
             // Just state update, wait for next/error to set feedback
@@ -2093,6 +2105,8 @@ class AmigoFormComponent {
     initialValue;
     submitPathParams;
     submitQueryParams;
+    submitHeaders;
+    submitAdditionalBody;
     submitted = new EventEmitter();
     submitFailed = new EventEmitter();
     isSubmitting = false;
@@ -2324,6 +2338,8 @@ class AmigoFormComponent {
             triggerField,
             submitPathParams: this.submitPathParams,
             submitQueryParams: this.submitQueryParams,
+            submitHeaders: this.submitHeaders,
+            submitAdditionalBody: this.submitAdditionalBody,
             onStateChange: (state) => {
                 this.isSubmitting = state.isSubmitting;
                 if (state.feedback)
@@ -2434,7 +2450,7 @@ class AmigoFormComponent {
         return t === "card" || t === "info-card" || t === "button";
     }
     static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: AmigoFormComponent, deps: [{ token: i0.ChangeDetectorRef }, { token: i1$2.MatDialog }, { token: AmigoApiExecutionService }, { token: FormVisibilityService }, { token: FormSubmissionService }, { token: FormReviewService }, { token: FormSchemaManagerService }, { token: FormValueManagerService }, { token: FormStepSectionManagerService }, { token: FormSelectOptionsManagerService }, { token: FormCalculationManagerService }, { token: i1.HttpClient }], target: i0.ɵɵFactoryTarget.Component });
-    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoFormComponent, isStandalone: true, selector: "amigo-form", inputs: { formId: "formId", schema: "schema", initialValue: "initialValue", submitPathParams: "submitPathParams", submitQueryParams: "submitQueryParams", isSubmitting: "isSubmitting", draftId: "draftId" }, outputs: { submitted: "submitted", submitFailed: "submitFailed", draftIdChange: "draftIdChange" }, providers: [
+    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.1.5", type: AmigoFormComponent, isStandalone: true, selector: "amigo-form", inputs: { formId: "formId", schema: "schema", initialValue: "initialValue", submitPathParams: "submitPathParams", submitQueryParams: "submitQueryParams", submitHeaders: "submitHeaders", submitAdditionalBody: "submitAdditionalBody", isSubmitting: "isSubmitting", draftId: "draftId" }, outputs: { submitted: "submitted", submitFailed: "submitFailed", draftIdChange: "draftIdChange" }, providers: [
             FormSchemaManagerService,
             FormStepSectionManagerService,
             FormValueManagerService,
@@ -2473,6 +2489,10 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImpor
             }], submitPathParams: [{
                 type: Input
             }], submitQueryParams: [{
+                type: Input
+            }], submitHeaders: [{
+                type: Input
+            }], submitAdditionalBody: [{
                 type: Input
             }], submitted: [{
                 type: Output
