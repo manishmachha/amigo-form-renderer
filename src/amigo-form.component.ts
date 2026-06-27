@@ -102,33 +102,36 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
       if (s) {
         this.stepSectionManager.activeStepIndex.set(0);
         this.stepSectionManager.isReviewed.set(false);
-        this.form = buildFormGroup(s.fields, this.initialValue);
-        
-        this.valueManager.patchInitialValue(this.form, s, this.initialValue);
-        
-        this.visibility.setupVisibility(this.form, s, () => {
-          if (this.stepSectionManager.isReviewed()) {
-            this.stepSectionManager.isReviewed.set(false);
-            this.cdr.detectChanges();
-          }
-        });
-
-        this.selectOptionsManager.preloadApiSelectOptions(this.form);
-        this.selectOptionsManager.setupCascadingSelects(this.form);
-        this.calculationManager.setupCalculations(this.form, s.fields || []);
+        this.initForm(s);
       } else {
         this.form = null;
       }
     });
   }
 
+  private initForm(s: any) {
+    this.form = buildFormGroup(s.fields, this.initialValue);
+    
+    this.valueManager.patchInitialValue(this.form, s, this.initialValue);
+    
+    this.visibility.setupVisibility(this.form, s, () => {
+      if (this.stepSectionManager.isReviewed()) {
+        this.stepSectionManager.isReviewed.set(false);
+        this.cdr.detectChanges();
+      }
+    });
+
+    this.selectOptionsManager.preloadApiSelectOptions(this.form);
+    this.selectOptionsManager.setupCascadingSelects(this.form);
+    this.calculationManager.setupCalculations(this.form, s.fields || []);
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes["schema"] || changes["formId"]) {
       this.schemaManager.init(this.formId, this.schema);
     }
-    if (changes["initialValue"] && this.resolvedSchema) {
-      this.form = buildFormGroup(this.resolvedSchema.fields, this.initialValue);
-      this.valueManager.patchInitialValue(this.form!, this.resolvedSchema, this.initialValue);
+    if (changes["initialValue"] && this.resolvedSchema && !changes["initialValue"].firstChange) {
+      this.initForm(this.resolvedSchema);
     }
   }
 

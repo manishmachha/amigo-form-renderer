@@ -454,6 +454,7 @@ declare class AmigoFormComponent implements OnChanges, OnDestroy {
     }>;
     reviewDialogTemplate: TemplateRef<any>;
     constructor(cdr: ChangeDetectorRef, dialog: MatDialog, apiExec: AmigoApiExecutionService, visibility: FormVisibilityService, submission: FormSubmissionService, reviewService: FormReviewService, schemaManager: FormSchemaManagerService, valueManager: FormValueManagerService, stepSectionManager: FormStepSectionManagerService, selectOptionsManager: FormSelectOptionsManagerService, calculationManager: FormCalculationManagerService, http: HttpClient);
+    private initForm;
     ngOnChanges(changes: SimpleChanges): void;
     ngOnDestroy(): void;
     get isLoading(): boolean;

@@ -71,16 +71,16 @@ export class FormSelectOptionsManagerService {
         const ctrl = form?.get(pk);
         if (!ctrl) continue;
         const sub = ctrl.valueChanges.subscribe(() => {
-          this.updateChildOptions(child, dep, form);
+          this.updateChildOptions(child, dep, form, false);
         });
         this.cascadingSubs.push(sub);
       }
 
-      this.updateChildOptions(child, dep, form);
+      this.updateChildOptions(child, dep, form, true);
     }
   }
 
-  private updateChildOptions(child: any, dep: DependentSelectConfig, form: FormGroup): void {
+  private updateChildOptions(child: any, dep: DependentSelectConfig, form: FormGroup, isInit = false): void {
     const s = this.schemaManager.resolvedSchema();
     const fields = s?.fields ?? [];
     
@@ -110,7 +110,7 @@ export class FormSelectOptionsManagerService {
     if (!primaryValue || primaryValue === "") {
       console.log(`[FormSelectOptionsManager] Primary parent value is empty, clearing child options.`);
       this.updateSelectState(child.id, { loading: false, options: [] });
-      if (childCtrl) childCtrl.setValue("", { emitEvent: false });
+      if (childCtrl && !isInit) childCtrl.setValue("", { emitEvent: false });
       return;
     }
 
@@ -125,6 +125,7 @@ export class FormSelectOptionsManagerService {
         next: (opts) => {
           console.log(`[FormSelectOptionsManager] API request successful, received options:`, opts);
           this.updateSelectState(child.id, { loading: false, options: opts });
+          if (childCtrl && !isInit) childCtrl.setValue("", { emitEvent: false });
         },
         error: (err) => {
           console.error(`[FormSelectOptionsManager] API request failed:`, err);
@@ -136,7 +137,6 @@ export class FormSelectOptionsManagerService {
         },
       });
 
-      if (childCtrl) childCtrl.setValue("", { emitEvent: false });
       return;
     }
 
@@ -171,7 +171,7 @@ export class FormSelectOptionsManagerService {
 
     if (!selectedParent) {
       this.updateSelectState(child.id, { loading: false, options: [] });
-      if (childCtrl) childCtrl.setValue("", { emitEvent: false });
+      if (childCtrl && !isInit) childCtrl.setValue("", { emitEvent: false });
       return;
     }
 
@@ -187,7 +187,7 @@ export class FormSelectOptionsManagerService {
 
     this.updateSelectState(child.id, { loading: false, options: childOptions });
 
-    if (childCtrl) childCtrl.setValue("", { emitEvent: false });
+    if (childCtrl && !isInit) childCtrl.setValue("", { emitEvent: false });
   }
 
   private updateSelectState(id: string, state: { loading: boolean; error?: string; options: any[] }) {

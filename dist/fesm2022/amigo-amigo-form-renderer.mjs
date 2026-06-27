@@ -1401,14 +1401,14 @@ class FormSelectOptionsManagerService {
                 if (!ctrl)
                     continue;
                 const sub = ctrl.valueChanges.subscribe(() => {
-                    this.updateChildOptions(child, dep, form);
+                    this.updateChildOptions(child, dep, form, false);
                 });
                 this.cascadingSubs.push(sub);
             }
-            this.updateChildOptions(child, dep, form);
+            this.updateChildOptions(child, dep, form, true);
         }
     }
-    updateChildOptions(child, dep, form) {
+    updateChildOptions(child, dep, form, isInit = false) {
         const s = this.schemaManager.resolvedSchema();
         const fields = s?.fields ?? [];
         const parentValuesMap = {};
@@ -1432,7 +1432,7 @@ class FormSelectOptionsManagerService {
         if (!primaryValue || primaryValue === "") {
             console.log(`[FormSelectOptionsManager] Primary parent value is empty, clearing child options.`);
             this.updateSelectState(child.id, { loading: false, options: [] });
-            if (childCtrl)
+            if (childCtrl && !isInit)
                 childCtrl.setValue("", { emitEvent: false });
             return;
         }
@@ -1445,6 +1445,8 @@ class FormSelectOptionsManagerService {
                 next: (opts) => {
                     console.log(`[FormSelectOptionsManager] API request successful, received options:`, opts);
                     this.updateSelectState(child.id, { loading: false, options: opts });
+                    if (childCtrl && !isInit)
+                        childCtrl.setValue("", { emitEvent: false });
                 },
                 error: (err) => {
                     console.error(`[FormSelectOptionsManager] API request failed:`, err);
@@ -1455,8 +1457,6 @@ class FormSelectOptionsManagerService {
                     });
                 },
             });
-            if (childCtrl)
-                childCtrl.setValue("", { emitEvent: false });
             return;
         }
         console.log(`[FormSelectOptionsManager] Fallback to local filtering for child: ${child.id}`);
@@ -1483,7 +1483,7 @@ class FormSelectOptionsManagerService {
         const selectedParent = parentItems.find((item) => String(item?.[parentValueKey]) === String(primaryValue));
         if (!selectedParent) {
             this.updateSelectState(child.id, { loading: false, options: [] });
-            if (childCtrl)
+            if (childCtrl && !isInit)
                 childCtrl.setValue("", { emitEvent: false });
             return;
         }
@@ -1497,7 +1497,7 @@ class FormSelectOptionsManagerService {
                 .filter((o) => o.label !== "" && o.value !== undefined)
             : [];
         this.updateSelectState(child.id, { loading: false, options: childOptions });
-        if (childCtrl)
+        if (childCtrl && !isInit)
             childCtrl.setValue("", { emitEvent: false });
     }
     updateSelectState(id, state) {
@@ -2118,30 +2118,32 @@ class AmigoFormComponent {
             if (s) {
                 this.stepSectionManager.activeStepIndex.set(0);
                 this.stepSectionManager.isReviewed.set(false);
-                this.form = buildFormGroup(s.fields, this.initialValue);
-                this.valueManager.patchInitialValue(this.form, s, this.initialValue);
-                this.visibility.setupVisibility(this.form, s, () => {
-                    if (this.stepSectionManager.isReviewed()) {
-                        this.stepSectionManager.isReviewed.set(false);
-                        this.cdr.detectChanges();
-                    }
-                });
-                this.selectOptionsManager.preloadApiSelectOptions(this.form);
-                this.selectOptionsManager.setupCascadingSelects(this.form);
-                this.calculationManager.setupCalculations(this.form, s.fields || []);
+                this.initForm(s);
             }
             else {
                 this.form = null;
             }
         });
     }
+    initForm(s) {
+        this.form = buildFormGroup(s.fields, this.initialValue);
+        this.valueManager.patchInitialValue(this.form, s, this.initialValue);
+        this.visibility.setupVisibility(this.form, s, () => {
+            if (this.stepSectionManager.isReviewed()) {
+                this.stepSectionManager.isReviewed.set(false);
+                this.cdr.detectChanges();
+            }
+        });
+        this.selectOptionsManager.preloadApiSelectOptions(this.form);
+        this.selectOptionsManager.setupCascadingSelects(this.form);
+        this.calculationManager.setupCalculations(this.form, s.fields || []);
+    }
     ngOnChanges(changes) {
         if (changes["schema"] || changes["formId"]) {
             this.schemaManager.init(this.formId, this.schema);
         }
-        if (changes["initialValue"] && this.resolvedSchema) {
-            this.form = buildFormGroup(this.resolvedSchema.fields, this.initialValue);
-            this.valueManager.patchInitialValue(this.form, this.resolvedSchema, this.initialValue);
+        if (changes["initialValue"] && this.resolvedSchema && !changes["initialValue"].firstChange) {
+            this.initForm(this.resolvedSchema);
         }
     }
     ngOnDestroy() {
