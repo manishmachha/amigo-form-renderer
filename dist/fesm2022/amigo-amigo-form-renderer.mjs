@@ -2157,14 +2157,6 @@ class AmigoFormComponent {
         effect(() => {
             const s = this.schemaManager.resolvedSchema();
             if (s) {
-                let startStep = 0;
-                if (this.initialValue && typeof this.initialValue['currentStep'] === 'number') {
-                    // Assume currentStep is 1-indexed from the API
-                    startStep = Math.max(0, this.initialValue['currentStep'] - 1);
-                }
-                this.stepSectionManager.activeStepIndex.set(startStep);
-                this.stepSectionManager.highestCompletedStep.set(startStep);
-                this.stepSectionManager.isReviewed.set(false);
                 this.initForm(s);
             }
             else {
@@ -2173,6 +2165,14 @@ class AmigoFormComponent {
         });
     }
     initForm(s) {
+        let startStep = 0;
+        if (this.initialValue && typeof this.initialValue['currentStep'] === 'number') {
+            // Assume currentStep is 1-indexed from the API
+            startStep = Math.max(0, this.initialValue['currentStep'] - 1);
+        }
+        this.stepSectionManager.activeStepIndex.set(startStep);
+        this.stepSectionManager.highestCompletedStep.set(startStep);
+        this.stepSectionManager.isReviewed.set(false);
         this.form = buildFormGroup(s.fields, this.initialValue);
         this.valueManager.patchInitialValue(this.form, s, this.initialValue);
         this.visibility.setupVisibility(this.form, s, () => {
