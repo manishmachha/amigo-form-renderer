@@ -47,6 +47,8 @@
       [activeStepIndex]="activeStepIndex"
       [totalSteps]="totalSteps"
       [visibleFieldsCount]="visibleFields.length"
+      [highestCompletedStep]="stepSectionManager.highestCompletedStep()"
+      [isDraftEnabled]="resolvedSchema?.draftConfig?.enabled === true"
       (stepChanged)="setActiveStep($event)"
     ></amigo-stepper>
 

@@ -102,7 +102,13 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
     effect(() => {
       const s = this.schemaManager.resolvedSchema();
       if (s) {
-        this.stepSectionManager.activeStepIndex.set(0);
+        let startStep = 0;
+        if (this.initialValue && typeof this.initialValue['currentStep'] === 'number') {
+           // Assume currentStep is 1-indexed from the API
+           startStep = Math.max(0, this.initialValue['currentStep'] - 1);
+        }
+        this.stepSectionManager.activeStepIndex.set(startStep);
+        this.stepSectionManager.highestCompletedStep.set(startStep);
         this.stepSectionManager.isReviewed.set(false);
         this.initForm(s);
       } else {
@@ -251,10 +257,10 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
             this.draftIdChange.emit(newDraftId);
           }
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Draft API Error:', err);
-        // Optionally show feedback. For now we prevent moving to next step on error.
-        this.submitFeedback = { type: 'error', message: 'Failed to save draft. Please try again.' };
+        const errMsg = err?.error?.message || err?.message || 'Failed to save draft. Please try again.';
+        this.submitFeedback = { type: 'error', message: errMsg };
         this.isDrafting = false;
         this.cdr.detectChanges();
         return; 
@@ -265,6 +271,10 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
     }
 
     this.submitFeedback = undefined; // clear any previous draft error
+    const nextIdx = this.activeStepIndex + 1;
+    this.stepSectionManager.highestCompletedStep.set(
+      Math.max(this.stepSectionManager.highestCompletedStep(), nextIdx)
+    );
     this.stepSectionManager.nextStep(this.form);
   }
 

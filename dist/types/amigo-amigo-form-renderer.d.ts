@@ -371,6 +371,7 @@ declare class FormStepSectionManagerService {
     private schemaManager;
     private visibility;
     readonly activeStepIndex: i0.WritableSignal<number>;
+    readonly highestCompletedStep: i0.WritableSignal<number>;
     readonly isReviewed: i0.WritableSignal<boolean>;
     readonly orderedSteps: i0.Signal<any[]>;
     readonly totalSteps: i0.Signal<number>;

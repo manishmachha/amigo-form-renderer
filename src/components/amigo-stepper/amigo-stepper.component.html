@@ -3,7 +3,7 @@
     <div
       class="h-1 rounded-full transition-all duration-300 bg-blue-600"
       [ngStyle]="{
-        width: ((activeStepIndex + 1) / totalSteps) * 100 + '%'
+        width: progressWidth
       }"
     ></div>
   </div>
@@ -11,7 +11,8 @@
   <div class="flex items-center justify-between w-full">
     <div
       *ngFor="let step of orderedSteps; let i = index"
-      class="flex flex-col items-center cursor-pointer"
+      class="flex flex-col items-center transition-all duration-300"
+      [ngClass]="(isDraftEnabled && i > highestCompletedStep) ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'"
       (click)="onStepClick(i)"
     >
       <div

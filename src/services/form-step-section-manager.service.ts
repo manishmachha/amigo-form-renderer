@@ -12,6 +12,7 @@ export class FormStepSectionManagerService {
   private visibility = inject(FormVisibilityService);
 
   readonly activeStepIndex = signal<number>(0);
+  readonly highestCompletedStep = signal<number>(0);
   readonly isReviewed = signal<boolean>(false);
 
   readonly orderedSteps = computed(() => {
@@ -71,6 +72,14 @@ export class FormStepSectionManagerService {
   setActiveStep(i: number, form: FormGroup | null) {
     if (i < 0 || i >= this.totalSteps()) return;
     if (i === this.activeStepIndex()) return;
+
+    const s = this.schemaManager.resolvedSchema();
+    const isDraftEnabled = s?.draftConfig?.enabled === true;
+
+    // Prevent navigation to uncompleted steps via stepper icons if drafting is enabled
+    if (isDraftEnabled && i > this.highestCompletedStep()) {
+      return;
+    }
 
     if (i > this.activeStepIndex()) {
       for (let stepIdx = 0; stepIdx < i; stepIdx++) {
