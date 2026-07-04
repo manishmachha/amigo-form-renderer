@@ -211,6 +211,17 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
     return stepFields.filter(f => !sectionedIds.has(f.id));
   }
 
+  get unsectionedFieldsForSectional(): FormFieldSchema[] {
+    const s = this.resolvedSchema;
+    if (!s) return [];
+    const stepFields = this.visibleFields;
+    const sectionedIds = new Set<string>();
+    for (const sec of this.orderedSections) {
+      (sec.fieldIds ?? []).forEach(id => sectionedIds.add(id));
+    }
+    return stepFields.filter(f => !sectionedIds.has(f.id));
+  }
+
   fieldsForSection(sectionId: string): FormFieldSchema[] {
     return this.stepSectionManager.fieldsForSection(sectionId);
   }

@@ -485,6 +485,7 @@ declare class AmigoFormComponent implements OnChanges, OnDestroy {
     get sectionsForActiveStep(): any[];
     fieldsForSectionInActiveStep(sectionId: string): FormFieldSchema[];
     get unsectionedFieldsForActiveStep(): FormFieldSchema[];
+    get unsectionedFieldsForSectional(): FormFieldSchema[];
     fieldsForSection(sectionId: string): FormFieldSchema[];
     setActiveStep(i: number): void;
     prevStep(): void;

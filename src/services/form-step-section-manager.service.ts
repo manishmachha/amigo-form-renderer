@@ -35,7 +35,7 @@ export class FormStepSectionManagerService {
 
   readonly isSectional = computed(() => {
     const s = this.schemaManager.resolvedSchema();
-    return s?.formType === "single-sectional";
+    return s?.formType === "single-sectional" || (s?.formType === "single" && (s.sections?.length ?? 0) > 0);
   });
 
   readonly visibleFields = computed(() => {
