@@ -111,9 +111,12 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
 
   private initForm(s: any) {
     let startStep = 0;
-    if (this.initialValue && typeof this.initialValue['currentStep'] === 'number') {
+    if (this.initialValue && this.initialValue['currentStep'] != null) {
        // Assume currentStep is 1-indexed from the API
-       startStep = Math.max(0, this.initialValue['currentStep'] - 1);
+       const stepVal = parseInt(String(this.initialValue['currentStep']), 10);
+       if (!isNaN(stepVal)) {
+           startStep = Math.max(0, stepVal - 1);
+       }
     }
     this.stepSectionManager.activeStepIndex.set(startStep);
     this.stepSectionManager.highestCompletedStep.set(startStep);
@@ -139,7 +142,7 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
     if (changes["schema"] || changes["formId"]) {
       this.schemaManager.init(this.formId, this.schema);
     }
-    if (changes["initialValue"] && this.resolvedSchema && !changes["initialValue"].firstChange) {
+    if (changes["initialValue"] && this.resolvedSchema) {
       this.initForm(this.resolvedSchema);
     }
   }
