@@ -948,7 +948,11 @@ class FormValueManagerService {
             }
             patch[key] = incoming;
         }
-        form.patchValue(patch, { emitEvent: false });
+        // We don't want to patch currentStep/step into the form values if it's not a field
+        const dataToPatch = { ...initialValue };
+        delete dataToPatch['currentStep'];
+        delete dataToPatch['step'];
+        form.patchValue(dataToPatch, { emitEvent: false });
         form.markAsPristine();
         form.markAsUntouched();
     }
@@ -2166,11 +2170,14 @@ class AmigoFormComponent {
     }
     initForm(s) {
         let startStep = 0;
-        if (this.initialValue && this.initialValue['currentStep'] != null) {
-            // Assume currentStep is 1-indexed from the API
-            const stepVal = parseInt(String(this.initialValue['currentStep']), 10);
-            if (!isNaN(stepVal)) {
-                startStep = Math.max(0, stepVal - 1);
+        if (this.initialValue) {
+            const stepField = this.initialValue['currentStep'] ?? this.initialValue['step'];
+            if (stepField != null) {
+                // Assume step is 1-indexed from the API
+                const stepVal = parseInt(String(stepField), 10);
+                if (!isNaN(stepVal)) {
+                    startStep = Math.max(0, stepVal - 1);
+                }
             }
         }
         this.stepSectionManager.activeStepIndex.set(startStep);

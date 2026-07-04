@@ -40,7 +40,12 @@ export class FormValueManagerService {
       patch[key] = incoming;
     }
 
-    form.patchValue(patch, { emitEvent: false });
+    // We don't want to patch currentStep/step into the form values if it's not a field
+    const dataToPatch = { ...initialValue };
+    delete dataToPatch['currentStep'];
+    delete dataToPatch['step'];
+
+    form.patchValue(dataToPatch, { emitEvent: false });
     form.markAsPristine();
     form.markAsUntouched();
   }
