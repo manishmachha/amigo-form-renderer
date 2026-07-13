@@ -652,9 +652,9 @@ class FormSubmissionService {
                     isSubmitting: false,
                     feedback: {
                         type: "error",
-                        message: btn.errorMessage ||
-                            err?.error?.message ||
+                        message: err?.error?.message ||
                             err?.message ||
+                            btn.errorMessage ||
                             "Failed to submit. Please try again.",
                     }
                 });
@@ -2449,7 +2449,7 @@ class AmigoFormComponent {
             error: (err) => {
                 this.buttonFeedback[field.id] = {
                     type: "error",
-                    message: btn.errorMessage || err?.error?.message || err?.message || "Action failed.",
+                    message: err?.error?.message || err?.message || btn.errorMessage || "Action failed.",
                 };
             },
         });
