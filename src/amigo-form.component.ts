@@ -419,7 +419,7 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
         error: (err) => {
           this.buttonFeedback[field.id] = {
             type: "error",
-            message: btn.errorMessage || err?.error?.message || err?.message || "Action failed.",
+            message: err?.error?.message || err?.message || btn.errorMessage || "Action failed.",
           };
         },
       });

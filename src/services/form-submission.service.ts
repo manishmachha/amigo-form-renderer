@@ -95,9 +95,9 @@ export class FormSubmissionService {
             feedback: {
               type: "error",
               message:
-                btn.errorMessage ||
                 err?.error?.message ||
                 err?.message ||
+                btn.errorMessage ||
                 "Failed to submit. Please try again.",
             }
           });
