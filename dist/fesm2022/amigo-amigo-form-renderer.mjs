@@ -776,7 +776,7 @@ class FormReviewService {
         if (field.type === 'array' && Array.isArray(val)) {
             if (val.length === 0)
                 return 'No items added';
-            const itemLabel = field.fieldArray?.label || 'Item';
+            const itemLabel = field.fieldArray?.label || field.label || field.name || 'Item';
             return val.map((group, i) => {
                 const parts = Object.entries(group)
                     .map(([k, v]) => {
