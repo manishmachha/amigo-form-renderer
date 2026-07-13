@@ -351,12 +351,18 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
     this.submitFeedback = undefined;
     const formValue = this.valueManager.normalizeFormValue(this.form!, this.resolvedSchema);
     
+    // Include draft ID in the submit payload when draft is enabled
+    let additionalBody = this.submitAdditionalBody;
+    if (this.draftId && this.resolvedSchema?.draftConfig?.enabled) {
+      additionalBody = { ...additionalBody, id: this.draftId };
+    }
+
     await this.submission.submit(this.form, this.resolvedSchema, formValue, {
       triggerField,
       submitPathParams: this.submitPathParams,
       submitQueryParams: this.submitQueryParams,
       submitHeaders: this.submitHeaders,
-      submitAdditionalBody: this.submitAdditionalBody,
+      submitAdditionalBody: additionalBody,
       onStateChange: (state) => {
         this.isSubmitting = state.isSubmitting;
         if (state.feedback) this.submitFeedback = state.feedback;
