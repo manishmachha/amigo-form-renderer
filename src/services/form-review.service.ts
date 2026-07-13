@@ -114,6 +114,10 @@ export class FormReviewService {
             else if (Array.isArray(v)) formattedV = v.join(', ');
             else if (v instanceof File) formattedV = v.name;
             
+            if (childField && childField.unit && formattedV !== '-') {
+              formattedV = `${formattedV} ${childField.unit}`;
+            }
+            
             return `  • ${childLabel}: ${formattedV}`;
           })
           .join('\n');

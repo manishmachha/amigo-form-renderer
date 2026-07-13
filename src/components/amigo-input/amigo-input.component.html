@@ -1,14 +1,14 @@
 <ng-container [formGroup]="form">
   <ng-container [ngSwitch]="field.type">
     <ng-container *ngSwitchCase="'text'">
-      <div *ngIf="field.unit; else textNoUnit" class="flex items-center border border-gray-300 rounded overflow-hidden" [style.borderRadius.px]="resolvedSchema?.style?.borderRadius">
+      <div *ngIf="field.unit; else textNoUnit" class="flex items-center border border-gray-300 rounded overflow-hidden bg-white" [style.borderRadius.px]="resolvedSchema?.style?.borderRadius">
         <input
           type="text"
           [placeholder]="field.placeholder"
           [formControlName]="controlKey()"
           class="flex-1 px-2 py-1 text-sm border-none outline-none bg-transparent"
         />
-        <span class="px-2 py-1 text-sm text-gray-500 bg-gray-50 border-l border-gray-300 whitespace-nowrap">{{ field.unit }}</span>
+        <span class="px-3 text-sm text-gray-400 whitespace-nowrap select-none pointer-events-none">{{ field.unit }}</span>
       </div>
       <ng-template #textNoUnit>
         <input
@@ -88,14 +88,14 @@
     </ng-container>
 
     <ng-container *ngSwitchCase="'number'">
-      <div *ngIf="field.unit; else numberNoUnit" class="flex items-center border border-gray-300 rounded overflow-hidden" [style.borderRadius.px]="resolvedSchema?.style?.borderRadius">
+      <div *ngIf="field.unit; else numberNoUnit" class="flex items-center border border-gray-300 rounded overflow-hidden bg-white" [style.borderRadius.px]="resolvedSchema?.style?.borderRadius">
         <input
           type="number"
           [placeholder]="field.placeholder"
           [formControlName]="controlKey()"
           class="flex-1 px-2 py-1 text-sm border-none outline-none bg-transparent"
         />
-        <span class="px-2 py-1 text-sm text-gray-500 bg-gray-50 border-l border-gray-300 whitespace-nowrap">{{ field.unit }}</span>
+        <span class="px-3 text-sm text-gray-400 whitespace-nowrap select-none pointer-events-none">{{ field.unit }}</span>
       </div>
       <ng-template #numberNoUnit>
         <input
@@ -127,14 +127,14 @@
     </ng-container>
 
     <ng-container *ngSwitchCase="'email'">
-      <div *ngIf="field.unit; else emailNoUnit" class="flex items-center border border-gray-300 rounded overflow-hidden" [style.borderRadius.px]="resolvedSchema?.style?.borderRadius">
+      <div *ngIf="field.unit; else emailNoUnit" class="flex items-center border border-gray-300 rounded overflow-hidden bg-white" [style.borderRadius.px]="resolvedSchema?.style?.borderRadius">
         <input
           type="email"
           [placeholder]="field.placeholder"
           [formControlName]="controlKey()"
           class="flex-1 px-2 py-1 text-sm border-none outline-none bg-transparent"
         />
-        <span class="px-2 py-1 text-sm text-gray-500 bg-gray-50 border-l border-gray-300 whitespace-nowrap">{{ field.unit }}</span>
+        <span class="px-3 text-sm text-gray-400 whitespace-nowrap select-none pointer-events-none">{{ field.unit }}</span>
       </div>
       <ng-template #emailNoUnit>
         <input
