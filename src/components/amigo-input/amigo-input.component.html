@@ -1,16 +1,27 @@
 <ng-container [formGroup]="form">
   <ng-container [ngSwitch]="field.type">
     <ng-container *ngSwitchCase="'text'">
-      <input
-        type="text"
-        [placeholder]="field.placeholder"
-        [formControlName]="controlKey()"
-        [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
-        [ngClass]="
-          resolvedSchema?.style?.inputClass ||
-          'w-full border border-gray-300 rounded px-2 py-1 text-sm'
-        "
-      />
+      <div *ngIf="field.unit; else textNoUnit" class="flex items-center border border-gray-300 rounded overflow-hidden" [style.borderRadius.px]="resolvedSchema?.style?.borderRadius">
+        <input
+          type="text"
+          [placeholder]="field.placeholder"
+          [formControlName]="controlKey()"
+          class="flex-1 px-2 py-1 text-sm border-none outline-none bg-transparent"
+        />
+        <span class="px-2 py-1 text-sm text-gray-500 bg-gray-50 border-l border-gray-300 whitespace-nowrap">{{ field.unit }}</span>
+      </div>
+      <ng-template #textNoUnit>
+        <input
+          type="text"
+          [placeholder]="field.placeholder"
+          [formControlName]="controlKey()"
+          [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
+          [ngClass]="
+            resolvedSchema?.style?.inputClass ||
+            'w-full border border-gray-300 rounded px-2 py-1 text-sm'
+          "
+        />
+      </ng-template>
 
       <div
         *ngIf="showError()"
@@ -77,16 +88,27 @@
     </ng-container>
 
     <ng-container *ngSwitchCase="'number'">
-      <input
-        type="number"
-        [placeholder]="field.placeholder"
-        [formControlName]="controlKey()"
-        [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
-        [ngClass]="
-          resolvedSchema?.style?.inputClass ||
-          'w-full border border-gray-300 rounded px-2 py-1 text-sm'
-        "
-      />
+      <div *ngIf="field.unit; else numberNoUnit" class="flex items-center border border-gray-300 rounded overflow-hidden" [style.borderRadius.px]="resolvedSchema?.style?.borderRadius">
+        <input
+          type="number"
+          [placeholder]="field.placeholder"
+          [formControlName]="controlKey()"
+          class="flex-1 px-2 py-1 text-sm border-none outline-none bg-transparent"
+        />
+        <span class="px-2 py-1 text-sm text-gray-500 bg-gray-50 border-l border-gray-300 whitespace-nowrap">{{ field.unit }}</span>
+      </div>
+      <ng-template #numberNoUnit>
+        <input
+          type="number"
+          [placeholder]="field.placeholder"
+          [formControlName]="controlKey()"
+          [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
+          [ngClass]="
+            resolvedSchema?.style?.inputClass ||
+            'w-full border border-gray-300 rounded px-2 py-1 text-sm'
+          "
+        />
+      </ng-template>
 
       <div
         *ngIf="showError()"
@@ -105,16 +127,27 @@
     </ng-container>
 
     <ng-container *ngSwitchCase="'email'">
-      <input
-        type="email"
-        [placeholder]="field.placeholder"
-        [formControlName]="controlKey()"
-        [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
-        [ngClass]="
-          resolvedSchema?.style?.inputClass ||
-          'w-full border border-gray-300 rounded px-2 py-1 text-sm'
-        "
-      />
+      <div *ngIf="field.unit; else emailNoUnit" class="flex items-center border border-gray-300 rounded overflow-hidden" [style.borderRadius.px]="resolvedSchema?.style?.borderRadius">
+        <input
+          type="email"
+          [placeholder]="field.placeholder"
+          [formControlName]="controlKey()"
+          class="flex-1 px-2 py-1 text-sm border-none outline-none bg-transparent"
+        />
+        <span class="px-2 py-1 text-sm text-gray-500 bg-gray-50 border-l border-gray-300 whitespace-nowrap">{{ field.unit }}</span>
+      </div>
+      <ng-template #emailNoUnit>
+        <input
+          type="email"
+          [placeholder]="field.placeholder"
+          [formControlName]="controlKey()"
+          [style.borderRadius.px]="resolvedSchema?.style?.borderRadius"
+          [ngClass]="
+            resolvedSchema?.style?.inputClass ||
+            'w-full border border-gray-300 rounded px-2 py-1 text-sm'
+          "
+        />
+      </ng-template>
 
       <div
         *ngIf="showError()"

@@ -196,6 +196,7 @@ export interface FormFieldSchema {
   emptyValue?: EmptyValueType;
   calculation?: FieldCalculationConfig;
   fieldArray?: FormFieldArrayConfig;
+  unit?: string;
 }
 
 export interface FormLayoutSchema {

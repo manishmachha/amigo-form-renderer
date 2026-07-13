@@ -121,6 +121,10 @@ export class FormReviewService {
       }).join('\n');
     }
     
+    const displayVal = String(val);
+    if (field.unit && displayVal !== '-') {
+      return `${displayVal} ${field.unit}`;
+    }
     return val;
   }
 
