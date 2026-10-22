@@ -3,6 +3,7 @@ import { FormGroup } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
 import { AmigoApiExecutionService } from '../amigo-api-execution.service';
 import { FormSchema, FormFieldSchema } from '../models';
+import { WorkflowRegistryService } from './workflow-registry.service';
 
 export interface SubmitOptions {
   triggerField?: any;
@@ -19,7 +20,10 @@ export interface SubmitOptions {
   providedIn: 'root'
 })
 export class FormSubmissionService {
-  constructor(private apiExec: AmigoApiExecutionService) {}
+  constructor(
+    private apiExec: AmigoApiExecutionService,
+    private workflowRegistry: WorkflowRegistryService
+  ) {}
 
   async submit(
     form: FormGroup | null,
@@ -80,14 +84,17 @@ export class FormSubmissionService {
             }
           });
 
-          options.onSuccess({
+          const successPayload = {
             url: apiConfig.url,
             method: apiConfig.method || 'POST',
             payload: formValue,
             headers: apiConfig.headers || [],
             params: apiConfig.queryParams || [],
             response: res,
-          });
+          };
+          this.workflowRegistry
+            .registerAfterThirdPartySubmit(resolvedSchema?.workflowIntegration, res)
+            .subscribe(() => options.onSuccess(successPayload));
         },
         error: (err) => {
           options.onStateChange({

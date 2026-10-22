@@ -192,6 +192,15 @@ interface FormDraftConfig {
     method?: HttpMethod;
     draftIdPath?: string;
 }
+/** Links submit to FormBuilder/Workflow without sending confidential field values to middleware. */
+interface WorkflowIntegrationConfig {
+    formId: string;
+    registryUrl: string;
+    externalSubmissionIdPath?: string;
+    workflowInstanceId?: string;
+    correlationId?: string;
+    actionKey?: string;
+}
 type FormType = "single" | "multi" | "single-sectional";
 interface FormStepConfig {
     id: string;
@@ -217,6 +226,7 @@ interface FormSchema {
     style: FormStyleSchema;
     actions?: FormActionSchema;
     draftConfig?: FormDraftConfig;
+    workflowIntegration?: WorkflowIntegrationConfig;
     formType?: FormType;
     steps?: FormStepConfig[];
     sections?: FormSectionSchema[];
@@ -290,6 +300,15 @@ declare class FormVisibilityService {
     static ɵprov: i0.ɵɵInjectableDeclaration<FormVisibilityService>;
 }
 
+declare class WorkflowRegistryService {
+    private http;
+    constructor(http: HttpClient);
+    registerAfterThirdPartySubmit(config: WorkflowIntegrationConfig | undefined, thirdPartyResponse: unknown): Observable<unknown>;
+    private resolveExternalId;
+    static ɵfac: i0.ɵɵFactoryDeclaration<WorkflowRegistryService, never>;
+    static ɵprov: i0.ɵɵInjectableDeclaration<WorkflowRegistryService>;
+}
+
 interface SubmitOptions {
     triggerField?: any;
     submitPathParams?: Record<string, any>;
@@ -308,7 +327,8 @@ interface SubmitOptions {
 }
 declare class FormSubmissionService {
     private apiExec;
-    constructor(apiExec: AmigoApiExecutionService);
+    private workflowRegistry;
+    constructor(apiExec: AmigoApiExecutionService, workflowRegistry: WorkflowRegistryService);
     submit(form: FormGroup | null, resolvedSchema: FormSchema | null | any, normalizedFormValue: Record<string, any>, options: SubmitOptions): Promise<void>;
     private getCaptureLocation;
     static ɵfac: i0.ɵɵFactoryDeclaration<FormSubmissionService, never>;
@@ -528,4 +548,4 @@ declare class AmigoTokenInterceptor implements HttpInterceptor {
 }
 
 export { AMIGO_AUTH_TOKEN_PROVIDER, AMIGO_FORM_CONFIG, AmigoFormComponent, AmigoFormService, AmigoTokenInterceptor, buildFormGroup, normalizeAccept, provideAmigoForm };
-export type { ActionApiConfig, AmigoAuthTokenProvider, AmigoFormConfig, ApiEndpointConfig, ButtonActionType, ButtonElementSchema, ButtonStyleVariant, DependentSelectConfig, EmptyValueType, FieldCalculationConfig, FieldType, FieldValidationRules, FieldVisibilitySchema, FormActionSchema, FormDraftConfig, FormFieldArrayConfig, FormFieldOption, FormFieldOptionGroup, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionSchema, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, HttpMethod, InfoCardSchema, InfoCardStyleSchema, KeyValuePair, OptionsSourceMode, SelectAuthType, SelectOptionsApiConfig, SelectOptionsApiResponseMapping, SelectOptionsSourceSchema, TokenFrom, VisibilityOperator, VisibilityRule };
+export type { ActionApiConfig, AmigoAuthTokenProvider, AmigoFormConfig, ApiEndpointConfig, ButtonActionType, ButtonElementSchema, ButtonStyleVariant, DependentSelectConfig, EmptyValueType, FieldCalculationConfig, FieldType, FieldValidationRules, FieldVisibilitySchema, FormActionSchema, FormDraftConfig, FormFieldArrayConfig, FormFieldOption, FormFieldOptionGroup, FormFieldSchema, FormLayoutSchema, FormSchema, FormSectionSchema, FormSpacingSchema, FormStepConfig, FormStyleSchema, FormType, HttpMethod, InfoCardSchema, InfoCardStyleSchema, KeyValuePair, OptionsSourceMode, SelectAuthType, SelectOptionsApiConfig, SelectOptionsApiResponseMapping, SelectOptionsSourceSchema, TokenFrom, VisibilityOperator, VisibilityRule, WorkflowIntegrationConfig };

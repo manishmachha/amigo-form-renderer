@@ -244,6 +244,16 @@ export interface FormDraftConfig {
   draftIdPath?: string; // Where in response to get draft ID, e.g. "data.id"
 }
 
+/** Links submit to FormBuilder/Workflow without sending confidential field values to middleware. */
+export interface WorkflowIntegrationConfig {
+  formId: string;
+  registryUrl: string;
+  externalSubmissionIdPath?: string;
+  workflowInstanceId?: string;
+  correlationId?: string;
+  actionKey?: string;
+}
+
 export type FormType = "single" | "multi" | "single-sectional";
 
 export interface FormStepConfig {
@@ -273,6 +283,7 @@ export interface FormSchema {
   actions?: FormActionSchema;
   
   draftConfig?: FormDraftConfig;
+  workflowIntegration?: WorkflowIntegrationConfig;
 
   // New features
   formType?: FormType;

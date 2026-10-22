@@ -7,7 +7,7 @@ import { FormArray, Validators, FormControl, FormGroup, ReactiveFormsModule } fr
 import * as i1$2 from '@angular/material/dialog';
 import { MatDialogModule } from '@angular/material/dialog';
 import { of, throwError, firstValueFrom, finalize as finalize$1 } from 'rxjs';
-import { finalize, tap, map, catchError } from 'rxjs/operators';
+import { tap, catchError, finalize, map } from 'rxjs/operators';
 import * as i1 from '@angular/common/http';
 import { HTTP_INTERCEPTORS, HttpHeaders, HttpParams } from '@angular/common/http';
 import * as i3 from '@angular/material/icon';
@@ -587,10 +587,63 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImpor
                     args: [AMIGO_FORM_CONFIG]
                 }] }] });
 
+class WorkflowRegistryService {
+    http;
+    constructor(http) {
+        this.http = http;
+    }
+    registerAfterThirdPartySubmit(config, thirdPartyResponse) {
+        if (!config?.registryUrl || !config.formId) {
+            return of(null);
+        }
+        const externalId = this.resolveExternalId(thirdPartyResponse, config.externalSubmissionIdPath);
+        if (!externalId) {
+            console.warn('workflowIntegration: could not resolve external_submission_id from response');
+            return of(null);
+        }
+        const body = {
+            external_submission_id: externalId,
+        };
+        if (config.correlationId)
+            body['correlation_id'] = config.correlationId;
+        if (config.workflowInstanceId)
+            body['workflow_instance_id'] = config.workflowInstanceId;
+        if (config.actionKey)
+            body['action_key'] = config.actionKey;
+        return this.http.post(config.registryUrl, body).pipe(tap((res) => console.debug('workflow registry', res)), catchError((err) => {
+            console.error('workflow registry failed', err);
+            return of(null);
+        }));
+    }
+    resolveExternalId(response, path) {
+        if (!path) {
+            if (response && typeof response === 'object' && 'id' in response) {
+                return String(response.id);
+            }
+            return null;
+        }
+        let cur = response;
+        for (const segment of path.split('.')) {
+            if (cur == null || typeof cur !== 'object')
+                return null;
+            cur = cur[segment];
+        }
+        return cur != null ? String(cur) : null;
+    }
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: WorkflowRegistryService, deps: [{ token: i1.HttpClient }], target: i0.ɵɵFactoryTarget.Injectable });
+    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: WorkflowRegistryService, providedIn: 'root' });
+}
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: WorkflowRegistryService, decorators: [{
+            type: Injectable,
+            args: [{ providedIn: 'root' }]
+        }], ctorParameters: () => [{ type: i1.HttpClient }] });
+
 class FormSubmissionService {
     apiExec;
-    constructor(apiExec) {
+    workflowRegistry;
+    constructor(apiExec, workflowRegistry) {
         this.apiExec = apiExec;
+        this.workflowRegistry = workflowRegistry;
     }
     async submit(form, resolvedSchema, normalizedFormValue, options) {
         if (!resolvedSchema || !form)
@@ -638,14 +691,17 @@ class FormSubmissionService {
                         message: btn.successMessage || "Submitted successfully.",
                     }
                 });
-                options.onSuccess({
+                const successPayload = {
                     url: apiConfig.url,
                     method: apiConfig.method || 'POST',
                     payload: formValue,
                     headers: apiConfig.headers || [],
                     params: apiConfig.queryParams || [],
                     response: res,
-                });
+                };
+                this.workflowRegistry
+                    .registerAfterThirdPartySubmit(resolvedSchema?.workflowIntegration, res)
+                    .subscribe(() => options.onSuccess(successPayload));
             },
             error: (err) => {
                 options.onStateChange({
@@ -683,7 +739,7 @@ class FormSubmissionService {
             }, { timeout: 2000, enableHighAccuracy: false });
         });
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: FormSubmissionService, deps: [{ token: AmigoApiExecutionService }], target: i0.ɵɵFactoryTarget.Injectable });
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: FormSubmissionService, deps: [{ token: AmigoApiExecutionService }, { token: WorkflowRegistryService }], target: i0.ɵɵFactoryTarget.Injectable });
     static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: FormSubmissionService, providedIn: 'root' });
 }
 i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: FormSubmissionService, decorators: [{
@@ -691,7 +747,7 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImpor
             args: [{
                     providedIn: 'root'
                 }]
-        }], ctorParameters: () => [{ type: AmigoApiExecutionService }] });
+        }], ctorParameters: () => [{ type: AmigoApiExecutionService }, { type: WorkflowRegistryService }] });
 
 class FormReviewService {
     visibility;
