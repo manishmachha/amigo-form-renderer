@@ -7,6 +7,11 @@ export interface AmigoFormConfig {
   apiBaseUrl: string;
   submitActionBaseUrl: string;
   selectOptionsBaseUrl?: string;
+  /**
+   * When true (default), each successful form submit POSTs to
+   * `{apiBaseUrl}/{formId}/submissions` so workflow can start instances.
+   */
+  autoWorkflowTrigger?: boolean;
   endpoints?: {
     getFormById?: (id: string) => string;
   };

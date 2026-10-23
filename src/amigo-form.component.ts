@@ -358,6 +358,7 @@ export class AmigoFormComponent implements OnChanges, OnDestroy {
     }
 
     await this.submission.submit(this.form, this.resolvedSchema, formValue, {
+      formId: this.formId ?? this.resolvedSchema?.id,
       triggerField,
       submitPathParams: this.submitPathParams,
       submitQueryParams: this.submitQueryParams,

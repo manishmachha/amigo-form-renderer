@@ -589,21 +589,39 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImpor
 
 class WorkflowRegistryService {
     http;
-    constructor(http) {
+    cfg;
+    constructor(http, cfg) {
         this.http = http;
+        this.cfg = cfg;
+    }
+    /** Notify Form Builder that this form was submitted (starts matching workflows). */
+    registerAutomaticTrigger(formId) {
+        if (!formId) {
+            return of(null);
+        }
+        if (this.cfg?.autoWorkflowTrigger === false) {
+            return of(null);
+        }
+        const base = (this.cfg?.apiBaseUrl ?? '/forms').replace(/\/$/, '');
+        const url = `${base}/${formId}/submissions`;
+        const body = {};
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            body['external_submission_id'] = crypto.randomUUID();
+        }
+        return this.http.post(url, body).pipe(tap((res) => console.debug('workflow auto-trigger registry', res)), catchError((err) => {
+            console.error('workflow auto-trigger registry failed', err);
+            return of(null);
+        }));
     }
     registerAfterThirdPartySubmit(config, thirdPartyResponse) {
         if (!config?.registryUrl || !config.formId) {
             return of(null);
         }
         const externalId = this.resolveExternalId(thirdPartyResponse, config.externalSubmissionIdPath);
-        if (!externalId) {
-            console.warn('workflowIntegration: could not resolve external_submission_id from response');
-            return of(null);
+        const body = {};
+        if (externalId) {
+            body['external_submission_id'] = externalId;
         }
-        const body = {
-            external_submission_id: externalId,
-        };
         if (config.correlationId)
             body['correlation_id'] = config.correlationId;
         if (config.workflowInstanceId)
@@ -614,6 +632,12 @@ class WorkflowRegistryService {
             console.error('workflow registry failed', err);
             return of(null);
         }));
+    }
+    notifyWorkflowAfterSubmit(formId, workflowIntegration, thirdPartyResponse) {
+        if (workflowIntegration?.registryUrl && workflowIntegration?.formId) {
+            return this.registerAfterThirdPartySubmit(workflowIntegration, thirdPartyResponse ?? {});
+        }
+        return this.registerAutomaticTrigger(formId ?? workflowIntegration?.formId);
     }
     resolveExternalId(response, path) {
         if (!path) {
@@ -630,13 +654,18 @@ class WorkflowRegistryService {
         }
         return cur != null ? String(cur) : null;
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: WorkflowRegistryService, deps: [{ token: i1.HttpClient }], target: i0.ɵɵFactoryTarget.Injectable });
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: WorkflowRegistryService, deps: [{ token: i1.HttpClient }, { token: AMIGO_FORM_CONFIG, optional: true }], target: i0.ɵɵFactoryTarget.Injectable });
     static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: WorkflowRegistryService, providedIn: 'root' });
 }
 i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.1.5", ngImport: i0, type: WorkflowRegistryService, decorators: [{
             type: Injectable,
             args: [{ providedIn: 'root' }]
-        }], ctorParameters: () => [{ type: i1.HttpClient }] });
+        }], ctorParameters: () => [{ type: i1.HttpClient }, { type: undefined, decorators: [{
+                    type: Optional
+                }, {
+                    type: Inject,
+                    args: [AMIGO_FORM_CONFIG]
+                }] }] });
 
 class FormSubmissionService {
     apiExec;
@@ -664,7 +693,9 @@ class FormSubmissionService {
         const formValue = { ...normalizedFormValue, geo_location: location };
         const endpoint = btn?.api;
         if (!btnField || !endpoint || !endpoint.url) {
-            options.onSuccess(formValue);
+            this.workflowRegistry
+                .notifyWorkflowAfterSubmit(options.formId ?? resolvedSchema?.id, resolvedSchema?.workflowIntegration)
+                .subscribe(() => options.onSuccess(formValue));
             return;
         }
         options.onStateChange({ isSubmitting: true });
@@ -700,7 +731,7 @@ class FormSubmissionService {
                     response: res,
                 };
                 this.workflowRegistry
-                    .registerAfterThirdPartySubmit(resolvedSchema?.workflowIntegration, res)
+                    .notifyWorkflowAfterSubmit(options.formId ?? resolvedSchema?.id, resolvedSchema?.workflowIntegration, res)
                     .subscribe(() => options.onSuccess(successPayload));
             },
             error: (err) => {
@@ -2454,6 +2485,7 @@ class AmigoFormComponent {
             additionalBody = { ...additionalBody, id: this.draftId };
         }
         await this.submission.submit(this.form, this.resolvedSchema, formValue, {
+            formId: this.formId ?? this.resolvedSchema?.id,
             triggerField,
             submitPathParams: this.submitPathParams,
             submitQueryParams: this.submitQueryParams,

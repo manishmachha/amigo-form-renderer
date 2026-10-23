@@ -6,6 +6,8 @@ import { FormSchema, FormFieldSchema } from '../models';
 import { WorkflowRegistryService } from './workflow-registry.service';
 
 export interface SubmitOptions {
+  /** Form UUID from `<amigo-form [formId]>` — used for automatic workflow trigger. */
+  formId?: string;
   triggerField?: any;
   submitPathParams?: Record<string, any>;
   submitQueryParams?: Record<string, any>;
@@ -53,7 +55,12 @@ export class FormSubmissionService {
     const endpoint = btn?.api;
 
     if (!btnField || !endpoint || !endpoint.url) {
-      options.onSuccess(formValue);
+      this.workflowRegistry
+        .notifyWorkflowAfterSubmit(
+          options.formId ?? resolvedSchema?.id,
+          resolvedSchema?.workflowIntegration,
+        )
+        .subscribe(() => options.onSuccess(formValue));
       return;
     }
 
@@ -93,7 +100,11 @@ export class FormSubmissionService {
             response: res,
           };
           this.workflowRegistry
-            .registerAfterThirdPartySubmit(resolvedSchema?.workflowIntegration, res)
+            .notifyWorkflowAfterSubmit(
+              options.formId ?? resolvedSchema?.id,
+              resolvedSchema?.workflowIntegration,
+              res,
+            )
             .subscribe(() => options.onSuccess(successPayload));
         },
         error: (err) => {

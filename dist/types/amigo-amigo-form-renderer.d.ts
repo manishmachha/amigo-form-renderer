@@ -243,6 +243,11 @@ interface AmigoFormConfig {
     apiBaseUrl: string;
     submitActionBaseUrl: string;
     selectOptionsBaseUrl?: string;
+    /**
+     * When true (default), each successful form submit POSTs to
+     * `{apiBaseUrl}/{formId}/submissions` so workflow can start instances.
+     */
+    autoWorkflowTrigger?: boolean;
     endpoints?: {
         getFormById?: (id: string) => string;
     };
@@ -302,14 +307,20 @@ declare class FormVisibilityService {
 
 declare class WorkflowRegistryService {
     private http;
-    constructor(http: HttpClient);
+    private readonly cfg;
+    constructor(http: HttpClient, cfg: AmigoFormConfig | null);
+    /** Notify Form Builder that this form was submitted (starts matching workflows). */
+    registerAutomaticTrigger(formId: string | null | undefined): Observable<unknown>;
     registerAfterThirdPartySubmit(config: WorkflowIntegrationConfig | undefined, thirdPartyResponse: unknown): Observable<unknown>;
+    notifyWorkflowAfterSubmit(formId: string | null | undefined, workflowIntegration: WorkflowIntegrationConfig | undefined, thirdPartyResponse?: unknown): Observable<unknown>;
     private resolveExternalId;
-    static ɵfac: i0.ɵɵFactoryDeclaration<WorkflowRegistryService, never>;
+    static ɵfac: i0.ɵɵFactoryDeclaration<WorkflowRegistryService, [null, { optional: true; }]>;
     static ɵprov: i0.ɵɵInjectableDeclaration<WorkflowRegistryService>;
 }
 
 interface SubmitOptions {
+    /** Form UUID from `<amigo-form [formId]>` — used for automatic workflow trigger. */
+    formId?: string;
     triggerField?: any;
     submitPathParams?: Record<string, any>;
     submitQueryParams?: Record<string, any>;
